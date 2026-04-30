@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Exam Generator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>📄 AI Exam Generator</h1>
+    <p class="subtitle">Create professional exam papers in seconds</p>
+
+    <div class="form-card">
+
+      <!-- Basic Inputs -->
+      <div class="input-group">
+        <label>Class</label>
+        <input id="class" placeholder="e.g. 10">
+      </div>
+
+      <div class="input-group">
+        <label>Subject</label>
+        <input id="subject" placeholder="e.g. Mathematics">
+      </div>
+
+      <div class="input-group">
+        <label>Topics</label>
+        <input id="topics" placeholder="e.g. Trigonometry">
+      </div>
+
+      <div class="row">
+        <div class="input-group">
+          <label>Difficulty</label>
+          <select id="difficulty">
+            <option>Easy</option>
+            <option>Medium</option>
+            <option>Hard</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label>Total Marks</label>
+          <input id="total" placeholder="e.g. 50">
+        </div>
+      </div>
+
+      <!-- Section Controls -->
+      <h3>📊 Section Settings</h3>
+
+      <div class="section-box">
+
+        <!-- Section A -->
+        <div class="section">
+          <h4>Section A</h4>
+          <input id="section_a" placeholder="Marks">
+
+          <select id="questions_a" onchange="handleCustom('questions_a','custom_a')">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="custom">Custom</option>
+          </select>
+
+          <input id="custom_a" placeholder="Custom number" style="display:none;">
+        </div>
+
+        <!-- Section B -->
+        <div class="section">
+          <h4>Section B</h4>
+          <input id="section_b" placeholder="Marks">
+
+          <select id="questions_b" onchange="handleCustom('questions_b','custom_b')">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="5">5</option>
+            <option value="custom">Custom</option>
+          </select>
+
+          <input id="custom_b" placeholder="Custom number" style="display:none;">
+        </div>
+
+        <!-- Section C -->
+        <div class="section">
+          <h4>Section C</h4>
+          <input id="section_c" placeholder="Marks">
+
+          <select id="questions_c" onchange="handleCustom('questions_c','custom_c')">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="custom">Custom</option>
+          </select>
+
+          <input id="custom_c" placeholder="Custom number" style="display:none;">
+        </div>
+
+      </div>
+
+      <!-- Instructions -->
+      <div class="input-group">
+        <label>Instructions (one per line)</label>
+        <textarea id="instructions" placeholder="e.g.
+No negative marking
+All questions compulsory"></textarea>
+      </div>
+
+      <!-- Toggle -->
+      <div class="toggle-box">
+        <label>Include Answer Key</label>
+        <input type="checkbox" id="includeAnswers" checked>
+      </div>
+
+      <!-- Loading -->
+      <div id="loading" class="loading">⏳ Generating...</div>
+
+      <!-- Button -->
+      <button onclick="generatePDF()" class="btn">
+        🚀 Generate Exam Paper
+      </button>
+
+      <!-- Result -->
+      <div class="result">
+        <a id="downloadLink" target="_blank"></a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,137 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 600px;
+  margin: 50px auto;
+  text-align: center;
+}
+
+h1 {
+  color: white;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #e0f7ff;
+  margin-bottom: 25px;
+}
+
+.form-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.input-group {
+  text-align: left;
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  outline: none;
+  font-size: 14px;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #4facfe;
+}
+
+textarea {
+  resize: none;
+  height: 80px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.section-box {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.section {
+  background: #f7f9fc;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.section h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+}
+
+.section input,
+.section select {
+  margin-top: 6px;
+}
+
+.toggle-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.loading {
+  display: none;
+  margin-top: 10px;
+  color: #4facfe;
+  font-weight: bold;
+}
+
+.btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background: #4facfe;
+  border: none;
+  color: white;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  background: #00c6ff;
+  transform: scale(1.02);
+}
+
+.result {
+  margin-top: 15px;
+}
+
+#downloadLink {
+  font-weight: bold;
+  color: #4facfe;
+  text-decoration: none;
+}
+
+#downloadLink:hover {
+  text-decoration: underline;
+}

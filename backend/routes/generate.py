@@ -7,7 +7,6 @@ from backend.services.pdf_service import generate_pdf
 import os
 
 router= APIRouter()
-
 class PaperRequest(BaseModel):
     class_name: str
     subject: str

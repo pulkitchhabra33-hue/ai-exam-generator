@@ -76,7 +76,7 @@ def generate_pdf(data, filename= "paper.pdf", include_answers= True):
     # Solutions (OPTIONAL)
 
     if include_answers:
-        elements.append(Paragraph("Solutions:", styles= ["Heading2"]))
+        elements.append(Paragraph("Solutions:", styles["Heading2"]))
 
         counter = 1
         for section in data.get("sections", []):
@@ -87,6 +87,8 @@ def generate_pdf(data, filename= "paper.pdf", include_answers= True):
                 counter += 1
 
     doc.build(elements)
+
+    
 
     try:
         doc.build(elements)

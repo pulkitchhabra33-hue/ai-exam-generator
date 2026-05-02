@@ -14,6 +14,26 @@ def format_instructions(text):
 def instructions_to_text(instructions_list):
     return "\n".join(f"- {i}" for i in instructions_list)
 
+json_format = """
+{
+  "title": "Exam Title",
+  "instructions": ["point1", "point2"],
+  "sections": [
+    {
+      "name": "Section A",
+      "questions": [
+        {
+          "question": "text",
+          "marks": 2,
+          "answer": "text",
+          "solution": "text"
+        }
+      ]
+    }
+  ]
+}
+"""
+
 def generate_paper(data):
 
     warning= None
@@ -79,23 +99,8 @@ def generate_paper(data):
     {instructions}
 
     JSON Format:
-{
-  "title": "Exam Title",
-  "instructions": ["point1", "point2"],
-  "sections": [
-    {
-      "name": "Section A",
-      "questions": [
-        {
-          "question": "text",
-          "marks": 2,
-          "answer": "text",
-          "solution": "text"
-        }
-      ]
-    }
-  ]
-}
+    {json_format}
+    
 
     STRICT RULES:
     - Total marks MUST equal the sum of marks of all questions
@@ -114,16 +119,23 @@ def generate_paper(data):
         messages= [{"role": "user", "content": prompt}]
     )
 
-    content= response.choices[0].message.content
+    try:
+        content = response.choices[0].message.content
+    except Exception as e:
+        return {
+            "error": "AI response structure issue",
+            "details": str(e),
+            "raw": str(response)
+        }
 
     try:
-        parsed= json.loads(content)
+        parsed = json.loads(content)
 
         if warning:
             parsed["warning"] = warning
 
         return parsed
-    
+
     except Exception as e:
         return {
             "error": "Invalid JSON from AI",

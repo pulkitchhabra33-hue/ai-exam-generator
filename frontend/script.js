@@ -1,3 +1,7 @@
+// Backend URL (TOP LEVEL — best practice)
+const BASE_URL = "https://ai-exam-generator-backend.onrender.com/";
+
+
 // Handle custom dropdown logic
 function handleCustom(selectId, inputId) {
   const select = document.getElementById(selectId);
@@ -10,11 +14,15 @@ function handleCustom(selectId, inputId) {
   }
 }
 
-// Main function
+
+// 🔹 Main function
 async function generatePDF() {
 
   // Show loading
   document.getElementById("loading").style.display = "block";
+
+  // Clear previous result
+  document.getElementById("downloadLink").innerText = "";
 
   try {
 
@@ -57,7 +65,7 @@ async function generatePDF() {
 
     // API call
     const res = await fetch(
-      `http://127.0.0.1:8000/generate-pdf?include_answers=${includeAnswers}`,
+      `${BASE_URL}/generate-pdf?include_answers=${includeAnswers}`,
       {
         method: "POST",
         headers: {
@@ -69,26 +77,24 @@ async function generatePDF() {
 
     const result = await res.json();
 
-    // Hide loading
-    document.getElementById("loading").style.display = "none";
-
-    // Success case
+    // ✅ Success case
     if (result.download_url) {
       const link = document.getElementById("downloadLink");
-      link.href = "http://127.0.0.1:8000" + result.download_url;
+      link.href = BASE_URL + result.download_url;
       link.innerText = "📥 Download PDF";
     } 
-    // Error case
+    // ❌ Error case
     else {
       alert(result.error || "Something went wrong");
     }
 
   } catch (error) {
 
-    // Hide loading on error
-    document.getElementById("loading").style.display = "none";
-
     console.error("Error:", error);
     alert("Server error. Check backend.");
+
+  } finally {
+    // Always hide loading
+    document.getElementById("loading").style.display = "none";
   }
 }

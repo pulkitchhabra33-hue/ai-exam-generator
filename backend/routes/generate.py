@@ -31,6 +31,8 @@ class PaperRequest(BaseModel):
 def generate_exam_paper(data: PaperRequest, include_answers: bool = True):
     paper = generate_paper(data)
 
+    print("PAPER DATA:", paper)
+
     if "error" in paper:
         return paper
     

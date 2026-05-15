@@ -3,95 +3,143 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import os
 import datetime
 
-def generate_pdf(data, filename= "paper.pdf", include_answers= True):
 
-    # Creating unique filename
+def generate_pdf(data, filename=None, include_answers=True):
+
+    # 🔥 Unique filename
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
     if not filename:
-        timestamp= datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename= f"paper_{timestamp}.pdf"
+        filename = f"paper_{timestamp}.pdf"
 
-    # Create folder
-    folder= "backend/pdfs"
-    os.makedirs(folder, exist_ok= True)
+    # 📁 Create folder
+    folder = "backend/pdfs"
+    os.makedirs(folder, exist_ok=True)
 
-    filepath= os.path.join(folder, filename)
-    doc= SimpleDocTemplate(filepath)
+    filepath = os.path.join(folder, filename)
 
-    styles= getSampleStyleSheet()
+    # 📄 PDF document
+    doc = SimpleDocTemplate(filepath)
 
-    # Custom style for better spacing
-    question_style= ParagraphStyle(
+    styles = getSampleStyleSheet()
+
+    # 🎨 Custom question style
+    question_style = ParagraphStyle(
         'QuestionStyle',
-        parent= styles['Normal'],
-        spaceAfter= 8,
+        parent=styles['Normal'],
+        spaceAfter=8,
     )
 
-    elements= []
+    elements = []
 
-    # Title
-    elements.append(Paragraph(data.get("title", "Exam Paper"), styles["Title"]))
-    elements.append(Spacer(1,12))
+    # 🏷 Title
+    elements.append(
+        Paragraph(
+            data.get("title", "Exam Paper"),
+            styles["Title"]
+        )
+    )
 
-    # Instructions
-    elements.append(Paragraph("Instructions:", styles["Heading2"]))
-    for inst in data.get("instructions", []):
-        elements.append(Paragraph(f"• {inst}", styles["Normal"]))
     elements.append(Spacer(1, 12))
 
-    # Sections + Questions (GLOBAL numbering)
+    # 📌 Instructions
+    elements.append(
+        Paragraph("Instructions:", styles["Heading2"])
+    )
+
+    for inst in data.get("instructions", []):
+        elements.append(
+            Paragraph(f"• {inst}", styles["Normal"])
+        )
+
+    elements.append(Spacer(1, 12))
+
+    # ❓ Questions
     question_counter = 1
+
     for section in data.get("sections", []):
-        elements.append(Paragraph(section.get("name", ""), styles["Heading2"]))
+
+        elements.append(
+            Paragraph(section.get("name", ""), styles["Heading2"])
+        )
+
         elements.append(Spacer(1, 8))
 
         for q in section.get("questions", []):
-            question_text= f"<b>{question_counter}.</b> {q.get('question')} ({q.get('marks')} marks)"
-            elements.append(Paragraph(question_text, question_style))
 
-            # MCQ options support
-            options= q.get("options", [])
-            
+            question_text = (
+                f"<b>{question_counter}.</b> "
+                f"{q.get('question')} "
+                f"({q.get('marks')} marks)"
+            )
+
+            elements.append(
+                Paragraph(question_text, question_style)
+            )
+
+            # MCQ options
+            options = q.get("options", [])
+
             if options:
                 for opt in options:
-                    elements.append(Paragraph(f"- {opt}", styles["Normal"]))
+                    elements.append(
+                        Paragraph(f"- {opt}", styles["Normal"])
+                    )
+
                 elements.append(Spacer(1, 6))
 
             question_counter += 1
-        
+
         elements.append(Spacer(1, 12))
 
-    # Answer Key (Optional)
+    # ✅ Answer Key
     if include_answers:
-        elements.append(Paragraph("Answer Key:", styles["Heading2"]))
+
+        elements.append(
+            Paragraph("Answer Key:", styles["Heading2"])
+        )
 
         counter = 1
+
         for section in data.get("sections", []):
             for q in section.get("questions", []):
-                ans= q.get("answer", "")
-                elements.append(Paragraph(f"{counter}. {ans}", styles["Normal"]))
+
+                ans = q.get("answer", "")
+
+                elements.append(
+                    Paragraph(f"{counter}. {ans}", styles["Normal"])
+                )
+
                 counter += 1
 
         elements.append(Spacer(1, 12))
-    
-    # Solutions (OPTIONAL)
 
+    # ✅ Solutions
     if include_answers:
-        elements.append(Paragraph("Solutions:", styles["Heading2"]))
+
+        elements.append(
+            Paragraph("Solutions:", styles["Heading2"])
+        )
 
         counter = 1
+
         for section in data.get("sections", []):
             for q in section.get("questions", []):
+
                 sol = q.get("solution", "")
-                elements.append(Paragraph(f"{counter}. {sol}", styles["Normal"]))
+
+                elements.append(
+                    Paragraph(f"{counter}. {sol}", styles["Normal"])
+                )
+
                 elements.append(Spacer(1, 6))
+
                 counter += 1
 
-    doc.build(elements)
-
-    
-
+    # 🔥 BUILD PDF ONLY ONCE
     try:
         doc.build(elements)
+
     except Exception as e:
         print("Error building PDF:", e)
         raise

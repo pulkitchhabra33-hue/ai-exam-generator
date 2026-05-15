@@ -41,8 +41,6 @@ def generate_exam_paper(data: PaperRequest, include_answers: bool = True):
 
     filename = file_path.split("/")[-1]
 
-    
-
     return {
         "message" : "PDF generated successfully",
         "download_url": f"/download/{filename}"
@@ -66,9 +64,10 @@ def create_pdf(data: PaperRequest):
 
 @router.get("/download/{filename}")
 def download_file(filename: str):
-    file_path = f"backend/pdfs/{filename}"
+    file_path = os.path.join("backend", "pdfs", filename)
+    print("Download Path:", file_path)
 
     if not os.path.exists(file_path):
         return {"error": "File not found"}
     
-    return FileResponse(file_path, media_type= 'application/pdf', filename= filename)
+    return FileResponse(path= file_path, media_type= 'application/pdf', filename= filename)

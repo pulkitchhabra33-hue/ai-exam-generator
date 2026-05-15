@@ -1,5 +1,5 @@
 // Backend URL (TOP LEVEL — best practice)
-const BASE_URL = "https://ai-exam-generator-backend.onrender.com/";
+const BASE_URL = "https://ai-exam-generator-backend.onrender.com";
 
 
 // Handle custom dropdown logic
@@ -65,7 +65,7 @@ async function generatePDF() {
 
     // API call
     const res = await fetch(
-      `${BASE_URL}/generate-pdf?include_answers=${includeAnswers}`,
+      `${BASE_URL}/generate-paper?include_answers=${includeAnswers}`,
       {
         method: "POST",
         headers: {

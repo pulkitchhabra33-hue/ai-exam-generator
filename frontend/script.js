@@ -41,10 +41,20 @@ async function generatePDF() {
 
     // Instructions + toggle
     const instructions = document.getElementById("instructions").value;
+    const selectedTime = document.getElementById("time_limit").value;
+
+    const timeLimit = selectedTime === "custom"
+      ? document.getElementById("custom_time").value
+      : selectedTime;
     const includeAnswers = document.getElementById("includeAnswers").checked;
 
     // Build request body
     const data = {
+      exam_type: document.getElementById("exam_type").value,
+      school_name: document.getElementById("school_name").value,
+      exam_name: document.getElementById("exam_name").value,
+      time_limit: timeLimit,
+      
       class_name: document.getElementById("class").value,
       subject: document.getElementById("subject").value,
       topics: document.getElementById("topics").value,

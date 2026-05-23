@@ -8,6 +8,12 @@ import os
 
 router= APIRouter()
 class PaperRequest(BaseModel):
+
+    exam_type: str | None = None
+    school_name: str | None = None
+    exam_name: str | None = None
+    time_limit: str | None = None
+    
     class_name: str
     subject: str
     topics: str

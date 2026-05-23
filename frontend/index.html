@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>AI Exam Generator</title>
   <link rel="stylesheet" href="style.css">
@@ -15,6 +16,17 @@
     <div class="form-card">
 
       <!-- Basic Inputs -->
+
+      <div class="input-group">
+        <label>School Name</label>
+        <input id="school_name" placeholder="e.g. ABC Public School">
+      </div>
+
+      <div class="input-group">
+        <label>Exam Name</label>
+        <input id="exam_name" placeholder="e.g. Half Yearly Examination">
+      </div>
+
       <div class="input-group">
         <label>Class</label>
         <input id="class" placeholder="e.g. 10">
@@ -30,20 +42,83 @@
         <input id="topics" placeholder="e.g. Trigonometry">
       </div>
 
+      <!-- Row -->
       <div class="row">
+
+        <!-- Difficulty -->
         <div class="input-group">
+
           <label>Difficulty</label>
+
           <select id="difficulty">
             <option>Easy</option>
             <option>Medium</option>
             <option>Hard</option>
           </select>
+
         </div>
 
+        <!-- Exam Type -->
         <div class="input-group">
-          <label>Total Marks</label>
-          <input id="total" placeholder="e.g. 50">
+
+          <label>
+            Exam Type
+            <span style="font-size:12px; color:gray;">
+              (Optional)
+            </span>
+          </label>
+
+          <select id="exam_type">
+
+            <option value="">None</option>
+
+            <option value="CBSE">CBSE</option>
+            <option value="ICSE">ICSE</option>
+            <option value="JEE">JEE</option>
+            <option value="NEET">NEET</option>
+            <option value="SSC">SSC</option>
+
+          </select>
+
         </div>
+
+        <!-- Time Limit -->
+        <div class="input-group">
+
+          <label>Time Limit</label>
+
+          <select
+            id="time_limit"
+            onchange="handleCustom('time_limit','custom_time')"
+          >
+
+            <option value="1 Hour">1 Hour</option>
+            <option value="2 Hours">2 Hours</option>
+            <option value="3 Hours">3 Hours</option>
+            <option value="custom">Custom</option>
+
+          </select>
+
+          <input
+            id="custom_time"
+            placeholder="Enter custom time"
+            style="display:none;"
+          >
+
+        </div>
+
+        <!-- Total Marks -->
+        <div class="input-group">
+
+          <label>Total Marks</label>
+
+          <input
+            id="total"
+            placeholder="e.g. 50"
+          >
+
+        </div>
+
       </div>
 
       <!-- Section Controls -->
@@ -53,77 +128,146 @@
 
         <!-- Section A -->
         <div class="section">
-          <h4>Section A</h4>
-          <input id="section_a" placeholder="Marks">
 
-          <select id="questions_a" onchange="handleCustom('questions_a','custom_a')">
+          <h4>Section A</h4>
+
+          <input
+            id="section_a"
+            placeholder="Marks"
+          >
+
+          <select
+            id="questions_a"
+            onchange="handleCustom('questions_a','custom_a')"
+          >
+
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="3">3</option>
             <option value="5">5</option>
             <option value="10">10</option>
             <option value="custom">Custom</option>
+
           </select>
 
-          <input id="custom_a" placeholder="Custom number" style="display:none;">
+          <input
+            id="custom_a"
+            placeholder="Custom number"
+            style="display:none;"
+          >
+
         </div>
 
         <!-- Section B -->
         <div class="section">
-          <h4>Section B</h4>
-          <input id="section_b" placeholder="Marks">
 
-          <select id="questions_b" onchange="handleCustom('questions_b','custom_b')">
+          <h4>Section B</h4>
+
+          <input
+            id="section_b"
+            placeholder="Marks"
+          >
+
+          <select
+            id="questions_b"
+            onchange="handleCustom('questions_b','custom_b')"
+          >
+
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="5">5</option>
             <option value="custom">Custom</option>
+
           </select>
 
-          <input id="custom_b" placeholder="Custom number" style="display:none;">
+          <input
+            id="custom_b"
+            placeholder="Custom number"
+            style="display:none;"
+          >
+
         </div>
 
         <!-- Section C -->
         <div class="section">
-          <h4>Section C</h4>
-          <input id="section_c" placeholder="Marks">
 
-          <select id="questions_c" onchange="handleCustom('questions_c','custom_c')">
+          <h4>Section C</h4>
+
+          <input
+            id="section_c"
+            placeholder="Marks"
+          >
+
+          <select
+            id="questions_c"
+            onchange="handleCustom('questions_c','custom_c')"
+          >
+
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="custom">Custom</option>
+
           </select>
 
-          <input id="custom_c" placeholder="Custom number" style="display:none;">
+          <input
+            id="custom_c"
+            placeholder="Custom number"
+            style="display:none;"
+          >
+
         </div>
 
       </div>
 
       <!-- Instructions -->
       <div class="input-group">
+
         <label>Instructions (one per line)</label>
-        <textarea id="instructions" placeholder="e.g.
+
+        <textarea
+          id="instructions"
+          placeholder="e.g.
 No negative marking
-All questions compulsory"></textarea>
+All questions compulsory"
+        ></textarea>
+
       </div>
 
       <!-- Toggle -->
       <div class="toggle-box">
+
         <label>Include Answer Key</label>
-        <input type="checkbox" id="includeAnswers" checked>
+
+        <input
+          type="checkbox"
+          id="includeAnswers"
+          checked
+        >
+
       </div>
 
       <!-- Loading -->
-      <div id="loading" class="loading">⏳ Generating...</div>
+      <div
+        id="loading"
+        class="loading"
+      >
+        ⏳ Generating...
+      </div>
 
       <!-- Button -->
-      <button onclick="generatePDF()" class="btn">
+      <button
+        onclick="generatePDF()"
+        class="btn"
+      >
         🚀 Generate Exam Paper
       </button>
 
       <!-- Result -->
       <div class="result">
-        <a id="downloadLink" target="_blank"></a>
+        <a
+          id="downloadLink"
+          target="_blank"
+        ></a>
       </div>
 
     </div>
@@ -133,4 +277,5 @@ All questions compulsory"></textarea>
   <script src="script.js"></script>
 
 </body>
+
 </html>

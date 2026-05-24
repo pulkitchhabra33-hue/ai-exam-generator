@@ -7,7 +7,7 @@ client= OpenAI(api_key= os.getenv("OPENAI_API_KEY"))
 def format_instructions(text):
     default_instruction= "Attempt all questions."
     
-    if not text or text.strip():
+    if not text or not text.strip():
         return [default_instruction]
 
     lines= text.split("\n")
@@ -23,16 +23,16 @@ def format_instructions(text):
 
         line= line[0].upper() + line[1:] if len(line) > 1 else line.upper()
 
-        if not line.endwith((".", "?", "!")):
+        if not line.endswith((".", "?", "!")):
             line += "."
 
-            cleaned.append(line)
+        cleaned.append(line)
 
-        lower_cleaned= [x.lower() for x in cleaned]
+    lower_cleaned= [x.lower() for x in cleaned]
         
-        if "attempt all questions" not in lower_cleaned:
-            cleaned.append(default_instruction)
-        return cleaned
+    if "attempt all questions" not in lower_cleaned:
+        cleaned.append(default_instruction)
+    return cleaned
 
 def instructions_to_text(instructions_list):
     return "\n".join(f"- {i}" for i in instructions_list)

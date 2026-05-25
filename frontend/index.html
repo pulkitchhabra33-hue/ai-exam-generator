@@ -11,38 +11,73 @@
   <div class="container">
 
     <h1>📄 AI Exam Generator</h1>
-    <p class="subtitle">Create professional exam papers in seconds</p>
+    <p class="subtitle">
+      Create professional exam papers in seconds
+    </p>
 
     <div class="form-card">
 
-      <!-- Basic Inputs -->
-
+      <!-- School Name -->
       <div class="input-group">
+
         <label>School Name</label>
-        <input id="school_name" placeholder="e.g. ABC Public School">
+
+        <input
+          id="school_name"
+          placeholder="e.g. ABC Public School"
+        >
+
       </div>
 
+      <!-- Exam Name -->
       <div class="input-group">
+
         <label>Exam Name</label>
-        <input id="exam_name" placeholder="e.g. Half Yearly Examination">
+
+        <input
+          id="exam_name"
+          placeholder="e.g. Half Yearly Examination"
+        >
+
       </div>
 
+      <!-- Class -->
       <div class="input-group">
+
         <label>Class</label>
-        <input id="class" placeholder="e.g. 10">
+
+        <input
+          id="class"
+          placeholder="e.g. 10"
+        >
+
       </div>
 
+      <!-- Subject -->
       <div class="input-group">
+
         <label>Subject</label>
-        <input id="subject" placeholder="e.g. Mathematics">
+
+        <input
+          id="subject"
+          placeholder="e.g. Mathematics"
+        >
+
       </div>
 
+      <!-- Topics -->
       <div class="input-group">
+
         <label>Topics</label>
-        <input id="topics" placeholder="e.g. Trigonometry">
+
+        <input
+          id="topics"
+          placeholder="e.g. Trigonometry"
+        >
+
       </div>
 
-      <!-- Row -->
+      <!-- Top Row -->
       <div class="row">
 
         <!-- Difficulty -->
@@ -51,9 +86,11 @@
           <label>Difficulty</label>
 
           <select id="difficulty">
+
             <option>Easy</option>
             <option>Medium</option>
             <option>Hard</option>
+
           </select>
 
         </div>
@@ -121,7 +158,7 @@
 
       </div>
 
-      <!-- Section Controls -->
+      <!-- Section Settings -->
       <h3>📊 Section Settings</h3>
 
       <div class="section-box">
@@ -136,6 +173,7 @@
             placeholder="Marks"
           >
 
+          <!-- Question Count -->
           <select
             id="questions_a"
             onchange="handleCustom('questions_a','custom_a')"
@@ -156,6 +194,41 @@
             style="display:none;"
           >
 
+          <!-- Question Type -->
+          <label>Question Type</label>
+
+          <select id="type_a">
+
+            <option value="Mixed">Mixed</option>
+
+            <option value="MCQ">MCQ</option>
+
+            <option value="Very Short Answer">
+              Very Short Answer
+            </option>
+
+            <option value="Short Answer">
+              Short Answer
+            </option>
+
+            <option value="Long Answer">
+              Long Answer
+            </option>
+
+            <option value="Case Study">
+              Case Study
+            </option>
+
+            <option value="Assertion-Reason">
+              Assertion-Reason
+            </option>
+
+            <option value="Application Based">
+              Application Based
+            </option>
+
+          </select>
+
         </div>
 
         <!-- Section B -->
@@ -168,6 +241,7 @@
             placeholder="Marks"
           >
 
+          <!-- Question Count -->
           <select
             id="questions_b"
             onchange="handleCustom('questions_b','custom_b')"
@@ -186,6 +260,41 @@
             style="display:none;"
           >
 
+          <!-- Question Type -->
+          <label>Question Type</label>
+
+          <select id="type_b">
+
+            <option value="Mixed">Mixed</option>
+
+            <option value="MCQ">MCQ</option>
+
+            <option value="Very Short Answer">
+              Very Short Answer
+            </option>
+
+            <option value="Short Answer">
+              Short Answer
+            </option>
+
+            <option value="Long Answer">
+              Long Answer
+            </option>
+
+            <option value="Case Study">
+              Case Study
+            </option>
+
+            <option value="Assertion-Reason">
+              Assertion-Reason
+            </option>
+
+            <option value="Application Based">
+              Application Based
+            </option>
+
+          </select>
+
         </div>
 
         <!-- Section C -->
@@ -198,6 +307,7 @@
             placeholder="Marks"
           >
 
+          <!-- Question Count -->
           <select
             id="questions_c"
             onchange="handleCustom('questions_c','custom_c')"
@@ -215,7 +325,61 @@
             style="display:none;"
           >
 
+          <!-- Question Type -->
+          <label>Question Type</label>
+
+          <select id="type_c">
+
+            <option value="Mixed">Mixed</option>
+
+            <option value="MCQ">MCQ</option>
+
+            <option value="Very Short Answer">
+              Very Short Answer
+            </option>
+
+            <option value="Short Answer">
+              Short Answer
+            </option>
+
+            <option value="Long Answer">
+              Long Answer
+            </option>
+
+            <option value="Case Study">
+              Case Study
+            </option>
+
+            <option value="Assertion-Reason">
+              Assertion-Reason
+            </option>
+
+            <option value="Application Based">
+              Application Based
+            </option>
+
+          </select>
+
         </div>
+
+      </div>
+
+      <!-- Previous Year Papers -->
+      <div class="input-group">
+
+        <label>
+          Upload Previous Year Papers
+          <span style="font-size:12px; color:gray;">
+            (Optional • Max 5 Files)
+          </span>
+        </label>
+
+        <input
+          type="file"
+          id="pyq_files"
+          multiple
+          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+        >
 
       </div>
 
@@ -233,7 +397,7 @@ All questions compulsory"
 
       </div>
 
-      <!-- Toggle -->
+      <!-- Include Answer Key -->
       <div class="toggle-box">
 
         <label>Include Answer Key</label>
@@ -254,7 +418,7 @@ All questions compulsory"
         ⏳ Generating...
       </div>
 
-      <!-- Button -->
+      <!-- Generate Button -->
       <button
         onclick="generatePDF()"
         class="btn"
@@ -262,12 +426,14 @@ All questions compulsory"
         🚀 Generate Exam Paper
       </button>
 
-      <!-- Result -->
+      <!-- Download Result -->
       <div class="result">
+
         <a
           id="downloadLink"
           target="_blank"
         ></a>
+
       </div>
 
     </div>

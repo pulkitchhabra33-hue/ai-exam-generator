@@ -24,6 +24,10 @@ class PaperRequest(BaseModel):
     section_a: int | None= None
     section_b: int | None= None
     section_c: int | None= None
+
+    type_a: str | None = None
+    type_b: str | None = None
+    type_c: str | None = None
     
     questions_a: int | None= None
     questions_b: int | None= None

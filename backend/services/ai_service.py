@@ -106,6 +106,15 @@ def generate_paper(data):
     instructions= instructions_to_text(instructions_list)
 
     exam_type= data.exam_type if data.exam_type else "General Exam Paper"
+
+    section_types = f'''
+    Section A Type: {data.type_a}
+    
+    Section B Type: {data.type_b}
+    
+    Section C Type: {data.type_c}
+
+'''
     prompt = f"""
     You are an expert academic exam paper setter and assessment designer.
 
@@ -137,6 +146,9 @@ def generate_paper(data):
 
     Section Distribution:
     {section_data}
+
+    Section Question Types:
+    {section_types}
 
     Instructions:
     {instructions}
@@ -209,6 +221,24 @@ def generate_paper(data):
     QUESTION QUALITY RULES
     --------------------------------------------------
 
+    IMPORTANT REALISM RULES:
+
+    - Questions should feel like real school or competitive exam papers.
+
+    - Avoid extremely direct textbook-definition questions unless necessary.
+
+    - Prefer:
+      - scenario-based wording
+      - application-based thinking
+      - competency-focused questions
+      - analytical reasoning
+
+    - Questions should test understanding, not memorization only.
+
+    - Use natural teacher-style wording.
+
+    - Make the paper feel human-created and professionally designed.
+
     Generate professional-quality questions.
 
     Avoid:
@@ -226,6 +256,25 @@ def generate_paper(data):
     --------------------------------------------------
     QUESTION TYPE RULES
     --------------------------------------------------
+
+    Respect the selected section question types.
+
+    Examples:
+
+    - If section type is MCQ:
+    generate objective questions with options.
+
+    - If section type is Case Study:
+    generate scenario-based questions.
+
+    - If section type is Assertion-Reason:
+    generate assertion and reasoning style questions.
+
+    - If section type is Application Based:
+    generate real-life application questions.
+
+    - If section type is Long Answer:
+    generate analytical descriptive questions.
 
     Use suitable combinations of:
 

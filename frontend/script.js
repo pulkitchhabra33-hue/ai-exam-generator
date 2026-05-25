@@ -66,6 +66,10 @@ async function generatePDF() {
       section_b: parseInt(document.getElementById("section_b").value) || 0,
       section_c: parseInt(document.getElementById("section_c").value) || 0,
 
+      type_a: document.getElementById("type_a").value,
+      type_b: document.getElementById("type_b").value,
+      type_c: document.getElementById("type_c").value,
+
       questions_a: parseInt(qa) || 1,
       questions_b: parseInt(qb) || 1,
       questions_c: parseInt(qc) || 1,

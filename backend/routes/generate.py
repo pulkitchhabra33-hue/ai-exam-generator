@@ -1,6 +1,8 @@
 from fileinput import filename
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile, File, Form
 from fastapi.responses import FileResponse
+from typing import List
+import json
 from pydantic import BaseModel
 from backend.services.ai_service import generate_paper
 from backend.services.pdf_service import generate_pdf
@@ -38,7 +40,22 @@ class PaperRequest(BaseModel):
 
 
 @router.post("/generate-paper")
-def generate_exam_paper(data: PaperRequest, include_answers: bool = True):
+def generate_exam_paper(data: str = Form(...), files: List[UploadFile] = File([]), include_answers: bool = True):
+    data_dict= json.loads(data)
+    data= PaperRequest(**data_dict)
+    upload_folder= "backend/uploads"
+
+    os.makedirs(upload_folder, exist_ok= True)
+    saved_files= []
+
+    for file in files:
+        file_path= os.path.join(upload_folder, file.filename)
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
+        saved_files.append(file_path)
+    
+    print("Saved Files:", saved_files)
+
     paper = generate_paper(data)
 
     paper["school_name"]= data.school_name

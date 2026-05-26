@@ -77,6 +77,17 @@ async function generatePDF() {
       instructions: instructions
     };
 
+    const formData = new FormData();
+    formData.append(
+      "data",
+      JSON.stringify(data)
+    )
+
+    const files= document.getElementById("pyq_files").files;
+    for (let i = 0; i < files.length; i++) {
+      formData.append("files", files[i])
+    }
+
     // API call
     const res = await fetch(
       `${BASE_URL}/generate-paper?include_answers=${includeAnswers}`,
@@ -85,7 +96,7 @@ async function generatePDF() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(data)
+        body: formData
       }
     );
 

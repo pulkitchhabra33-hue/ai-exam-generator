@@ -2,17 +2,107 @@
 const BASE_URL = "https://ai-exam-generator-backend.onrender.com";
 
 
+// SIGNUP
+async function signup() {
+
+  const email =
+    document.getElementById("email").value;
+
+  const password =
+    document.getElementById("password").value;
+
+  const res = await fetch(
+    `${BASE_URL}/signup`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        email,
+        password
+      })
+
+    }
+  );
+
+  const result = await res.json();
+
+  alert(
+    result.message || result.detail
+  );
+
+}
+
+
+// LOGIN
+async function login() {
+
+  const email =
+    document.getElementById("email").value;
+
+  const password =
+    document.getElementById("password").value;
+
+  const res = await fetch(
+    `${BASE_URL}/login`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        email,
+        password
+      })
+
+    }
+  );
+
+  const result = await res.json();
+
+  if (result.access_token) {
+
+    localStorage.setItem(
+      "token",
+      result.access_token
+    );
+
+    alert("Login successful");
+
+  }
+
+  else {
+
+    alert(
+      result.detail || "Login failed"
+    );
+
+  }
+
+}
+
+
 // Handle custom dropdown logic
 function handleCustom(selectId, inputId) {
 
-  const select = document.getElementById(selectId);
-  const input = document.getElementById(inputId);
+  const select =
+    document.getElementById(selectId);
+
+  const input =
+    document.getElementById(inputId);
 
   if (select.value === "custom") {
 
     input.style.display = "block";
 
-  } else {
+  }
+
+  else {
 
     input.style.display = "none";
 
@@ -21,18 +111,20 @@ function handleCustom(selectId, inputId) {
 }
 
 
-// Main Generate Function
+// GENERATE PDF
 async function generatePDF() {
 
   // Show loading
-  document.getElementById("loading").style.display = "block";
+  document.getElementById("loading").style.display =
+    "block";
 
   // Clear previous result
-  document.getElementById("downloadLink").innerText = "";
+  document.getElementById("downloadLink").innerText =
+    "";
 
   try {
 
-    // Handle custom question counts
+    // Question counts
     const qa =
       document.getElementById("questions_a").value === "custom"
         ? document.getElementById("custom_a").value
@@ -156,7 +248,7 @@ async function generatePDF() {
 
     }
 
-    // API request
+    // API Request
     const res = await fetch(
       `${BASE_URL}/generate-paper?include_answers=${includeAnswers}`,
       {

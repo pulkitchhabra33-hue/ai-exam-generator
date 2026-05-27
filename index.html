@@ -2,8 +2,11 @@
 <html>
 
 <head>
+
   <title>AI Exam Generator</title>
+
   <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
@@ -11,13 +14,45 @@
   <div class="container">
 
     <h1>📄 AI Exam Generator</h1>
+
     <p class="subtitle">
       Create professional exam papers in seconds
     </p>
 
+    <!-- AUTH BOX -->
+
+    <div class="auth-box">
+
+      <h2>🔐 User Authentication</h2>
+
+      <input
+        type="email"
+        id="email"
+        placeholder="Enter Email"
+      >
+
+      <input
+        type="password"
+        id="password"
+        placeholder="Enter Password"
+      >
+
+      <button onclick="signup()">
+        Sign Up
+      </button>
+
+      <button onclick="login()">
+        Login
+      </button>
+
+    </div>
+
+    <!-- MAIN FORM -->
+
     <div class="form-card">
 
       <!-- School Name -->
+
       <div class="input-group">
 
         <label>School Name</label>
@@ -30,6 +65,7 @@
       </div>
 
       <!-- Exam Name -->
+
       <div class="input-group">
 
         <label>Exam Name</label>
@@ -42,6 +78,7 @@
       </div>
 
       <!-- Class -->
+
       <div class="input-group">
 
         <label>Class</label>
@@ -54,6 +91,7 @@
       </div>
 
       <!-- Subject -->
+
       <div class="input-group">
 
         <label>Subject</label>
@@ -66,6 +104,7 @@
       </div>
 
       <!-- Topics -->
+
       <div class="input-group">
 
         <label>Topics</label>
@@ -77,10 +116,12 @@
 
       </div>
 
-      <!-- Top Row -->
+      <!-- TOP ROW -->
+
       <div class="row">
 
         <!-- Difficulty -->
+
         <div class="input-group">
 
           <label>Difficulty</label>
@@ -96,6 +137,7 @@
         </div>
 
         <!-- Exam Type -->
+
         <div class="input-group">
 
           <label>
@@ -120,6 +162,7 @@
         </div>
 
         <!-- Time Limit -->
+
         <div class="input-group">
 
           <label>Time Limit</label>
@@ -145,6 +188,7 @@
         </div>
 
         <!-- Total Marks -->
+
         <div class="input-group">
 
           <label>Total Marks</label>
@@ -158,12 +202,14 @@
 
       </div>
 
-      <!-- Section Settings -->
+      <!-- SECTION SETTINGS -->
+
       <h3>📊 Section Settings</h3>
 
       <div class="section-box">
 
-        <!-- Section A -->
+        <!-- SECTION A -->
+
         <div class="section">
 
           <h4>Section A</h4>
@@ -173,7 +219,6 @@
             placeholder="Marks"
           >
 
-          <!-- Question Count -->
           <select
             id="questions_a"
             onchange="handleCustom('questions_a','custom_a')"
@@ -194,7 +239,6 @@
             style="display:none;"
           >
 
-          <!-- Question Type -->
           <label>Question Type</label>
 
           <select id="type_a">
@@ -231,7 +275,8 @@
 
         </div>
 
-        <!-- Section B -->
+        <!-- SECTION B -->
+
         <div class="section">
 
           <h4>Section B</h4>
@@ -241,7 +286,6 @@
             placeholder="Marks"
           >
 
-          <!-- Question Count -->
           <select
             id="questions_b"
             onchange="handleCustom('questions_b','custom_b')"
@@ -260,7 +304,6 @@
             style="display:none;"
           >
 
-          <!-- Question Type -->
           <label>Question Type</label>
 
           <select id="type_b">
@@ -297,7 +340,8 @@
 
         </div>
 
-        <!-- Section C -->
+        <!-- SECTION C -->
+
         <div class="section">
 
           <h4>Section C</h4>
@@ -307,7 +351,6 @@
             placeholder="Marks"
           >
 
-          <!-- Question Count -->
           <select
             id="questions_c"
             onchange="handleCustom('questions_c','custom_c')"
@@ -325,7 +368,6 @@
             style="display:none;"
           >
 
-          <!-- Question Type -->
           <label>Question Type</label>
 
           <select id="type_c">
@@ -364,7 +406,8 @@
 
       </div>
 
-      <!-- Previous Year Papers -->
+      <!-- PYQ UPLOAD -->
+
       <div class="input-group">
 
         <label>
@@ -383,7 +426,8 @@
 
       </div>
 
-      <!-- Instructions -->
+      <!-- INSTRUCTIONS -->
+
       <div class="input-group">
 
         <label>Instructions (one per line)</label>
@@ -397,7 +441,8 @@ All questions compulsory"
 
       </div>
 
-      <!-- Include Answer Key -->
+      <!-- ANSWER KEY -->
+
       <div class="toggle-box">
 
         <label>Include Answer Key</label>
@@ -410,7 +455,8 @@ All questions compulsory"
 
       </div>
 
-      <!-- Loading -->
+      <!-- LOADING -->
+
       <div
         id="loading"
         class="loading"
@@ -418,7 +464,8 @@ All questions compulsory"
         ⏳ Generating...
       </div>
 
-      <!-- Generate Button -->
+      <!-- GENERATE BUTTON -->
+
       <button
         onclick="generatePDF()"
         class="btn"
@@ -426,7 +473,8 @@ All questions compulsory"
         🚀 Generate Exam Paper
       </button>
 
-      <!-- Download Result -->
+      <!-- DOWNLOAD RESULT -->
+
       <div class="result">
 
         <a

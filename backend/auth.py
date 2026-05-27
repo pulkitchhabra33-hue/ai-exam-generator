@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from database import SessionLocal
-from models import User
+from backend.database import SessionLocal
+from backend.models import User
 
 from passlib.context import CryptContext
 from jose import jwt

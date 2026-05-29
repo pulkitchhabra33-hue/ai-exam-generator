@@ -1,4 +1,6 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy import DateTime
+from datetime import datetime
 from backend.database import Base
 
 class User(Base):
@@ -9,3 +11,4 @@ class User(Base):
     password= Column(String(255))
 
     free_generations_used= Column(Integer, default= 0)
+    created_at= Column(DateTime, default= datetime.utcnow)

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer
+
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
@@ -11,6 +13,9 @@ from datetime import datetime, timedelta
 router= APIRouter()
 
 secret_key= "my_secret_key"
+
+oauth2_scheme= OAuth2PasswordBearer(tokenUrl= "login")
+
 algorithm= "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES= 60
 
@@ -35,6 +40,23 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt= jwt.encode(to_encode, secret_key, algorithm= algorithm)
 
     return encoded_jwt
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload= jwt.decode(token, secret_key, algorithms= [algorithm])
+    email: str= payload.get("sub")
+
+    if email is None:
+        raise HTTPException(status_code= 401, detail= "Invalid authentication credentials")
+    
+    db= SessionLocal()
+    user= db.query(User).filter(User.email == email).first()
+    
+    if user is None:
+        raise HTTPException(status_code= 401, detail= "Invalid authentication credentials")
+
+    return user
+
+
 
 #SIGNUP
 @router.post("/signup")

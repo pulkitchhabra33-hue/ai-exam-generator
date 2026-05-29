@@ -1,11 +1,15 @@
 from fileinput import filename
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, Depends
 from fastapi.responses import FileResponse
+
 from typing import List
 import json
 from pydantic import BaseModel
+
 from backend.services.ai_service import generate_paper
 from backend.services.pdf_service import generate_pdf
+from backend.auth import get_current_user
+
 import os
 
 router= APIRouter()
@@ -40,7 +44,11 @@ class PaperRequest(BaseModel):
 
 
 @router.post("/generate-paper")
-def generate_exam_paper(data: str = Form(...), files: List[UploadFile] = File([]), include_answers: bool = True):
+def generate_exam_paper(data: str = Form(...), 
+    files: List[UploadFile] = File([]), 
+    include_answers: bool = True,
+    current_user= Depends(get_current_user)):
+    
     data_dict= json.loads(data)
     data= PaperRequest(**data_dict)
     upload_folder= "backend/uploads"

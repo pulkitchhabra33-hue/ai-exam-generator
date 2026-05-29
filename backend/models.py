@@ -10,5 +10,8 @@ class User(Base):
     email= Column(String(255), unique= True, index= True)
     password= Column(String(255))
 
-    free_generations_used= Column(Integer, default= 0)
+    plan= Column(String(20), default= "FREE")
+    credits_remaining= Column(Integer, default=2)
+    subscription_end= Column(DateTime, nullable= True)
+
     created_at= Column(DateTime, default= datetime.utcnow)

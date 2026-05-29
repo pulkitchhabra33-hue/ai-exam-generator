@@ -70,8 +70,8 @@ def generate_exam_paper(data: str = Form(...),
     db = SessionLocal()
     db_user= db.query(User).filter(User.id == current_user.id).first()
 
-    if db_user.free_generations_used >= 2:
-        raise HTTPException(status_code= 403, detail= "Free paper generation limit reached. Please upgrade your plan.")
+    if db_user.credits_remaining <= 0:
+        raise HTTPException(status_code= 403, detail= "No credits remaining. Please upgrade your plan.")
     
     # Generate paper using AI
     paper= generate_paper(data)
@@ -92,8 +92,8 @@ def generate_exam_paper(data: str = Form(...),
     
     file_path = generate_pdf(paper, include_answers= include_answers)
 
-    #Increase user generation count
-    db_user.free_generations_used += 1
+    #Decrease user credits
+    db_user.credits_remaining -= 1
     db.commit()
     db.refresh(db_user)
 

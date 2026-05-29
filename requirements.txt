@@ -8,6 +8,5 @@ scikit-learn
 streamlit
 reportlab
 sqlalchemy 
-passlib 
-bcrypt 
+passlib
 python-jose

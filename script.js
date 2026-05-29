@@ -286,7 +286,9 @@ async function generatePDF() {
     else {
 
       alert(
-        result.error || "Something went wrong"
+        result.detail ||
+        result.error || 
+        "Something went wrong"
       );
 
     }

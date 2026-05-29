@@ -1,5 +1,5 @@
 from fileinput import filename
-from fastapi import APIRouter, UploadFile, File, Form, Depends
+from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from fastapi.responses import FileResponse
 
 from typing import List
@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from backend.services.ai_service import generate_paper
 from backend.services.pdf_service import generate_pdf
 from backend.auth import get_current_user
+from backend.database import SessionLocal
+from backend.models import User
 
 import os
 
@@ -63,8 +65,17 @@ def generate_exam_paper(data: str = Form(...),
         saved_files.append(file_path)
     
     print("Saved Files:", saved_files)
+    
+    # Check free generation limit for the user
+    db = SessionLocal()
+    db_user= db.query(User).filter(User.id == current_user.id).first()
 
-    paper = generate_paper(data)
+    if db_user.free_generations_used >= 2:
+        raise HTTPException(status_code= 403, detail= "Free paper generation limit reached. Please upgrade your plan.")
+    
+    # Generate paper using AI
+    paper= generate_paper(data)
+
 
     paper["school_name"]= data.school_name
     paper["exam_name"]= data.exam_name
@@ -80,6 +91,12 @@ def generate_exam_paper(data: str = Form(...),
         return paper
     
     file_path = generate_pdf(paper, include_answers= include_answers)
+
+    #Increase user generation count
+    db_user.free_generations_used += 1
+    db.commit()
+    db.refresh(db_user)
+
     print("Generated PDF:", file_path)
 
     filename = file_path.split("/")[-1]

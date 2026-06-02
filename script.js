@@ -319,3 +319,57 @@ async function generatePDF() {
   }
 
 }
+
+async function loadUserInfo() {
+
+  const token =
+    localStorage.getItem("token");
+
+  if (!token) return;
+
+  const res = await fetch(
+    `${BASE_URL}/current-user`,
+    {
+
+      headers: {
+        Authorization:
+          `Bearer ${token}`
+      }
+
+    }
+  );
+
+  const data =
+    await res.json();
+
+  document.getElementById(
+    "userPlan"
+  ).innerText =
+    `Plan: ${data.plan}`;
+
+  document.getElementById(
+    "userCredits"
+  ).innerText =
+    `Credits: ${data.credits}`;
+
+}
+
+window.onload =
+  loadUserInfo;
+
+function upgradePro() {
+
+  alert(
+    "Razorpay integration coming on Day-11"
+  );
+
+}
+
+
+function upgradePremium() {
+
+  alert(
+    "Razorpay integration coming on Day-11"
+  );
+
+}

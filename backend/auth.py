@@ -90,3 +90,11 @@ def login(user: UserRequest):
     
     access_token= create_access_token(data= {"sub": existing_user.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get("/current_user")
+def current_user_info(current_user= Depends(get_current_user)):
+    return{
+        "email": current_user.email,
+        "plan": current_user.plan,
+        "credits_remaining": current_user.credits_remaining
+    }

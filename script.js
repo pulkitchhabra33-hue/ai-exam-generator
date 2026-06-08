@@ -354,22 +354,153 @@ async function loadUserInfo() {
 
 }
 
-window.onload =
-  loadUserInfo;
+async function upgradePro() {
 
-function upgradePro() {
+  const token =
+    localStorage.getItem("token");
+
+  const res = await fetch(
+    `${BASE_URL}/upgrade-plan`,
+    {
+
+      method: "POST",
+
+      headers: {
+
+        "Content-Type":
+          "application/json",
+
+        "Authorization":
+          `Bearer ${token}`
+
+      },
+
+      body: JSON.stringify({
+
+        plan: "PRO"
+
+      })
+
+    }
+  );
+
+  const result =
+    await res.json();
 
   alert(
-    "Razorpay integration coming on Day-11"
+    result.message
   );
+
+  loadUserInfo();
 
 }
 
 
-function upgradePremium() {
+async function upgradePremium() {
+
+  const token =
+    localStorage.getItem("token");
+
+  const res = await fetch(
+    `${BASE_URL}/upgrade-plan`,
+    {
+
+      method: "POST",
+
+      headers: {
+
+        "Content-Type":
+          "application/json",
+
+        "Authorization":
+          `Bearer ${token}`
+
+      },
+
+      body: JSON.stringify({
+
+        plan: "PREMIUM"
+
+      })
+
+    }
+  );
+
+  const result =
+    await res.json();
 
   alert(
-    "Razorpay integration coming on Day-11"
+    result.message
+  );
+
+  loadUserInfo();
+
+}
+
+async function loadPaperHistory() {
+
+  const token =
+    localStorage.getItem(
+      "token"
+    );
+
+  const res = await fetch(
+
+    `${BASE_URL}/my-papers`,
+
+    {
+
+      headers: {
+
+        Authorization:
+          `Bearer ${token}`
+
+      }
+
+    }
+
+  );
+
+  const papers =
+    await res.json();
+
+  const container =
+    document.getElementById(
+      "paperHistory"
+    );
+
+  container.innerHTML = "";
+
+  papers.forEach(
+    paper => {
+
+      container.innerHTML += `
+
+      <div>
+
+        <b>
+        ${paper.exam_name}
+        </b>
+
+        -
+        ${paper.subject}
+
+        -
+        ${paper.exam_type}
+
+      </div>
+
+      `;
+
+    }
   );
 
 }
+
+window.onload = () => {
+
+  loadUserInfo();
+
+  loadPaperHistory();
+
+};

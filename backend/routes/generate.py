@@ -10,7 +10,7 @@ from backend.services.ai_service import generate_paper
 from backend.services.pdf_service import generate_pdf
 from backend.auth import get_current_user
 from backend.database import SessionLocal
-from backend.models import User
+from backend.models import User, PaperHistory
 
 import os
 
@@ -100,6 +100,18 @@ def generate_exam_paper(data: str = Form(...),
     print("Generated PDF:", file_path)
 
     filename = file_path.split("/")[-1]
+
+    #Save Paper History
+    history= PaperHistory(
+        user_id= current_user.id,
+        exam_name= data.exam_name,
+        subject= data.subject,
+        exam_type= data.exam_type,
+        pdf_path= filename
+    )
+
+    db.add(history)
+    db.commit()
 
     return {
         "message" : "PDF generated successfully",

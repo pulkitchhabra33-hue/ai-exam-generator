@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.models import User
+from backend.models import User, PaperHistory
 
 from passlib.context import CryptContext
 from jose import jwt
@@ -91,10 +91,56 @@ def login(user: UserRequest):
     access_token= create_access_token(data= {"sub": existing_user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+class UpgradeRequest(BaseModel):
+    plan: str
+
+@router.post("/upgrade-plan")
+def upgrade_plan(data: UpgradeRequest, current_user= Depends(get_current_user)):
+    db: Session= SessionLocal()
+    user= db.query(User).filter(User.id == current_user.id).first()
+
+    if data.plan == "PRO":
+        user.plan= "PRO"
+        user.credits_remaining= 75
+
+        user.subscription_end= (
+            datetime.utcnow() +
+            timedelta(days= 30)
+        )
+
+    elif data.plan == "PREMIUM":
+        user.plan= "PREMIUM"
+        user.credits_remaining= 600
+        user.subscription_end= (
+            datetime.utcnow() +
+            timedelta(days= 365)
+        )
+
+    else:
+        raise HTTPException(status_code= 400, detail= "Invalid plan selected")
+    
+    db.commit()
+    db.refresh(user)
+    return {
+        "message":
+            f"Plan upgraded to {user.plan}",
+
+        "credits":
+            user.credits_remaining
+    }
+    
+
 @router.get("/current_user")
 def current_user_info(current_user= Depends(get_current_user)):
+
     return{
         "email": current_user.email,
         "plan": current_user.plan,
         "credits_remaining": current_user.credits_remaining
     }
+
+@router.get("/my-papers")
+def get_my_papers(current_user= Depends(get_current_user)):
+    db: Session= SessionLocal()
+    papers= db.query(PaperHistory).filter(PaperHistory.user_id == current_user.id).all()
+    return papers

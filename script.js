@@ -504,3 +504,10 @@ window.onload = () => {
   loadPaperHistory();
 
 };
+
+function openMyPapers() {
+
+  window.location.href =
+    "mypapers.html";
+
+}

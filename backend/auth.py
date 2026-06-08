@@ -136,7 +136,9 @@ def current_user_info(current_user= Depends(get_current_user)):
     return{
         "email": current_user.email,
         "plan": current_user.plan,
-        "credits_remaining": current_user.credits_remaining
+        "credits_remaining": current_user.credits_remaining,
+        "subscription_end": current_user.subscription_end,
+        "status": "Active" if current_user.plan != "FREE" else "Free Plan"
     }
 
 @router.get("/my-papers")

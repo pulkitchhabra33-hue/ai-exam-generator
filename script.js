@@ -352,6 +352,18 @@ async function loadUserInfo() {
   ).innerText =
     `Credits: ${data.credits}`;
 
+  document.getElementById(
+    "userStatus"
+).innerText =
+  `Status: ${data.status}`;
+
+  document.getElementById(
+    "userExpiry"
+).innerText =
+  `Expires: ${
+    data.subscription_end || "N/A"
+  }`;
+
 }
 
 async function upgradePro() {

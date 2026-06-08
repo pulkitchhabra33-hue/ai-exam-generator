@@ -513,8 +513,6 @@ window.onload = () => {
 
   loadUserInfo();
 
-  loadPaperHistory();
-
 };
 
 function openMyPapers() {

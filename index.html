@@ -206,205 +206,22 @@
 
       <h3>📊 Section Settings</h3>
 
-      <div class="section-box">
+      <p>
+        Add or remove sections as needed.
+        Section A is mandatory.
+      </p>
 
-        <!-- SECTION A -->
-
-        <div class="section">
-
-          <h4>Section A</h4>
-
-          <input
-            id="section_a"
-            placeholder="Marks"
-          >
-
-          <select
-            id="questions_a"
-            onchange="handleCustom('questions_a','custom_a')"
-          >
-
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="custom">Custom</option>
-
-          </select>
-
-          <input
-            id="custom_a"
-            placeholder="Custom number"
-            style="display:none;"
-          >
-
-          <label>Question Type</label>
-
-          <select id="type_a">
-
-            <option value="Mixed">Mixed</option>
-
-            <option value="MCQ">MCQ</option>
-
-            <option value="Very Short Answer">
-              Very Short Answer
-            </option>
-
-            <option value="Short Answer">
-              Short Answer
-            </option>
-
-            <option value="Long Answer">
-              Long Answer
-            </option>
-
-            <option value="Case Study">
-              Case Study
-            </option>
-
-            <option value="Assertion-Reason">
-              Assertion-Reason
-            </option>
-
-            <option value="Application Based">
-              Application Based
-            </option>
-
-          </select>
-
-        </div>
-
-        <!-- SECTION B -->
-
-        <div class="section">
-
-          <h4>Section B</h4>
-
-          <input
-            id="section_b"
-            placeholder="Marks"
-          >
-
-          <select
-            id="questions_b"
-            onchange="handleCustom('questions_b','custom_b')"
-          >
-
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="5">5</option>
-            <option value="custom">Custom</option>
-
-          </select>
-
-          <input
-            id="custom_b"
-            placeholder="Custom number"
-            style="display:none;"
-          >
-
-          <label>Question Type</label>
-
-          <select id="type_b">
-
-            <option value="Mixed">Mixed</option>
-
-            <option value="MCQ">MCQ</option>
-
-            <option value="Very Short Answer">
-              Very Short Answer
-            </option>
-
-            <option value="Short Answer">
-              Short Answer
-            </option>
-
-            <option value="Long Answer">
-              Long Answer
-            </option>
-
-            <option value="Case Study">
-              Case Study
-            </option>
-
-            <option value="Assertion-Reason">
-              Assertion-Reason
-            </option>
-
-            <option value="Application Based">
-              Application Based
-            </option>
-
-          </select>
-
-        </div>
-
-        <!-- SECTION C -->
-
-        <div class="section">
-
-          <h4>Section C</h4>
-
-          <input
-            id="section_c"
-            placeholder="Marks"
-          >
-
-          <select
-            id="questions_c"
-            onchange="handleCustom('questions_c','custom_c')"
-          >
-
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="custom">Custom</option>
-
-          </select>
-
-          <input
-            id="custom_c"
-            placeholder="Custom number"
-            style="display:none;"
-          >
-
-          <label>Question Type</label>
-
-          <select id="type_c">
-
-            <option value="Mixed">Mixed</option>
-
-            <option value="MCQ">MCQ</option>
-
-            <option value="Very Short Answer">
-              Very Short Answer
-            </option>
-
-            <option value="Short Answer">
-              Short Answer
-            </option>
-
-            <option value="Long Answer">
-              Long Answer
-            </option>
-
-            <option value="Case Study">
-              Case Study
-            </option>
-
-            <option value="Assertion-Reason">
-              Assertion-Reason
-            </option>
-
-            <option value="Application Based">
-              Application Based
-            </option>
-
-          </select>
-
-        </div>
+      <div id="sectionsContainer">
 
       </div>
+
+      <button
+        type="button"
+        onclick="addSection()"
+        class="btn"
+      >
+       ➕ Add Section
+      </button>
 
       <!-- PYQ UPLOAD -->
 

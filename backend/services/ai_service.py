@@ -62,46 +62,29 @@ json_format = """
 
 def generate_paper(data):
 
-    warning= None
     print("Incoming Request:", data)
 
-    if data.total_marks:
-        total= data.total_marks
+    section_data= ""
+    if data.sections:
+        for index, section in enumerate(data.sections):
 
-        if data.section_a or data.section_b or data.section_c:
-            a= data.section_a or 0
-            b= data.section_b or 0
-            c= data.section_c or 0
+            section_name= (f"Section {chr(65 + index)}")
+            total_marks= (section["marks"])
+            total_questions= (section["questions"])
+            question_type= (section["type"])
+            marks_per_question= round(total_marks / total_questions, 2) if total_questions > 0 else 0
 
-            if (a+b) > total:
-                return {
-                    "error": "Section (A+B) marks exceed total marks",
-                    "details": f"A({a}) + B({b}) > Total({total})"
-                }
-            
-            # ✅ adjust C safely
-            c= total - (a+b) 
+            section_data += f"""
 
-            if (a+b+c) != total:
-                warning= "Section marks adjusted to fit total marks."
-        else:
-            a= int(total * 0.3)
-            b= int(total * 0.3)
-            c= total - (a+b)
+            {section_name}:
+            Type: {question_type}
+            Total Marks: {total_marks}
+            Total Questions: {total_questions}
+            Marks Per Question: {marks_per_question}    
 
-        qa= data.questions_a if data.questions_a and data.questions_a > 0 else 1
-        qb= data.questions_b if data.questions_b and data.questions_b > 0 else 1
-        qc= data.questions_c if data.questions_c and data.questions_c > 0 else 1
+            """
 
-        marks_a= round(a / qa, 2) if data.total_marks else "auto"
-        marks_b= round(b / qb, 2) if data.total_marks else "auto"
-        marks_c= round(c / qc, 2) if data.total_marks else "auto"
 
-        section_data= f"""
-            Section A: {a} marks, {qa} questions, {marks_a} marks per question
-            Section B: {b} marks, {qb} questions, {marks_b} marks per question
-            Section C: {c} marks, {qc} questions, {marks_c} marks per question
-        """
     else:
         section_data= "Use standard exam pattern"
 
@@ -110,14 +93,8 @@ def generate_paper(data):
 
     exam_type= data.exam_type if data.exam_type else "General Exam Paper"
 
-    section_types = f'''
-    Section A Type: {data.type_a}
-    
-    Section B Type: {data.type_b}
-    
-    Section C Type: {data.type_c}
 
-'''
+
     prompt = f"""
     You are an expert academic exam paper setter and assessment designer.
 
@@ -149,9 +126,6 @@ def generate_paper(data):
 
     Section Distribution:
     {section_data}
-
-    Section Question Types:
-    {section_types}
 
     Instructions:
     {instructions}
@@ -351,9 +325,6 @@ def generate_paper(data):
 
     try:
         parsed = json.loads(content)
-
-        if warning:
-            parsed["warning"] = warning
 
         return parsed
 

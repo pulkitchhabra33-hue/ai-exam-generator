@@ -29,17 +29,7 @@ class PaperRequest(BaseModel):
 
     total_marks: int | None= None
 
-    section_a: int | None= None
-    section_b: int | None= None
-    section_c: int | None= None
-
-    type_a: str | None = None
-    type_b: str | None = None
-    type_c: str | None = None
-    
-    questions_a: int | None= None
-    questions_b: int | None= None
-    questions_c: int | None= None
+    sections: list | None= None
 
     instructions: str | None= None
     student_performance: str | None= None

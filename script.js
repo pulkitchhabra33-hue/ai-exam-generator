@@ -1,6 +1,8 @@
 // Backend URL
 const BASE_URL = "https://ai-exam-generator-backend.onrender.com";
 
+let sectionCount = 0;
+
 
 // SIGNUP
 async function signup() {
@@ -122,22 +124,36 @@ async function generatePDF() {
 
   try {
 
-    const qa =
-      document.getElementById("questions_a").value === "custom"
-        ? document.getElementById("custom_a").value
-        : document.getElementById("questions_a").value;
+    const sections = [];
 
+    document
+    .querySelectorAll(".section")
+    .forEach(section => {
 
-    const qb =
-      document.getElementById("questions_b").value === "custom"
-        ? document.getElementById("custom_b").value
-        : document.getElementById("questions_b").value;
+    const marks =
+      section.querySelector(".marks").value;
 
+    const questions =
+      section.querySelector(".questions").value;
 
-    const qc =
-      document.getElementById("questions_c").value === "custom"
-        ? document.getElementById("custom_c").value
-        : document.getElementById("questions_c").value;
+    const type =
+      section.querySelector(".questionType").value;
+
+    if (marks && questions) {
+
+      sections.push({
+
+        marks: parseInt(marks),
+
+        questions: parseInt(questions),
+
+        type: type
+
+      });
+
+    }
+
+  });
 
 
     const selectedTime =
@@ -184,39 +200,10 @@ async function generatePDF() {
       total_marks:
         parseInt(document.getElementById("total").value) || 0,
 
-
-      section_a:
-        parseInt(document.getElementById("section_a").value) || 0,
-
-      section_b:
-        parseInt(document.getElementById("section_b").value) || 0,
-
-      section_c:
-        parseInt(document.getElementById("section_c").value) || 0,
-
-
-      type_a:
-        document.getElementById("type_a").value,
-
-      type_b:
-        document.getElementById("type_b").value,
-
-      type_c:
-        document.getElementById("type_c").value,
-
-
-      questions_a:
-        parseInt(qa) || 1,
-
-      questions_b:
-        parseInt(qb) || 1,
-
-      questions_c:
-        parseInt(qc) || 1,
-
+      sections: sections,
 
       instructions:
-        document.getElementById("instructions").value
+        document.getElementById("instructions").value,
 
     };
 
@@ -521,3 +508,96 @@ function openMyPapers() {
     "mypapers.html";
 
 }
+
+function addSection() {
+
+  sectionCount++;
+
+  const container =
+    document.getElementById(
+      "sectionsContainer"
+    );
+
+  const letter =
+    String.fromCharCode(
+      64 + sectionCount
+    );
+
+  const removeButton =
+    sectionCount === 1
+      ? ""
+      : `
+      <button
+        type="button"
+        onclick="removeSection(${sectionCount})"
+      >
+        ❌ Remove Section
+      </button>
+      `;
+
+  container.innerHTML += `
+
+  <div
+    class="section"
+    id="section-${sectionCount}"
+  >
+
+    <h4>
+      Section ${letter}
+    </h4>
+
+    ${removeButton}
+
+    <input
+      class="marks"
+      placeholder="Marks"
+    >
+
+    <input
+      class="questions"
+      placeholder="Questions"
+    >
+
+    <select
+      class="questionType"
+    >
+
+      <option>
+        MCQ
+      </option>
+
+      <option>
+        Short Answer
+      </option>
+
+      <option>
+        Long Answer
+      </option>
+
+      <option>
+        Case Study
+      </option>
+
+      <option>
+        Assertion-Reason
+      </option>
+
+    </select>
+
+  </div>
+
+  `;
+}
+
+function removeSection(id) {
+
+  const section =
+    document.getElementById(
+      `section-${id}`
+    );
+
+  section.remove();
+
+}
+
+addSection();

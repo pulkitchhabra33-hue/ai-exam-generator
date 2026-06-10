@@ -567,6 +567,10 @@ function addSection() {
       </option>
 
       <option>
+        Very Short Answer
+      </option>
+      
+      <option>
         Short Answer
       </option>
 
@@ -580,6 +584,38 @@ function addSection() {
 
       <option>
         Assertion-Reason
+      </option>
+
+      <option>
+        Application-based
+      </option>
+
+      <option>
+        HOTS
+      </option>
+
+      <option>
+        True/False
+      </option>
+
+      <option>
+        Fill in the Blanks
+      </option>
+
+      <option>
+        Match the Following
+      </option>
+
+      <option>
+        One Word Answer
+      </option>
+
+      <option>
+        Source-Based Questions
+      </option>
+
+      <option>
+        Diagram-Based Questions
       </option>
 
     </select>

@@ -241,6 +241,12 @@ def generate_paper(data):
     - If section type is MCQ:
     generate objective questions with options.
 
+    - If section type is Very Short Answer:
+    generate concise answer questions.
+
+    - If section type is Short Answer:
+    generate short descriptive questions.
+
     - If section type is Case Study:
     generate scenario-based questions.
 
@@ -252,6 +258,29 @@ def generate_paper(data):
 
     - If section type is Long Answer:
     generate analytical descriptive questions.
+
+    - If section type is HOTS:
+    generate higher-order thinking questions.
+
+    - If section type is True/False:
+    generate true or false statements.
+
+    - If section type is Fill in the Blanks:
+    generate fill-in-the-blank questions.
+
+    - If section type is Match the Following:
+    generate matching-column questions.
+
+    - If section type is One Word Answer:
+    generate one-word response questions.
+
+    - If section type is Source-Based Questions:
+    generate questions based on a given source or passage.
+
+    - If section type is Diagram-Based Questions:
+    generate questions requiring diagram interpretation.
+
+
 
     Use suitable combinations of:
 

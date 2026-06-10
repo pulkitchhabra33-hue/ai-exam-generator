@@ -518,9 +518,14 @@ function addSection() {
       "sectionsContainer"
     );
 
+  const currentSections =
+    document.querySelectorAll(
+      ".section"
+    ).length;
+  
   const letter =
     String.fromCharCode(
-      64 + sectionCount
+      65 + currentSections
     );
 
   const removeButton =
@@ -535,14 +540,18 @@ function addSection() {
       </button>
       `;
 
-  container.innerHTML += `
+  const newSection =
+    document.createElement("div");
 
-  <div
-    class="section"
-    id="section-${sectionCount}"
-  >
+  newSection.className =
+    "section";
 
-    <h4>
+  newSection.id =
+    `section-${sectionCount}`;
+
+  newSection.innerHTML = `
+
+    <h4 class="sectionTitle">
       Section ${letter}
     </h4>
 
@@ -562,67 +571,28 @@ function addSection() {
       class="questionType"
     >
 
-      <option>
-        MCQ
-      </option>
-
-      <option>
-        Very Short Answer
-      </option>
-      
-      <option>
-        Short Answer
-      </option>
-
-      <option>
-        Long Answer
-      </option>
-
-      <option>
-        Case Study
-      </option>
-
-      <option>
-        Assertion-Reason
-      </option>
-
-      <option>
-        Application-based
-      </option>
-
-      <option>
-        HOTS
-      </option>
-
-      <option>
-        True/False
-      </option>
-
-      <option>
-        Fill in the Blanks
-      </option>
-
-      <option>
-        Match the Following
-      </option>
-
-      <option>
-        One Word Answer
-      </option>
-
-      <option>
-        Source-Based Questions
-      </option>
-
-      <option>
-        Diagram-Based Questions
-      </option>
+      <option>MCQ</option>
+      <option>Very Short Answer</option>
+      <option>Short Answer</option>
+      <option>Long Answer</option>
+      <option>Case Study</option>
+      <option>Assertion-Reason</option>
+      <option>Application-based</option>
+      <option>HOTS</option>
+      <option>True/False</option>
+      <option>Fill in the Blanks</option>
+      <option>Match the Following</option>
+      <option>One Word Answer</option>
+      <option>Source-Based Questions</option>
+      <option>Diagram-Based Questions</option>
 
     </select>
 
-  </div>
-
   `;
+
+  container.appendChild(
+    newSection
+  );
 }
 
 function removeSection(id) {
@@ -633,6 +603,35 @@ function removeSection(id) {
     );
 
   section.remove();
+
+  refreshSectionNames();
+
+}
+
+function refreshSectionNames() {
+
+  const sections =
+    document.querySelectorAll(
+      ".section"
+    );
+
+  sections.forEach(
+    (section, index) => {
+
+      const title =
+        section.querySelector(
+          ".sectionTitle"
+        );
+
+      title.innerText =
+        `Section ${
+          String.fromCharCode(
+            65 + index
+          )
+        }`;
+
+    }
+  );
 
 }
 

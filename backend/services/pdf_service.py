@@ -3,7 +3,8 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
     Table,
-    TableStyle
+    TableStyle,
+    HRFlowable
 )
 
 from reportlab.lib.styles import (
@@ -134,24 +135,35 @@ def generate_pdf(data, filename=None, include_answers=True):
 
     elements.append(Spacer(1, 15))
 
-    # 📌 Instructions
-    elements.append(
-        Paragraph(
-            "<b>Instructions :-</b>",
-            styles["Heading3"]
-        )
-    )
-
-    elements.append(Spacer(1, 8))
+    # 📌 Instructions Box
+    instruction_text= "<b>INSTRUCTIONS</b><br/><br/>"
 
     for inst in data.get("instructions", []):
-        elements.append(
-            Paragraph(
-                f"• {inst}",
-                styles["Normal"]
-            )
-        )
+        instruction_text += f"• {inst}<br/>"
 
+    instruction_box= Table(
+        [[
+            Paragraph(
+                instruction_text,
+                styles["BodyText"]
+            )
+        ]],
+        colWidths= [500]
+    )
+
+    instruction_box.setStyle(
+        TableStyle([
+            ("BOX", (0, 0), (-1, -1), 1.5, colors.black),
+            ("TOPPADDING", (0, 0), (-1, -1), 10),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+            ("LEFTPADDING", (0, 0), (-1, -1), 10),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ])
+    )
+
+    elements.append(instruction_box)
+    
     elements.append(Spacer(1, 18))
 
     # ❓ Questions
@@ -159,10 +171,22 @@ def generate_pdf(data, filename=None, include_answers=True):
 
     for section in data.get("sections", []):
 
+        elements.append(
+            HRFlowable(
+                width= "100%",
+                thickness= 1,
+                color= colors.black
+            )
+        )
+
+        elements.append(
+            Spacer(1, 8)
+        )
+
         # Section Heading
         elements.append(
             Paragraph(
-                f"<para align='center'><b>{section.get('name', '')}</b></para>",
+                f"<para align='center'><b>{section.get('name', '').upper()}</b></para>",
                 styles["Heading2"]
             )
         )

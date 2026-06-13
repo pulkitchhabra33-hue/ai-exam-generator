@@ -62,13 +62,13 @@ json_format = """
 """
 
 def generate_paper(data):
-    print("🔥 GENERATE_PAPER CALLED 🔥")
+#     print("🔥 GENERATE_PAPER CALLED 🔥")
 
     print("Incoming Request:", data)
 
     exam_prompt= get_exam_prompt(data.exam_type)
 
-    print("Exam prompt loaded:", data.exam_type)
+    # print("Exam prompt loaded:", data.exam_type)
 
     section_data= ""
     if data.sections:
@@ -87,7 +87,6 @@ def generate_paper(data):
             Total Marks: {total_marks}
             Total Questions: {total_questions}
             Marks Per Question: {marks_per_question}    
-
             """
 
 
@@ -98,7 +97,6 @@ def generate_paper(data):
     instructions= instructions_to_text(instructions_list)
 
     exam_type= data.exam_type if data.exam_type else "General Exam Paper"
-
 
 
     prompt = f"""

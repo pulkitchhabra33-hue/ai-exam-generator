@@ -62,11 +62,12 @@ json_format = """
 """
 
 def generate_paper(data):
+    print("🔥 GENERATE_PAPER CALLED 🔥")
 
     print("Incoming Request:", data)
 
     exam_prompt= get_exam_prompt(data.exam_type)
-    
+
     print("Exam prompt loaded:", data.exam_type)
 
     section_data= ""

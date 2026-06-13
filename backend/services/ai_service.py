@@ -1,6 +1,7 @@
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
+from backend.exam_patterns import get_exam_prompt
 import os
 
 load_dotenv()
@@ -64,6 +65,10 @@ def generate_paper(data):
 
     print("Incoming Request:", data)
 
+    exam_prompt= get_exam_prompt(data.exam_type)
+    
+    print("Exam prompt loaded:", data.exam_type)
+
     section_data= ""
     if data.sections:
         for index, section in enumerate(data.sections):
@@ -96,6 +101,9 @@ def generate_paper(data):
 
 
     prompt = f"""
+
+    {exam_prompt}
+
     You are an expert academic exam paper setter and assessment designer.
 
     Your task is to create a highly professional, realistic, well-structured, and board-style exam paper in STRICT JSON format.

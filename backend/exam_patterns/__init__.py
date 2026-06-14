@@ -4,6 +4,7 @@ from backend.exam_patterns.jee import JEE_PROMPT
 from backend.exam_patterns.neet import NEET_PROMPT
 from backend.exam_patterns.ssc import SSC_PROMPT
 from backend.exam_patterns.default import DEFAULT_PROMPT
+from backend.exam_patterns.blueprints import get_blueprint
 
 def get_exam_prompt(exam_type):
 

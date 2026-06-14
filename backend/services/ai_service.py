@@ -346,10 +346,10 @@ def generate_paper(data):
     Do NOT return plain text.
     Only return valid JSON.
 """
-    response= client.chat.completions.create(
-        model= "gpt-4o-mini",
-        response_format= {"type": "json_object"},
-        messages= [{"role": "user", "content": prompt}]
+    response = client.chat.completions.create(
+        model="gpt-5",
+        response_format={"type": "json_object"},
+        messages=[{"role": "user", "content": prompt}]
     )
 
     try:

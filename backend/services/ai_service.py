@@ -2,6 +2,7 @@ import json
 from openai import OpenAI
 from dotenv import load_dotenv
 from backend.exam_patterns import get_exam_prompt, get_blueprint
+import tiktoken
 import os
 
 load_dotenv()
@@ -346,11 +347,24 @@ def generate_paper(data):
     Do NOT return plain text.
     Only return valid JSON.
 """
-    response = client.chat.completions.create(
-        model="gpt-5",
-        response_format={"type": "json_object"},
-        messages=[{"role": "user", "content": prompt}]
+
+
+
+    encoding = tiktoken.get_encoding("cl100k_base")
+
+    prompt_tokens = len(
+    encoding.encode(prompt)
     )
+
+    print(f"PROMPT TOKENS: {prompt_tokens}")
+
+    response = client.chat.completions.create(
+    model="gpt-5",
+    response_format={"type": "json_object"},
+    messages=[{"role": "user", "content": prompt}]
+    )
+
+    print(response.usage)
 
     try:
         content = response.choices[0].message.content

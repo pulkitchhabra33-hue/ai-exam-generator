@@ -10,3 +10,4 @@ reportlab
 sqlalchemy 
 passlib
 python-jose
+tiktoken

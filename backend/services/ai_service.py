@@ -62,7 +62,7 @@ json_format = """
 }
 """
 
-def generate_paper(data):
+def generate_paper(data, uploaded_content= ""):
 #     print("🔥 GENERATE_PAPER CALLED 🔥")
 
     print("Incoming Request:", data)

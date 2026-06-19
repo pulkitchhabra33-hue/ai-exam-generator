@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from backend.services.ai_service import generate_paper
 from backend.services.pdf_service import generate_pdf
+from backend.services.pdf_parser import extract_text_from_pdf
 from backend.auth import get_current_user
 from backend.database import SessionLocal
 from backend.models import User, PaperHistory
@@ -53,6 +54,23 @@ def generate_exam_paper(data: str = Form(...),
         with open(file_path, "wb") as f:
             f.write(file.file.read())
         saved_files.append(file_path)
+
+    uploaded_content= ""
+    for file_path in saved_files:
+        if file_path.lower().endswith(".pdf"):
+            uploaded_content += (
+                extract_text_from_pdf(file_path) + "\n\n"
+            )
+
+    print("\n========== PDF CONTENT ==========\n")
+    print(uploaded_content[:1000])
+    print("\n===============================\n")
+
+
+    paper= generate_paper(
+        data, 
+        uploaded_content= ""
+        )
     
     print("Saved Files:", saved_files)
     
@@ -64,7 +82,7 @@ def generate_exam_paper(data: str = Form(...),
         raise HTTPException(status_code= 403, detail= "No credits remaining. Please upgrade your plan.")
     
     # Generate paper using AI
-    paper= generate_paper(data)
+    # paper= generate_paper(data)
 
 
     paper["school_name"]= data.school_name

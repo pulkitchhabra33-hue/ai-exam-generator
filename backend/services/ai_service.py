@@ -100,6 +100,28 @@ def generate_paper(data, uploaded_content= ""):
 
     exam_type= data.exam_type if data.exam_type else "General Exam Paper"
 
+    reference_paper= ""
+
+    if uploaded_content.strip():
+        reference_paper= f"""
+
+    REFERENCE PAPER CONTENT:
+    {uploaded_content[:12000]}
+
+    IMPORTANT:
+    Analyze the reference paper.
+
+    Replicate:
+    - Question style
+    - Difficulty level
+    - Section structure
+    - Marks distribution
+    - Language style
+
+    Do NOT copy questions directly.
+
+    Generate completely new questions.
+    """
 
     prompt = f"""
 
@@ -139,6 +161,8 @@ def generate_paper(data, uploaded_content= ""):
 
     Instructions:
     {instructions}
+
+    {reference_paper}
 
     --------------------------------------------------
     EXAM GENERATION BEHAVIOR
@@ -348,8 +372,6 @@ def generate_paper(data, uploaded_content= ""):
     Only return valid JSON.
 """
 
-
-
     encoding = tiktoken.get_encoding("cl100k_base")
 
     prompt_tokens = len(
@@ -357,7 +379,8 @@ def generate_paper(data, uploaded_content= ""):
     )
 
     print(f"PROMPT TOKENS: {prompt_tokens}")
-
+    print("REFERENCE PAPER LENGTH:", len(reference_paper))
+    
     response = client.chat.completions.create(
     model="gpt-4o-mini",
     response_format={"type": "json_object"},

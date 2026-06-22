@@ -69,7 +69,7 @@ def generate_exam_paper(data: str = Form(...),
 
     paper= generate_paper(
         data, 
-        uploaded_content= ""
+        uploaded_content= uploaded_content
         )
     
     print("Saved Files:", saved_files)

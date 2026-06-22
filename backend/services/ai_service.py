@@ -379,8 +379,8 @@ def generate_paper(data, uploaded_content= ""):
     )
 
     print(f"PROMPT TOKENS: {prompt_tokens}")
-    print("REFERENCE PAPER LENGTH:", len(reference_paper))
-    
+    print(f"REFERENCE PAPER LENGTH: {len(reference_paper)}")
+
     response = client.chat.completions.create(
     model="gpt-4o-mini",
     response_format={"type": "json_object"},

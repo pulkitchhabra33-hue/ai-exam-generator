@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from backend.services.ai_service import generate_paper
 from backend.services.pdf_service import generate_pdf
 from backend.services.pdf_parser import extract_text_from_pdf
+from backend.services.pattern_analyzer import analyze_reference_paper
 from backend.auth import get_current_user
 from backend.database import SessionLocal
 from backend.models import User, PaperHistory
@@ -62,6 +63,17 @@ def generate_exam_paper(data: str = Form(...),
                 extract_text_from_pdf(file_path) + "\n\n"
             )
 
+            pattern_summary= ""
+
+            if uploaded_content.strip():
+                pattern_summary= (
+                    analyze_reference_paper
+                    (uploaded_content)
+                    )
+                
+                print("Pattern Summary:", pattern_summary)
+                
+
     print("\n========== PDF CONTENT ==========\n")
     print(uploaded_content[:1000])
     print("\n===============================\n")
@@ -69,7 +81,8 @@ def generate_exam_paper(data: str = Form(...),
 
     paper= generate_paper(
         data, 
-        uploaded_content= uploaded_content
+        uploaded_content= uploaded_content,
+        pattern_summary= pattern_summary
         )
     
     print("Saved Files:", saved_files)

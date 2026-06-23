@@ -2,6 +2,7 @@ import json
 from openai import OpenAI
 from dotenv import load_dotenv
 from backend.exam_patterns import get_exam_prompt, get_blueprint
+# from backend.services.pattern_analyzer import analyze_reference_paper
 import tiktoken
 import os
 
@@ -62,7 +63,7 @@ json_format = """
 }
 """
 
-def generate_paper(data, uploaded_content= ""):
+def generate_paper(data, uploaded_content= "", pattern_summary= ""):
 #     print("🔥 GENERATE_PAPER CALLED 🔥")
 
     print("Incoming Request:", data)
@@ -100,27 +101,29 @@ def generate_paper(data, uploaded_content= ""):
 
     exam_type= data.exam_type if data.exam_type else "General Exam Paper"
 
-    reference_paper= ""
+    reference_paper = ""
 
-    if uploaded_content.strip():
-        reference_paper= f"""
+    if pattern_summary.strip():
 
-    REFERENCE PAPER CONTENT:
-    {uploaded_content[:12000]}
+        reference_paper = f"""
+
+    REFERENCE PAPER ANALYSIS
+
+    {pattern_summary}
 
     IMPORTANT:
-    Analyze the reference paper.
 
-    Replicate:
-    - Question style
-    - Difficulty level
-    - Section structure
-    - Marks distribution
-    - Language style
+    Use this analysis to generate a NEW examination paper.
 
-    Do NOT copy questions directly.
+    Follow:
+    - The same pattern
+    - Similar difficulty
+    - Similar structure
+    - Similar assessment style
 
-    Generate completely new questions.
+    Do NOT copy any question.
+
+    Create completely original questions.
     """
 
     prompt = f"""

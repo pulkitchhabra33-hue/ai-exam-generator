@@ -138,3 +138,59 @@ def get_blueprint(exam_type):
         return SSC_BLUEPRINT
     
     return ""
+
+
+CBSE_COGNITIVE_BLUEPRINT = {
+    "recall": 20,
+    "understanding": 30,
+    "application": 35,
+    "analysis": 15
+}
+
+JEE_COGNITIVE_BLUEPRINT = {
+    "recall": 5,
+    "understanding": 25,
+    "application": 40,
+    "analysis": 30
+}
+
+NEET_COGNITIVE_BLUEPRINT = {
+    "recall": 25,
+    "understanding": 35,
+    "application": 25,
+    "analysis": 15
+}
+
+ICSE_COGNITIVE_BLUEPRINT = {
+    "recall": 15,
+    "understanding": 35,
+    "application": 30,
+    "analysis": 20
+}
+
+SSC_COGNITIVE_BLUEPRINT = {
+    "recall": 30,
+    "understanding": 25,
+    "application": 30,
+    "analysis": 15
+}
+
+
+def get_cognitive_blueprint(exam_type):
+    if not exam_type:
+        return {}
+    
+    exam_type= exam_type.lower()
+
+    if "cbse" in exam_type:
+        return CBSE_COGNITIVE_BLUEPRINT
+    elif "icse" in exam_type:
+        return ICSE_COGNITIVE_BLUEPRINT
+    elif "jee" in exam_type:
+        return JEE_COGNITIVE_BLUEPRINT
+    elif "ssc" in exam_type:
+        return SSC_COGNITIVE_BLUEPRINT
+    elif "neet" in exam_type:
+        return NEET_COGNITIVE_BLUEPRINT
+
+    return {}  

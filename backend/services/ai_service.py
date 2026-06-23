@@ -2,6 +2,7 @@ import json
 from openai import OpenAI
 from dotenv import load_dotenv
 from backend.exam_patterns import get_exam_prompt, get_blueprint
+from backend.exam_patterns.blueprints import get_cognitive_blueprint
 # from backend.services.pattern_analyzer import analyze_reference_paper
 import tiktoken
 import os
@@ -100,6 +101,8 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
     instructions= instructions_to_text(instructions_list)
 
     exam_type= data.exam_type if data.exam_type else "General Exam Paper"
+
+    cognitive_blueprint= get_cognitive_blueprint(exam_type)
 
     reference_paper = ""
 
@@ -373,6 +376,24 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
     Do NOT return markdown.
     Do NOT return plain text.
     Only return valid JSON.
+
+    BLUEPRINT REQUIREMENTS
+
+    Follow this cognitive distribution:
+
+    Recall Questions:
+    {cognitive_blueprint["recall"]}%
+
+    Understanding Questions:
+    {cognitive_blueprint["understanding"]}%
+
+    Application Questions:
+    {cognitive_blueprint["application"]}%
+
+    Analysis Questions:
+    {cognitive_blueprint["analysis"]}%
+
+The generated paper MUST approximately follow this distribution.
 """
 
     encoding = tiktoken.get_encoding("cl100k_base")

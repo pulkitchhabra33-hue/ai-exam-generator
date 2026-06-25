@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from backend.exam_patterns import get_exam_prompt, get_blueprint
 from backend.exam_patterns.blueprints import get_cognitive_blueprint
 from backend.services.question_allocator import allocate_questions
+from backend.prompt_engine.prompt_builder import build_prompt
 import tiktoken
 import os
 
@@ -77,6 +78,7 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
     section_data= ""
 
     exam_type= data.exam_type if data.exam_type else "General Exam Paper"
+    
     if data.sections:
         for index, section in enumerate(data.sections):
 
@@ -85,7 +87,7 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
             total_questions= (section["questions"])
             question_type= (section["type"])
             marks_per_question= round(total_marks / total_questions, 2) if total_questions > 0 else 0
-            allocation= allocate_questions(exam_type, total_marks)
+            allocation= allocate_questions(exam_type, total_questions)
             print(f"{section_name} Allocation:", allocation)
 
 
@@ -149,273 +151,285 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
 
     Create completely original questions.
     """
+        
+    prompt = build_prompt(
+    data=data,
+    exam_type=exam_type,
+    section_data=section_data,
+    instructions=instructions,
+    reference_paper=reference_paper,
+    json_format=json_format,
+    cognitive_blueprint=cognitive_blueprint,
+    exam_prompt=exam_prompt,
+    exam_blueprint=exam_blueprint
+    )
+## OLD PROMPT
+#     prompt = f"""
 
-    prompt = f"""
+#     {exam_prompt}
+#     {exam_blueprint} 
 
-    {exam_prompt}
-    {exam_blueprint} 
+#     You are an expert academic exam paper setter and assessment designer.
 
-    You are an expert academic exam paper setter and assessment designer.
+#     Your task is to create a highly professional, realistic, well-structured, and board-style exam paper in STRICT JSON format.
 
-    Your task is to create a highly professional, realistic, well-structured, and board-style exam paper in STRICT JSON format.
+#     You must behave like an experienced teacher and paper setter.
 
-    You must behave like an experienced teacher and paper setter.
+#     --------------------------------------------------
+#     EXAM DETAILS
+#     --------------------------------------------------
 
-    --------------------------------------------------
-    EXAM DETAILS
-    --------------------------------------------------
+#     School Class:
+#     {data.class_name}
 
-    School Class:
-    {data.class_name}
+#     Subject:
+#     {data.subject}
 
-    Subject:
-    {data.subject}
+#     Topics:
+#     {data.topics}
 
-    Topics:
-    {data.topics}
+#     Difficulty Level:
+#     {data.difficulty}
 
-    Difficulty Level:
-    {data.difficulty}
+#     Exam Type:
+#     {exam_type}
 
-    Exam Type:
-    {exam_type}
+#     Total Marks:
+#     {data.total_marks if data.total_marks else "Auto"}
 
-    Total Marks:
-    {data.total_marks if data.total_marks else "Auto"}
+#     Section Distribution:
+#     {section_data}
 
-    Section Distribution:
-    {section_data}
+#     Instructions:
+#     {instructions}
 
-    Instructions:
-    {instructions}
+#     {reference_paper}
 
-    {reference_paper}
+#     --------------------------------------------------
+#     EXAM GENERATION BEHAVIOR
+#     --------------------------------------------------
 
-    --------------------------------------------------
-    EXAM GENERATION BEHAVIOR
-    --------------------------------------------------
+#     If Exam Type is provided:
 
-    If Exam Type is provided:
+#     - Generate the paper in the style, tone, structure, and difficulty level commonly seen in that examination.
 
-    - Generate the paper in the style, tone, structure, and difficulty level commonly seen in that examination.
+#     - Behave like a real exam paper setter for that exam.
 
-    - Behave like a real exam paper setter for that exam.
+#     - Use realistic wording and professional educational language.
 
-    - Use realistic wording and professional educational language.
+#     - Follow common patterns used in official exams.
 
-    - Follow common patterns used in official exams.
+#     Examples:
 
-    Examples:
+#     CBSE:
+#     - Competency-based questions
+#     - Case-study questions
+#     - NCERT-oriented style
+#     - Balanced conceptual difficulty
 
-    CBSE:
-    - Competency-based questions
-    - Case-study questions
-    - NCERT-oriented style
-    - Balanced conceptual difficulty
+#     ICSE:
+#     - Theory-rich descriptive questions
+#     - Detailed analytical writing
+#     - Formal school-exam style
 
-    ICSE:
-    - Theory-rich descriptive questions
-    - Detailed analytical writing
-    - Formal school-exam style
+#     JEE:
+#     - Conceptual and application-based problems
+#     - Multi-step problem solving
+#     - Higher-order thinking
 
-    JEE:
-    - Conceptual and application-based problems
-    - Multi-step problem solving
-    - Higher-order thinking
+#     NEET:
+#     - Biology and science-oriented MCQs
+#     - Assertion-reason questions
+#     - Medical entrance style
 
-    NEET:
-    - Biology and science-oriented MCQs
-    - Assertion-reason questions
-    - Medical entrance style
+#     SSC:
+#     - Objective and direct questions
+#     - Practical and scoring-oriented pattern
 
-    SSC:
-    - Objective and direct questions
-    - Practical and scoring-oriented pattern
+#     --------------------------------------------------
+#     IMPORTANT INTELLIGENCE RULES
+#     --------------------------------------------------
 
-    --------------------------------------------------
-    IMPORTANT INTELLIGENCE RULES
-    --------------------------------------------------
+#     If Previous Year Papers are NOT uploaded:
 
-    If Previous Year Papers are NOT uploaded:
+#     - Infer the likely style of the selected exam type.
+#     - Generate questions similar to official papers.
+#     - Use realistic exam patterns.
 
-    - Infer the likely style of the selected exam type.
-    - Generate questions similar to official papers.
-    - Use realistic exam patterns.
+#     If Previous Year Papers ARE uploaded:
 
-    If Previous Year Papers ARE uploaded:
+#     - Use them as reference material.
+#     - Analyze:
+#     - question style
+#     - marks distribution
+#     - section structure
+#     - wording style
+#     - exam difficulty
+#     - question patterns
 
-    - Use them as reference material.
-    - Analyze:
-    - question style
-    - marks distribution
-    - section structure
-    - wording style
-    - exam difficulty
-    - question patterns
+#     - Then generate a paper inspired by those patterns.
 
-    - Then generate a paper inspired by those patterns.
+#     --------------------------------------------------
+#     QUESTION QUALITY RULES
+#     --------------------------------------------------
 
-    --------------------------------------------------
-    QUESTION QUALITY RULES
-    --------------------------------------------------
+#     IMPORTANT REALISM RULES:
 
-    IMPORTANT REALISM RULES:
+#     - Questions should feel like real school or competitive exam papers.
 
-    - Questions should feel like real school or competitive exam papers.
+#     - Avoid extremely direct textbook-definition questions unless necessary.
 
-    - Avoid extremely direct textbook-definition questions unless necessary.
+#     - Prefer:
+#       - scenario-based wording
+#       - application-based thinking
+#       - competency-focused questions
+#       - analytical reasoning
 
-    - Prefer:
-      - scenario-based wording
-      - application-based thinking
-      - competency-focused questions
-      - analytical reasoning
+#     - Questions should test understanding, not memorization only.
 
-    - Questions should test understanding, not memorization only.
+#     - Use natural teacher-style wording.
 
-    - Use natural teacher-style wording.
+#     - Make the paper feel human-created and professionally designed.
 
-    - Make the paper feel human-created and professionally designed.
+#     Generate professional-quality questions.
 
-    Generate professional-quality questions.
+#     Avoid:
+#     - generic questions
+#     - repetitive wording
+#     - vague questions
+#     - extremely easy repeated textbook questions
 
-    Avoid:
-    - generic questions
-    - repetitive wording
-    - vague questions
-    - extremely easy repeated textbook questions
+#     Prefer:
+#     - realistic exam language
+#     - meaningful concepts
+#     - application-based thinking
+#     - conceptual clarity
 
-    Prefer:
-    - realistic exam language
-    - meaningful concepts
-    - application-based thinking
-    - conceptual clarity
+#     --------------------------------------------------
+#     QUESTION TYPE RULES
+#     --------------------------------------------------
 
-    --------------------------------------------------
-    QUESTION TYPE RULES
-    --------------------------------------------------
+#     Respect the selected section question types.
 
-    Respect the selected section question types.
+#     Examples:
 
-    Examples:
+#     - If section type is MCQ:
+#     generate objective questions with options.
 
-    - If section type is MCQ:
-    generate objective questions with options.
+#     - If section type is Very Short Answer:
+#     generate concise answer questions.
 
-    - If section type is Very Short Answer:
-    generate concise answer questions.
+#     - If section type is Short Answer:
+#     generate short descriptive questions.
 
-    - If section type is Short Answer:
-    generate short descriptive questions.
+#     - If section type is Case Study:
+#     generate scenario-based questions.
 
-    - If section type is Case Study:
-    generate scenario-based questions.
+#     - If section type is Assertion-Reason:
+#     generate assertion and reasoning style questions.
 
-    - If section type is Assertion-Reason:
-    generate assertion and reasoning style questions.
+#     - If section type is Application Based:
+#     generate real-life application questions.
 
-    - If section type is Application Based:
-    generate real-life application questions.
+#     - If section type is Long Answer:
+#     generate analytical descriptive questions.
 
-    - If section type is Long Answer:
-    generate analytical descriptive questions.
+#     - If section type is HOTS:
+#     generate higher-order thinking questions.
 
-    - If section type is HOTS:
-    generate higher-order thinking questions.
+#     - If section type is True/False:
+#     generate true or false statements.
 
-    - If section type is True/False:
-    generate true or false statements.
+#     - If section type is Fill in the Blanks:
+#     generate fill-in-the-blank questions.
 
-    - If section type is Fill in the Blanks:
-    generate fill-in-the-blank questions.
+#     - If section type is Match the Following:
+#     generate matching-column questions.
 
-    - If section type is Match the Following:
-    generate matching-column questions.
+#     - If section type is One Word Answer:
+#     generate one-word response questions.
 
-    - If section type is One Word Answer:
-    generate one-word response questions.
+#     - If section type is Source-Based Questions:
+#     generate questions based on a given source or passage.
 
-    - If section type is Source-Based Questions:
-    generate questions based on a given source or passage.
+#     - If section type is Diagram-Based Questions:
+#     generate questions requiring diagram interpretation.
 
-    - If section type is Diagram-Based Questions:
-    generate questions requiring diagram interpretation.
 
 
+#     Use suitable combinations of:
 
-    Use suitable combinations of:
+#     - MCQs
+#     - Short answer questions
+#     - Long answer questions
+#     - Assertion-reason questions
+#     - Case-study questions
+#     - HOTS questions
+#     - Application-based questions
 
-    - MCQs
-    - Short answer questions
-    - Long answer questions
-    - Assertion-reason questions
-    - Case-study questions
-    - HOTS questions
-    - Application-based questions
+#     where appropriate.
 
-    where appropriate.
+#     --------------------------------------------------
+#     DIFFICULTY DISTRIBUTION
+#     --------------------------------------------------
 
-    --------------------------------------------------
-    DIFFICULTY DISTRIBUTION
-    --------------------------------------------------
+#     Maintain balanced difficulty:
 
-    Maintain balanced difficulty:
+#     - 30% Easy
+#     - 50% Medium
+#     - 20% Hard
 
-    - 30% Easy
-    - 50% Medium
-    - 20% Hard
+#     The paper should feel realistic and properly balanced.
 
-    The paper should feel realistic and properly balanced.
+#     --------------------------------------------------
+#     STRICT STRUCTURE RULES
+#     --------------------------------------------------
 
-    --------------------------------------------------
-    STRICT STRUCTURE RULES
-    --------------------------------------------------
+#     - Total marks MUST equal the sum of all question marks.
+#     - Section marks MUST match the provided section distribution.
+#     - Number of questions per section MUST match exactly.
+#     - Every question MUST contain:
+#     - question
+#     - marks
+#     - answer
+#     - solution
 
-    - Total marks MUST equal the sum of all question marks.
-    - Section marks MUST match the provided section distribution.
-    - Number of questions per section MUST match exactly.
-    - Every question MUST contain:
-    - question
-    - marks
-    - answer
-    - solution
+#     - Do NOT skip sections.
+#     - Do NOT create extra sections.
+#     - Maintain consistent formatting.
 
-    - Do NOT skip sections.
-    - Do NOT create extra sections.
-    - Maintain consistent formatting.
+#     --------------------------------------------------
+#     OUTPUT FORMAT
+#     --------------------------------------------------
 
-    --------------------------------------------------
-    OUTPUT FORMAT
-    --------------------------------------------------
+#     Return ONLY valid JSON.
 
-    Return ONLY valid JSON.
+#     JSON Structure:
+#     {json_format}
 
-    JSON Structure:
-    {json_format}
+#     Do NOT return explanations.
+#     Do NOT return markdown.
+#     Do NOT return plain text.
+#     Only return valid JSON.
 
-    Do NOT return explanations.
-    Do NOT return markdown.
-    Do NOT return plain text.
-    Only return valid JSON.
+#     BLUEPRINT REQUIREMENTS
 
-    BLUEPRINT REQUIREMENTS
+#     Follow this cognitive distribution:
 
-    Follow this cognitive distribution:
+#     Recall Questions:
+#     {cognitive_blueprint["recall"]}%
 
-    Recall Questions:
-    {cognitive_blueprint["recall"]}%
+#     Understanding Questions:
+#     {cognitive_blueprint["understanding"]}%
 
-    Understanding Questions:
-    {cognitive_blueprint["understanding"]}%
+#     Application Questions:
+#     {cognitive_blueprint["application"]}%
 
-    Application Questions:
-    {cognitive_blueprint["application"]}%
+#     Analysis Questions:
+#     {cognitive_blueprint["analysis"]}%
 
-    Analysis Questions:
-    {cognitive_blueprint["analysis"]}%
-
-The generated paper MUST approximately follow this distribution.
-"""
+# The generated paper MUST approximately follow this distribution.
+# """
 
     encoding = tiktoken.get_encoding("cl100k_base")
 

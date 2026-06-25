@@ -75,6 +75,8 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
     # print("Exam prompt loaded:", data.exam_type)
 
     section_data= ""
+
+    exam_type= data.exam_type if data.exam_type else "General Exam Paper"
     if data.sections:
         for index, section in enumerate(data.sections):
 
@@ -120,8 +122,6 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
 
     instructions_list= format_instructions(data.instructions)
     instructions= instructions_to_text(instructions_list)
-
-    exam_type= data.exam_type if data.exam_type else "General Exam Paper"
 
     cognitive_blueprint= get_cognitive_blueprint(exam_type)
 

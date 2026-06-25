@@ -8,9 +8,9 @@ def allocate_questions(exam_type, total_questions):
 
     cognitive_blueprint= get_cognitive_blueprint(exam_type)
 
-    recall= round(total_questions*cognitive_blueprint / 100)
-    understanding= round(total_questions*cognitive_blueprint / 100)
-    application= round(total_questions*cognitive_blueprint / 100)
+    recall= round(total_questions*cognitive_blueprint["recall"] / 100)
+    understanding= round(total_questions*cognitive_blueprint["understanding"] / 100)
+    application= round(total_questions*cognitive_blueprint["application"] / 100)
     analysis= (
         total_questions
         -recall

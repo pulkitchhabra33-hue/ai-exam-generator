@@ -3,7 +3,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from backend.exam_patterns import get_exam_prompt, get_blueprint
 from backend.exam_patterns.blueprints import get_cognitive_blueprint
-# from backend.services.pattern_analyzer import analyze_reference_paper
+from backend.services.question_allocator import allocate_questions
 import tiktoken
 import os
 
@@ -83,6 +83,9 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
             total_questions= (section["questions"])
             question_type= (section["type"])
             marks_per_question= round(total_marks / total_questions, 2) if total_questions > 0 else 0
+            allocation= allocate_questions(exam_type, total_marks)
+            print(f"{section_name} Allocation:", allocation)
+
 
             section_data += f"""
 
@@ -90,7 +93,25 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
             Type: {question_type}
             Total Marks: {total_marks}
             Total Questions: {total_questions}
-            Marks Per Question: {marks_per_question}    
+            Marks Per Question: {marks_per_question}  
+
+            COGNITIVE DISTRIBUTION:
+
+            - Recall Questions:
+            {allocation["recall"]}
+
+            - Understanding Questions:
+            {allocation["understanding"]}
+
+            - Application Questions:
+            {allocation["application"]}
+
+            - Analysis Questions:
+            {allocation["analysis"]}
+
+            IMPORTANT:
+
+            Generate EXACTLY this DISTIBUTION for this section.
             """
 
 

@@ -1,16 +1,11 @@
 import json
-from openai import OpenAI
-from dotenv import load_dotenv
 from backend.exam_patterns import get_exam_prompt, get_blueprint
 from backend.exam_patterns.blueprints import get_cognitive_blueprint
 from backend.services.question_allocator import allocate_questions
 from backend.prompt_engine.prompt_builder import build_prompt
+from backend.core.ai_client import client
+from backend.utils.logger import logger
 import tiktoken
-import os
-
-load_dotenv()
-
-client= OpenAI(api_key= os.getenv("OPENAI_API_KEY"))
 
 def format_instructions(text):
     default_instruction= "Attempt all questions."
@@ -68,7 +63,7 @@ json_format = """
 def generate_paper(data, uploaded_content= "", pattern_summary= ""):
 #     print("🔥 GENERATE_PAPER CALLED 🔥")
 
-    print("Incoming Request:", data)
+    logger.info("Received paper generation request.")
 
     exam_prompt= get_exam_prompt(data.exam_type)
     exam_blueprint= get_blueprint(data.exam_type)
@@ -88,8 +83,9 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
             question_type= (section["type"])
             marks_per_question= round(total_marks / total_questions, 2) if total_questions > 0 else 0
             allocation= allocate_questions(exam_type, total_questions)
-            print(f"{section_name} Allocation:", allocation)
-
+            logger.info(
+                f"{section_name} Allocation: {allocation}"
+            )
 
             section_data += f"""
 
@@ -437,16 +433,14 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
     encoding.encode(prompt)
     )
 
-    print(f"PROMPT TOKENS: {prompt_tokens}")
-    print(f"REFERENCE PAPER LENGTH: {len(reference_paper)}")
+    logger.info(f"PROMPT TOKENS: {prompt_tokens}")
+    logger.info(f"REFERENCE PAPER LENGTH: {len(reference_paper)}")
 
     response = client.chat.completions.create(
     model="gpt-4o-mini",
     response_format={"type": "json_object"},
     messages=[{"role": "user", "content": prompt}]
     )
-
-    print(response.usage)
 
     try:
         content = response.choices[0].message.content
@@ -468,3 +462,74 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
             "details": str(e),
             "raw_response": content
         }
+
+
+def regenerate_paper(
+        regeneration_prompt
+):
+    encoding= tiktoken.get_encoding("cl100k_base")
+
+    prompt_tokens= len(
+        encoding.encode(
+            regeneration_prompt
+        )
+    )
+
+    logger.info(
+        f"REGENERATION PROMPT TOKENS: {prompt_tokens}"
+    )
+
+    response= client.chat.completions.create(
+        model= "gpt-4o-mini",
+        response_format= {
+            "type": "json_object"
+        },
+
+        messages= [
+            {
+                "role": "user",
+                "content": regeneration_prompt
+            }
+        ]
+    )
+
+    print_usage(response)
+
+    try:
+        content= response.choices[0].message.content
+    
+    except Exception as e:
+        return {
+            "error": "AI response structure issue",
+            "details": str(e),
+            "raw": str(response)
+        }
+    
+    try:
+        parsed= json.loads(content)
+        return parsed
+    
+    except Exception as e:
+        return {
+            "error": "Invalid JSON from AI",
+            "details": str(e),
+            "raw_response": content
+        }
+    
+
+def print_usage(response):
+    usage= response.usage
+
+    print()
+    
+    logger.info(
+        f"Prompt Tokens: {usage.prompt_tokens}"
+    )
+
+    logger.info(
+        f"Completion Tokens: {usage.completion_tokens}"
+    )
+
+    logger.info(
+        f"Total Tokens: {usage.total_tokens}"
+    )

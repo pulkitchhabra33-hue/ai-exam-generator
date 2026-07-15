@@ -1,0 +1,42 @@
+{
+    "exam_info": {
+        "exam_type": "",
+        "subject": ""
+    },
+    "statistics": {
+        "total_questions": 2,
+        "mcq": 0,
+        "short_answer": 2,
+        "long_answer": 0,
+        "case_based": 0,
+        "assertion_reason": 0
+    },
+    "questions": [
+        {
+            "question_no": 1,
+            "question_text": "What is Ohm's Law?",
+            "question_type": "Very Short Answer",
+            "marks": null,
+            "chapter": null,
+            "concept": null,
+            "difficulty": null,
+            "cognitive": null,
+            "case_based": false,
+            "assertion_reason": false,
+            "diagram": false
+        },
+        {
+            "question_no": 2,
+            "question_text": "Explain Newton's First Law.",
+            "question_type": "Very Short Answer",
+            "marks": null,
+            "chapter": null,
+            "concept": null,
+            "difficulty": null,
+            "cognitive": null,
+            "case_based": false,
+            "assertion_reason": false,
+            "diagram": false
+        }
+    ]
+}

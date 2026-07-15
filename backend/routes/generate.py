@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from backend.services.ai_service import generate_paper
 from backend.services.pdf_service import generate_pdf
 from backend.services.pdf_parser import extract_text_from_pdf
-from backend.services.pattern_analyzer import analyze_reference_paper
+from backend.services.reference_analyzer import analyze_reference_paper
 from backend.auth import get_current_user
 from backend.database import SessionLocal
 from backend.models import User, PaperHistory

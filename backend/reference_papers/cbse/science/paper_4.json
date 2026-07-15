@@ -1,0 +1,15 @@
+{
+    "exam_info": {
+        "exam_type": "",
+        "subject": ""
+    },
+    "statistics": {
+        "total_questions": 0,
+        "mcq": 0,
+        "short_answer": 0,
+        "long_answer": 0,
+        "case_based": 0,
+        "assertion_reason": 0
+    },
+    "questions": []
+}

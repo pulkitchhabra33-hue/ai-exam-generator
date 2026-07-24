@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routes.generate import router as generate_router
 from backend.database import engine
-from backend.schemas import Base
+from backend.models import Base
 from backend.auth import router as auth_router
 
 app = FastAPI()

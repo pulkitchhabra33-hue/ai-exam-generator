@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.schemas import User, PaperHistory
+from backend.models import User, PaperHistory
 
 from passlib.context import CryptContext
 from jose import jwt

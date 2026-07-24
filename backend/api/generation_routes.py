@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from backend.services.generation_pipeline import generate_exam_paper
-from backend.schemas.request_models import TeacherRequest
-from backend.schemas.response_models import GenerationResponse
+from backend.models_1.request_models import TeacherRequest
+from backend.models_1.response_models import GenerationResponse
 
 router= APIRouter()
 

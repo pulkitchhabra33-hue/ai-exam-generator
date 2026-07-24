@@ -65,22 +65,22 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
 
     logger.info("Received paper generation request.")
 
-    exam_prompt= get_exam_prompt(data.exam_type)
-    exam_blueprint= get_blueprint(data.exam_type)
+    exam_prompt= get_exam_prompt(data["exam_type"])
+    exam_blueprint= get_blueprint(data["exam_type"])
 
     # print("Exam prompt loaded:", data.exam_type)
 
     section_data= ""
 
-    exam_type= data.exam_type if data.exam_type else "General Exam Paper"
+    exam_type= data.get("exam_type", "General Exam Paper")
     
-    if data.sections:
-        for index, section in enumerate(data.sections):
+    if data.get("sections"):
+        for index, section in enumerate(data["sections"]):
 
             section_name= (f"Section {chr(65 + index)}")
             total_marks= (section["marks"])
-            total_questions= (section["questions"])
-            question_type= (section["type"])
+            total_questions= (section["question_count"])
+            question_type= (section["question_type"])
             marks_per_question= round(total_marks / total_questions, 2) if total_questions > 0 else 0
             allocation= allocate_questions(exam_type, total_questions)
             logger.info(
@@ -118,7 +118,7 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
     else:
         section_data= "Use standard exam pattern"
 
-    instructions_list= format_instructions(data.instructions)
+    instructions_list= format_instructions(data.get("instructions", ""))
     instructions= instructions_to_text(instructions_list)
 
     cognitive_blueprint= get_cognitive_blueprint(exam_type)

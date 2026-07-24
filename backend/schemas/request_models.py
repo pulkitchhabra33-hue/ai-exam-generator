@@ -6,6 +6,7 @@ class SectionRequest(BaseModel):
     marks: int= Field(gt=0)
     question_count: int= Field(gt=0)
     marks_per_question: int= Field(gt=0)
+    question_type: str
 
 class TeacherRequest(BaseModel):
     exam_type: str

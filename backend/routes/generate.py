@@ -12,7 +12,7 @@ from backend.services.pdf_parser import extract_text_from_pdf
 from backend.services.reference_analyzer import analyze_reference_paper
 from backend.auth import get_current_user
 from backend.database import SessionLocal
-from backend.models import User, PaperHistory
+from backend.schemas import User, PaperHistory
 
 import os
 

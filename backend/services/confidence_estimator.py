@@ -34,4 +34,4 @@ def calculate_confidence(
         0
     )
 
-    return f"{confidence}%"
+    return confidence

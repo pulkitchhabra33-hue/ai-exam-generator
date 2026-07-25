@@ -44,13 +44,16 @@ def generate_exam_paper(teacher_data):
         )
 
         paper= result["paper"]
-        report= result["report"]
 
-        quality= calculate_quality_score(report)
-        confidence= calculate_confidence(report)
+        validation_report= result["report"]
+        generation_statistics= result["statistics"]
+
+        quality= calculate_quality_score(validation_report)
+        confidence= calculate_confidence(validation_report)
 
         statistics= build_generation_statistics(
-            report,
+            validation_report,
+            generation_statistics,
             quality,
             confidence
         )
@@ -78,7 +81,7 @@ def generate_exam_paper(teacher_data):
 
     except Exception as error:
 
-        logger.error(
+        logger.exception(
             f"Generation Pipeline Error: {error}"
         )
         

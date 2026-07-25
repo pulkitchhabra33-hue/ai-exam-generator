@@ -98,13 +98,13 @@ def generate_exam_paper(data: str = Form(...),
     # paper= generate_paper(data)
 
 
-    paper["school_name"]= data.school_name
-    paper["exam_name"]= data.exam_name
-    paper["class_name"]= data.class_name
-    paper["subject"]= data.subject
-    paper["time_limit"]= data.time_limit
-    paper["total_marks"]= data.total_marks
-    paper["exam_type"]= data.exam_type
+    paper["school_name"]= data.get("school_name", "")
+    paper["exam_name"]= data.get("exam_name", "")
+    paper["class_name"]= data.get("class_name", "")
+    paper["subject"]= data.get("subject", "")
+    paper["time_limit"]= data.get("time_limit", "")
+    paper["total_marks"]= data.get("total_marks", "")
+    paper["exam_type"]= data.get("exam_type", "")
 
     print("PAPER DATA:", paper)
 

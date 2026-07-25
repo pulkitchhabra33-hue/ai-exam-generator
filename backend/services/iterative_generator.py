@@ -58,12 +58,11 @@ def iterative_generation(
 
                 "paper": generated_paper,
 
-                "report": {
+                "report": "validation",
+                "statistics": {
                     "attempts": attempts_used,
                     "best_attempt": attempt + 1,
-                    "valid": True,
-                    "remaining_errors": 0,
-                    "validators": validation["details"]
+                    "remaining_errors": 0
                 }
             }
         
@@ -127,11 +126,10 @@ def iterative_generation(
 
         "paper": best_paper,
 
-        "report": {
+        "report": best_validation,
+        "statistics": {
             "attempts": attempts_used,
             "best_attempt": best_attempt,
-            "valid": best_validation["valid"],
             "remaining_errors": lowest_errors,
-            "validators": best_validation["details"]
         }   
     }

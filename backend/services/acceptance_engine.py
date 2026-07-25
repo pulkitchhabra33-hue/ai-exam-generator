@@ -4,7 +4,7 @@ MAX_ALLOWED_ERRORS= 3
 
 def should_accept(statistics):
     quality= statistics["quality_score"]
-    confidence= int(statistics["confidence"].replace("%", ""))
+    confidence= statistics["confidence"]
     errors= statistics["remaining_errors"]
 
     accepted= (

@@ -14,25 +14,25 @@ Exam Type:
 {exam_type}
 
 School:
-{data.school_name}
+{data.get("school_name", "")}
 
 Exam:
-{data.exam_name}
+{data.get("exam_name", "")}
 
 Class:
-{data.class_name}
+{data.get("class_name", "")}
 
 Subject:
-{data.subject}
+{data.get("subject", "")}
 
 Topics:
-{data.topics}
+{data.get("topics", "")}
 
 Difficulty:
-{data.difficulty}
+{data.get("difficulty", "")}
 
 Total Marks:
-{data.total_marks}
+{data.get("total_marks", "")}
 
 Section Distribution:
 {section_data}

@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException
 from backend.services.generation_pipeline import generate_exam_paper
 from backend.schemas.request_models import TeacherRequest
 from backend.schemas.response_models import GenerationResponse
+from backend.api.response_builder import (
+    success_response, error_response
+)
 
 router= APIRouter()
 
@@ -44,10 +47,12 @@ def generate(teacher_data: TeacherRequest):
     if not result["success"]:
         raise HTTPException(
             status_code= 500,
-            detail= {
-                "message": result["error"],
-                "stage": "generation_pipeline"
-            }
+            detail= error_response(
+                "Paper generation failed."
+            )
         )
     
-    return result
+    return success_response(
+        result,
+        "Paper generated successfully."
+    )

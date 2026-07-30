@@ -13,3 +13,4 @@ python-jose
 tiktoken
 PyMuPDF
 language-tool-python
+python-docx

@@ -1,9 +1,4 @@
-from openai import OpenAI
-import os
-
-client= OpenAI(
-    api_key= os.getenv("OPENAI_API_KEY")
-)
+from backend.core.ai_client import client
 
 def analyze_reference_paper(pdf_text):
     prompt = f"""

@@ -1,6 +1,6 @@
 from backend.services.semantic_search import semantic_search
 from backend.services.diversity_engine import diversify_results
-from backend.services.question_rewriter import rewrite_question
+from backend.services.batch_question_rewriter import rewrite_questions
 
 def build_generation_context (
         query,
@@ -10,6 +10,7 @@ def build_generation_context (
     ranked= semantic_search(
         query= query,
         repository= repository,
+        teacher_requirements= teacher_requirements,
         top_k= 20
     )
 
@@ -18,14 +19,18 @@ def build_generation_context (
         top_k= 10
     )
 
-    rewritten= []
+    questions= []
 
     for _, question in selected:
-        rewritten.append(
-            rewrite_question(
-                question["question"],
-                teacher_requirements
-            )
+        questions.append(
+            {
+                "question": question["question"]
+            }
         )
+
+    rewritten= rewrite_questions(
+        questions,
+        teacher_requirements
+    )
 
     return rewritten

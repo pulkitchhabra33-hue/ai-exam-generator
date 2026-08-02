@@ -180,3 +180,11 @@ textarea {
 .home-button:hover {
   text-decoration: underline;
 }
+
+.price-button:hover {
+  text-decoration: underline;
+}
+
+.about-button:hover {
+  text-decoration: underline;
+}

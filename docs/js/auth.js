@@ -1,14 +1,30 @@
-const form = document.getElementById(
+const loginForm = document.getElementById(
     "loginForm"
 );
 
-if (form) {
+if (loginForm) {
 
-    form.addEventListener(
+    loginForm.addEventListener(
 
         "submit",
 
         loginUser
+
+    );
+
+}
+
+const signupForm = document.getElementById(
+    "signupForm"
+);
+
+if (signupForm) {
+
+    signupForm.addEventListener(
+
+        "submit",
+
+        signupUser
 
     );
 

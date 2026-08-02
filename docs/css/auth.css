@@ -79,3 +79,19 @@ body {
     font-size: 16px;
 
 }
+
+.auth-card a {
+
+    color: #2563eb;
+
+    text-decoration: none;
+
+    font-weight: 600;
+
+}
+
+.auth-card a:hover {
+
+    text-decoration: underline;
+
+}

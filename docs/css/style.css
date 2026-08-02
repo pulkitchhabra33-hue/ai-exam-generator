@@ -176,3 +176,7 @@ textarea {
   cursor: pointer;
   font-weight: bold;
 }
+
+.home-button:hover {
+  text-decoration: underline;
+}

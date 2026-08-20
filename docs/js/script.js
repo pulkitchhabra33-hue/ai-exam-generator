@@ -1,92 +1,8 @@
 // Backend URL
-const BASE_URL = "https://ai-exam-generator-backend.onrender.com";
+const BASE_URL =
+  "https://ai-exam-generator-backend.onrender.com";
 
 let sectionCount = 0;
-
-
-// SIGNUP
-async function signup() {
-
-  const email =
-    document.getElementById("email").value;
-
-  const password =
-    document.getElementById("password").value;
-
-  const res = await fetch(
-    `${BASE_URL}/signup`,
-    {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify({
-        email,
-        password
-      })
-
-    }
-  );
-
-  const result = await res.json();
-
-  alert(
-    result.message || result.detail
-  );
-
-}
-
-
-// LOGIN
-async function login() {
-
-  const email =
-    document.getElementById("email").value;
-
-  const password =
-    document.getElementById("password").value;
-
-  const res = await fetch(
-    `${BASE_URL}/login`,
-    {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify({
-        email,
-        password
-      })
-
-    }
-  );
-
-  const result = await res.json();
-
-  if (result.access_token) {
-
-    localStorage.setItem(
-      "token",
-      result.access_token
-    );
-
-    alert("Login successful");
-
-  }
-
-  else {
-
-    alert(
-      result.detail || "Login failed"
-    );
-
-  }
-
-}
 
 
 // Handle custom dropdown logic
@@ -102,9 +18,7 @@ function handleCustom(selectId, inputId) {
 
     input.style.display = "block";
 
-  }
-
-  else {
+  } else {
 
     input.style.display = "none";
 
@@ -127,34 +41,103 @@ async function generatePDF() {
     const sections = [];
 
     document
-    .querySelectorAll(".section")
-    .forEach(section => {
+      .querySelectorAll(".section")
+      .forEach(section => {
 
-    const marks =
-      section.querySelector(".marks").value;
+        const marks =
+          section.querySelector(".marks").value;
 
-    const questions =
-      section.querySelector(".questions").value;
+        const questionCount =
+          section.querySelector(".questions").value;
 
-    const type =
-      section.querySelector(".questionType").value;
+        const questionType =
+          section.querySelector(".questionType").value;
 
-    if (marks && questions) {
+        if (marks && questionCount) {
 
-      sections.push({
+          const marksValue =
+            parseInt(marks);
 
-        marks: parseInt(marks),
+          const questionCountValue =
+            parseInt(questionCount);
 
-        questions: parseInt(questions),
+          if (
+            !Number.isInteger(marksValue) ||
+            !Number.isInteger(questionCountValue) ||
+            questionCountValue <= 0
+          ) {
 
-        type: type
+            alert(
+              "Please enter valid marks and question count."
+            );
+
+            return;
+
+          }
+
+          if (
+            marksValue % questionCountValue !== 0
+          ) {
+
+            alert(
+              `Section marks (${marksValue}) must be divisible by the number of questions (${questionCountValue}).`
+            );
+
+            return;
+
+          }
+
+          sections.push({
+
+            section_name:
+              section.querySelector(
+                ".sectionTitle"
+              ).innerText,
+
+            marks:
+              marksValue,
+
+            question_count:
+              questionCountValue,
+
+            marks_per_question:
+              marksValue /
+              questionCountValue,
+
+            question_type:
+              questionType
+
+          });
+
+        }
 
       });
 
+    
+    const totalMarks =
+      parseInt(
+        document.getElementById("total").value
+      ) || 0;
+
+    const sectionTotal =
+      sections.reduce(
+        (sum, section) =>
+          sum + section.marks,
+        0
+      );
+
+    if (totalMarks !== sectionTotal) {
+
+      alert(
+        `Total marks are ${totalMarks}, but your sections add up to ${sectionTotal}.`
+      );
+
+      return;
+
     }
 
-  });
-
+    const selectedTime =
+      document.getElementById("time_limit").value;
 
     const selectedTime =
       document.getElementById("time_limit").value;
@@ -196,11 +179,13 @@ async function generatePDF() {
       difficulty:
         document.getElementById("difficulty").value,
 
-
       total_marks:
-        parseInt(document.getElementById("total").value) || 0,
+        parseInt(
+          document.getElementById("total").value
+        ) || 0,
 
-      sections: sections,
+      sections:
+        sections,
 
       instructions:
         document.getElementById("instructions").value,
@@ -208,7 +193,8 @@ async function generatePDF() {
     };
 
 
-    const formData = new FormData();
+    const formData =
+      new FormData();
 
 
     formData.append(
@@ -219,7 +205,42 @@ async function generatePDF() {
 
     const files =
       document.getElementById("pyq_files").files;
+    
+    if (files.length > 5) {
 
+      alert(
+        "You can upload a maximum of 5 previous papers."
+      );
+
+      return;
+
+    }
+
+    for (let i = 0; i < files.length; i++) {
+
+      const file =
+        files[i];
+
+      const fileName =
+        file.name.toLowerCase();
+
+      if (
+        !fileName.endsWith(".pdf") &&
+        !fileName.endsWith(".docx") &&
+        !fileName.endsWith(".png") &&
+        !fileName.endsWith(".jpg") &&
+        !fileName.endsWith(".jpeg")
+      ) {
+
+        alert(
+          "Only PDF, DOCX, PNG, JPG and JPEG files are supported."
+        );
+
+        return;
+
+      }
+
+    }
 
     for (let i = 0; i < files.length; i++) {
 
@@ -233,22 +254,25 @@ async function generatePDF() {
 
     // 🔥 JWT TOKEN ADDED HERE
     const token =
-      localStorage.getItem("token");
+      localStorage.getItem("access_token");
 
 
-    const res = await fetch(
-      `${BASE_URL}/generate-paper?include_answers=${includeAnswers}`,
-      {
-        method: "POST",
+    const res =
+      await fetch(
+        `${BASE_URL}/generate-paper?include_answers=${includeAnswers}`,
+        {
+          method: "POST",
 
-        headers: {
-          "Authorization": `Bearer ${token}`
-        },
+          headers: {
+            "Authorization":
+              `Bearer ${token}`
+          },
 
-        body: formData
+          body:
+            formData
 
-      }
-    );
+        }
+      );
 
 
     const result =
@@ -258,7 +282,9 @@ async function generatePDF() {
     if (result.download_url) {
 
       const link =
-        document.getElementById("downloadLink");
+        document.getElementById(
+          "downloadLink"
+        );
 
 
       link.href =
@@ -268,22 +294,17 @@ async function generatePDF() {
       link.innerText =
         "📥 Download PDF";
 
-    }
-
-    else {
+    } else {
 
       alert(
         result.detail ||
-        result.error || 
+        result.error ||
         "Something went wrong"
       );
 
     }
 
-  }
-
-
-  catch (error) {
+  } catch (error) {
 
     console.error(
       "Error:",
@@ -295,10 +316,7 @@ async function generatePDF() {
       "Server error. Check backend."
     );
 
-  }
-
-
-  finally {
+  } finally {
 
     document.getElementById("loading").style.display =
       "none";
@@ -307,88 +325,98 @@ async function generatePDF() {
 
 }
 
+
 async function loadUserInfo() {
 
   const token =
-    localStorage.getItem("token");
+    localStorage.getItem("access_token");
 
   if (!token) return;
 
-  const res = await fetch(
-    `${BASE_URL}/current-user`,
-    {
 
-      headers: {
-        Authorization:
-          `Bearer ${token}`
+  const res =
+    await fetch(
+      `${BASE_URL}/current-user`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${token}`
+        }
       }
+    );
 
-    }
-  );
 
   const data =
     await res.json();
+
 
   document.getElementById(
     "userPlan"
   ).innerText =
     `Plan: ${data.plan}`;
 
+
   document.getElementById(
     "userCredits"
   ).innerText =
     `Credits: ${data.credits}`;
 
+
   document.getElementById(
     "userStatus"
-).innerText =
-  `Status: ${data.status}`;
+  ).innerText =
+    `Status: ${data.status}`;
+
 
   document.getElementById(
     "userExpiry"
-).innerText =
-  `Expires: ${
-    data.subscription_end || "N/A"
-  }`;
+  ).innerText =
+    `Expires: ${
+      data.subscription_end || "N/A"
+    }`;
 
 }
+
 
 async function upgradePro() {
 
   const token =
-    localStorage.getItem("token");
+    localStorage.getItem("access_token");
 
-  const res = await fetch(
-    `${BASE_URL}/upgrade-plan`,
-    {
 
-      method: "POST",
+  const res =
+    await fetch(
+      `${BASE_URL}/upgrade-plan`,
+      {
+        method: "POST",
 
-      headers: {
+        headers: {
 
-        "Content-Type":
-          "application/json",
+          "Content-Type":
+            "application/json",
 
-        "Authorization":
-          `Bearer ${token}`
+          "Authorization":
+            `Bearer ${token}`
 
-      },
+        },
 
-      body: JSON.stringify({
+        body:
+          JSON.stringify({
+            plan: "PRO"
+          })
 
-        plan: "PRO"
+      }
+    );
 
-      })
-
-    }
-  );
 
   const result =
     await res.json();
 
+
   alert(
     result.message
   );
+
 
   loadUserInfo();
 
@@ -398,96 +426,100 @@ async function upgradePro() {
 async function upgradePremium() {
 
   const token =
-    localStorage.getItem("token");
+    localStorage.getItem("access_token");
 
-  const res = await fetch(
-    `${BASE_URL}/upgrade-plan`,
-    {
 
-      method: "POST",
+  const res =
+    await fetch(
+      `${BASE_URL}/upgrade-plan`,
+      {
+        method: "POST",
 
-      headers: {
+        headers: {
 
-        "Content-Type":
-          "application/json",
+          "Content-Type":
+            "application/json",
 
-        "Authorization":
-          `Bearer ${token}`
+          "Authorization":
+            `Bearer ${token}`
 
-      },
+        },
 
-      body: JSON.stringify({
+        body:
+          JSON.stringify({
+            plan: "PREMIUM"
+          })
 
-        plan: "PREMIUM"
+      }
+    );
 
-      })
-
-    }
-  );
 
   const result =
     await res.json();
+
 
   alert(
     result.message
   );
 
+
   loadUserInfo();
 
 }
+
 
 async function loadPaperHistory() {
 
   const token =
     localStorage.getItem(
-      "token"
+      "access_token"
     );
 
-  const res = await fetch(
 
-    `${BASE_URL}/my-papers`,
-
-    {
-
-      headers: {
-
-        Authorization:
-          `Bearer ${token}`
-
+  const res =
+    await fetch(
+      `${BASE_URL}/my-papers`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${token}`
+        }
       }
+    );
 
-    }
-
-  );
 
   const papers =
     await res.json();
+
 
   const container =
     document.getElementById(
       "paperHistory"
     );
 
-  container.innerHTML = "";
+
+  container.innerHTML =
+    "";
+
 
   papers.forEach(
     paper => {
 
       container.innerHTML += `
 
-      <div>
+        <div>
 
-        <b>
-        ${paper.exam_name}
-        </b>
+          <b>
+            ${paper.exam_name}
+          </b>
 
-        -
-        ${paper.subject}
+          -
+          ${paper.subject}
 
-        -
-        ${paper.exam_type}
+          -
+          ${paper.exam_type}
 
-      </div>
+        </div>
 
       `;
 
@@ -496,11 +528,13 @@ async function loadPaperHistory() {
 
 }
 
+
 window.onload = () => {
 
   loadUserInfo();
 
 };
+
 
 function openMyPapers() {
 
@@ -509,45 +543,56 @@ function openMyPapers() {
 
 }
 
+
 function addSection() {
 
   sectionCount++;
+
 
   const container =
     document.getElementById(
       "sectionsContainer"
     );
 
+
   const currentSections =
     document.querySelectorAll(
       ".section"
     ).length;
-  
+
+
   const letter =
     String.fromCharCode(
       65 + currentSections
     );
 
+
   const removeButton =
     sectionCount === 1
       ? ""
       : `
-      <button
-        type="button"
-        onclick="removeSection(${sectionCount})"
-      >
-        ❌ Remove Section
-      </button>
+        <button
+          type="button"
+          onclick="removeSection(${sectionCount})"
+        >
+          ❌ Remove Section
+        </button>
       `;
 
+
   const newSection =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
+
 
   newSection.className =
     "section";
 
+
   newSection.id =
     `section-${sectionCount}`;
+
 
   newSection.innerHTML = `
 
@@ -572,28 +617,70 @@ function addSection() {
     >
 
       <option>MCQ</option>
-      <option>Very Short Answer</option>
-      <option>Short Answer</option>
-      <option>Long Answer</option>
-      <option>Case Study</option>
-      <option>Assertion-Reason</option>
-      <option>Application-based</option>
-      <option>HOTS</option>
-      <option>True/False</option>
-      <option>Fill in the Blanks</option>
-      <option>Match the Following</option>
-      <option>One Word Answer</option>
-      <option>Source-Based Questions</option>
-      <option>Diagram-Based Questions</option>
+
+      <option>
+        Very Short Answer
+      </option>
+
+      <option>
+        Short Answer
+      </option>
+
+      <option>
+        Long Answer
+      </option>
+
+      <option>
+        Case Study
+      </option>
+
+      <option>
+        Assertion-Reason
+      </option>
+
+      <option>
+        Application-based
+      </option>
+
+      <option>
+        HOTS
+      </option>
+
+      <option>
+        True/False
+      </option>
+
+      <option>
+        Fill in the Blanks
+      </option>
+
+      <option>
+        Match the Following
+      </option>
+
+      <option>
+        One Word Answer
+      </option>
+
+      <option>
+        Source-Based Questions
+      </option>
+
+      <option>
+        Diagram-Based Questions
+      </option>
 
     </select>
 
   `;
 
+
   container.appendChild(
     newSection
   );
+
 }
+
 
 function removeSection(id) {
 
@@ -602,11 +689,14 @@ function removeSection(id) {
       `section-${id}`
     );
 
+
   section.remove();
+
 
   refreshSectionNames();
 
 }
+
 
 function refreshSectionNames() {
 
@@ -615,6 +705,7 @@ function refreshSectionNames() {
       ".section"
     );
 
+
   sections.forEach(
     (section, index) => {
 
@@ -622,6 +713,7 @@ function refreshSectionNames() {
         section.querySelector(
           ".sectionTitle"
         );
+
 
       title.innerText =
         `Section ${
@@ -634,5 +726,6 @@ function refreshSectionNames() {
   );
 
 }
+
 
 addSection();

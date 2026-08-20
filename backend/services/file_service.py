@@ -8,7 +8,11 @@ UPLOAD_FOLDER= Path("backend/uploads/temp")
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS= {
-    ".pdf", ".docx"
+    ".pdf", 
+    ".docx",
+    ".jpg",
+    ".jpeg",
+    ".png"
 }
 
 MAX_FILE_SIZE= 10*1024*1024   # 10 MB

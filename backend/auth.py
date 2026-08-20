@@ -10,9 +10,13 @@ from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
 
+from dotenv import load_dotenv
+import os
+
 router= APIRouter()
 
-secret_key= "my_secret_key"
+load_dotenv()
+secret_key= os.getenv("SECRET_KEY")
 
 oauth2_scheme= OAuth2PasswordBearer(tokenUrl= "login")
 
@@ -22,6 +26,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES= 60
 pwd_context= CryptContext(schemes= ["pbkdf2_sha256"], deprecated= "auto")
 
 class UserRequest(BaseModel):
+    name: str
     email: str
     password: str
 

@@ -1,31 +1,69 @@
-const loginForm = document.getElementById(
-    "loginForm"
-);
+async function loginUser(event) {
 
-if (loginForm) {
+    event.preventDefault();
 
-    loginForm.addEventListener(
+    const email = document.getElementById(
+        "email"
+    ).value;
 
-        "submit",
+    const password = document.getElementById(
+        "password"
+    ).value;
 
-        loginUser
+    try {
 
-    );
+        const response = await apiRequest(
 
-}
+            "/login",
 
-const signupForm = document.getElementById(
-    "signupForm"
-);
+            {
 
-if (signupForm) {
+                method: "POST",
 
-    signupForm.addEventListener(
+                headers: {
 
-        "submit",
+                    "Content-Type":
+                        "application/json"
 
-        signupUser
+                },
 
-    );
+                body: JSON.stringify({
+
+                    email,
+
+                    password
+
+                })
+
+            }
+
+        );
+
+        localStorage.setItem(
+
+            "access_token",
+
+            response.access_token
+
+        );
+
+        alert("Login Successful!");
+
+        window.location.href =
+            "index.html";
+
+    }
+
+    catch (error) {
+
+        alert(
+
+            "Invalid email or password."
+
+        );
+
+        console.error(error);
+
+    }
 
 }

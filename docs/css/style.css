@@ -177,14 +177,6 @@ textarea {
   font-weight: bold;
 }
 
-.home-button:hover {
-  text-decoration: underline;
-}
-
-.price-button:hover {
-  text-decoration: underline;
-}
-
-.about-button:hover {
+.nav-links a:hover {
   text-decoration: underline;
 }

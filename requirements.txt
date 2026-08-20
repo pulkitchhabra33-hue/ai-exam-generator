@@ -14,3 +14,5 @@ tiktoken
 PyMuPDF
 language-tool-python
 python-docx
+pillow
+pytesseract

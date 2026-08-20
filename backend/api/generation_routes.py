@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from backend.services.generation_pipeline import generate_exam_paper
+from backend.services.paper_service import create_exam_paper
 from backend.schemas.request_models import TeacherRequest
 from backend.schemas.response_models import GenerationResponse
 from backend.api.response_builder import (
@@ -42,7 +42,7 @@ The pipeline automatically:
 )
 
 def generate(teacher_data: TeacherRequest):
-    result= generate_exam_paper(teacher_data.model_dump())
+    result= create_exam_paper(teacher_data.model_dump())
 
     if not result["success"]:
         raise HTTPException(

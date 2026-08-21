@@ -7,10 +7,10 @@ def build_regeneration_prompt(
         feedback
 ):
     teacher_requirements= (
-        f"Exam Type: {teacher_data.get("exam_type")}\n"
-        f"Subject: {teacher_data.get("subject")}\n"
-        f"Class: {teacher_data.get("class")}\n"
-        f"Total Marks: {teacher_data.get("total_marks")}"
+        f"Exam Type: {teacher_data.get('exam_type')}\n"
+        f"Subject: {teacher_data.get('subject')}\n"
+        f"Class: {teacher_data.get('class')}\n"
+        f"Total Marks: {teacher_data.get('total_marks')}"
     )
     
     paper_json= json.dumps(

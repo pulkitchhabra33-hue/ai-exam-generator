@@ -139,10 +139,6 @@ async function generatePDF() {
     const selectedTime =
       document.getElementById("time_limit").value;
 
-    const selectedTime =
-      document.getElementById("time_limit").value;
-
-
     const timeLimit =
       selectedTime === "custom"
         ? document.getElementById("custom_time").value
@@ -256,6 +252,18 @@ async function generatePDF() {
     const token =
       localStorage.getItem("access_token");
 
+    if (!token) {
+
+      alert(
+        "Please login before generating an exam paper."
+      );
+
+      window.location.href =
+        "login.html";
+
+      return;
+
+    }
 
     const res =
       await fetch(

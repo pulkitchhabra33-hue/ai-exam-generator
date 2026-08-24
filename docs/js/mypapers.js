@@ -6,7 +6,7 @@ async function loadPaperHistory() {
 
   const token =
     localStorage.getItem(
-      "token"
+      "access_token"
     );
 
   const res = await fetch(

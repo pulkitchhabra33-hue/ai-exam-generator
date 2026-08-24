@@ -1,12 +1,23 @@
 import language_tool_python
 from backend.utils.question_utils import build_question_id
 
-tool= language_tool_python.LanguageTool("en-US")
+_tool= None
+
+def get_grammar_tool():
+    global _tool
+
+    if _tool is None:
+        _tool= language_tool_python.LanguageTool("en-US")
+
+    return _tool
+
 
 def validate_grammar(
         generated_paper
 ):
-    
+
+    tool= get_grammar_tool()
+
     report= {
         "valid": True,
         "errors": []

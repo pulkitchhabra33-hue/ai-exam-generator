@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.models import User, PaperHistory
+from backend.models import User, PaperHistory, GuestSession
 
 from passlib.context import CryptContext
 from jose import jwt
@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 import os
+import uuid
 
 router= APIRouter()
 
@@ -62,39 +63,121 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 
-
 #SIGNUP
 @router.post("/signup")
-def signup(user: UserRequest):
-    db: Session= SessionLocal()
+def signup(user: SignupRequest):
+    db: Session= SessionLocal
 
-    existing_user= db.query(User).filter(User.email == user.email).first()
-    if existing_user:
-        raise HTTPException(status_code= 400, detail= "Email already registered")
-    
-    hashed_password= get_password_hash(user.password)
-    new_user= User(email= user.email, password= hashed_password,
-                   plan= "FREE", credits_remaining= 2)
-    
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    try:
+        existing_user= {
+            db.query(User)
+            .filter(User.email == user.email)
+            .first()
+        }
 
-    return {"message": "User created successfully"}
+        if existing_user:
+            raise HTTPException(
+                status_code= 400,
+                detail="Email already registered"
+            )
+
+        hashed_password= get_password_hash(
+            user.password
+        )
+
+        new_user= User(
+            name= user.name,
+            email= user.email,
+            password= hashed_password,
+            plan= "FREE",
+            credits_remaining= 2
+        )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        return {
+            "message": "User created success"
+        }
+
+    finally:
+        db.close()
+
 
 #Login
 @router.post("/login")
-def login(user: UserRequest):
-    db: Session= SessionLocal()
+def login(user: LoginRequest):
+    db: Session = SessionLocal()
 
-    existing_user= db.query(User).filter(User.email == user.email).first()
-    if not existing_user:
-        raise HTTPException(status_code= 400, detail= "Invalid email or password")
-    if not verify_password(user.password, existing_user.password):
-        raise HTTPException(status_code= 400, detail= "Invalid email or password")
-    
-    access_token= create_access_token(data= {"sub": existing_user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    try:
+        existing_user= (
+            db.query(User)
+            .filter(User.email == user.email)
+            .first()
+        )
+
+        if not existing_user:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid email or password"
+            )
+
+        if not verify_password(
+            user.password,
+            existing_user.password
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid email or password"
+            )
+
+        access_token= create_access_token(
+            data={
+                "sub": existing_user.email
+            }
+        )
+
+        return {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
+
+    finally:
+        db.close()
+
+
+#Guest-ID
+@router.post("/guest-session")
+def create_guest_session():
+    db: Session= SessionLocal()
+    guest_id= str(uuid.uuid4())
+
+    guest= GuestSession(guest_id= guest_id, credits_remaining= 2)
+    db.add(guest)
+    db.commit()
+
+    db.refresh(guest)
+    db.close()
+
+    return {
+        "guest_id": guest_id,
+        "credits_remaining": guest.credits_remaining
+    }
+
+def get_guest_session(guest_id, db):
+    if not guest_id:
+        return None
+
+    guest= (
+        db.query(GuestSession).filter(
+            GuestSession.guest_id == guest_id
+        )
+        .first()
+    )
+
+    return guest
 
 class UpgradeRequest(BaseModel):
     plan: str
@@ -139,6 +222,7 @@ def upgrade_plan(data: UpgradeRequest, current_user= Depends(get_current_user)):
 def current_user_info(current_user= Depends(get_current_user)):
 
     return{
+        "name": current_user.name,
         "email": current_user.email,
         "plan": current_user.plan,
         "credits": current_user.credits_remaining,

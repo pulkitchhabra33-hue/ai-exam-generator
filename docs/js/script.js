@@ -2,6 +2,29 @@
 const BASE_URL =
   "https://ai-exam-generator-backend.onrender.com";
 
+function getGuestId() {
+
+  let guestId =
+    localStorage.getItem(
+      "guest_id"
+    );
+
+  if (!guestId) {
+
+    guestId =
+      crypto.randomUUID();
+
+    localStorage.setItem(
+      "guest_id",
+      guestId
+    );
+
+  }
+
+  return guestId;
+
+}
+
 let sectionCount = 0;
 
 
@@ -252,16 +275,18 @@ async function generatePDF() {
     const token =
       localStorage.getItem("access_token");
 
-    if (!token) {
+    const headers = {};
 
-      alert(
-        "Please login before generating an exam paper."
-      );
+    if (token) {
 
-      window.location.href =
-        "login.html";
+      headers.Authorization =
+        `Bearer ${token}`;
 
-      return;
+    }
+    else {
+
+      headers["X-Guest-ID"] =
+        getGuestId();
 
     }
 
@@ -271,10 +296,7 @@ async function generatePDF() {
         {
           method: "POST",
 
-          headers: {
-            "Authorization":
-              `Bearer ${token}`
-          },
+          headers: headers,
 
           body:
             formData
@@ -286,6 +308,17 @@ async function generatePDF() {
     const result =
       await res.json();
 
+    if (
+      res.status === 403 &&
+      result.detail === "NO_CREDITS"
+    ) {
+
+      showNoCreditsMessage();
+
+      return;
+
+    }
+
 
     if (result.download_url) {
 
@@ -294,15 +327,17 @@ async function generatePDF() {
           "downloadLink"
         );
 
-
       link.href =
-        BASE_URL + result.download_url;
-
+        BASE_URL +
+        result.download_url;
 
       link.innerText =
         "📥 Download PDF";
 
-    } else {
+      loadGuestCredits();
+
+    }
+    else {
 
       alert(
         result.detail ||
@@ -336,53 +371,85 @@ async function generatePDF() {
 
 async function loadUserInfo() {
 
-  const token =
-    localStorage.getItem("access_token");
+    const token =
+        localStorage.getItem(
+            "access_token"
+        );
 
-  if (!token) return;
+    if (!token) {
 
+        return;
+    }
 
-  const res =
-    await fetch(
-      `${BASE_URL}/current-user`,
-      {
-        headers: {
-          Authorization:
-            `Bearer ${token}`
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL +
+                "/current-user",
+                {
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+        if (!response.ok) {
+
+            localStorage.removeItem(
+                "access_token"
+            );
+
+            return;
         }
-      }
-    );
 
+        const user =
+            await response.json();
 
-  const data =
-    await res.json();
+        const loginButton =
+            document.getElementById(
+                "loginBtn"
+            );
 
+        const signupButton =
+            document.getElementById(
+                "signupBtn"
+            );
 
-  document.getElementById(
-    "userPlan"
-  ).innerText =
-    `Plan: ${data.plan}`;
+        if (loginButton) {
 
+            loginButton.style.display =
+                "none";
+        }
 
-  document.getElementById(
-    "userCredits"
-  ).innerText =
-    `Credits: ${data.credits}`;
+        if (signupButton) {
 
+            signupButton.style.display =
+                "none";
+        }
 
-  document.getElementById(
-    "userStatus"
-  ).innerText =
-    `Status: ${data.status}`;
+        const userDisplay =
+            document.getElementById(
+                "userDisplay"
+            );
 
+        if (userDisplay) {
 
-  document.getElementById(
-    "userExpiry"
-  ).innerText =
-    `Expires: ${
-      data.subscription_end || "N/A"
-    }`;
+            userDisplay.textContent =
+                `👤 ${user.name}`;
+        }
 
+    }
+
+    catch (error) {
+
+        console.error(
+            "Failed to load user:",
+            error
+        );
+
+    }
 }
 
 
@@ -536,24 +603,75 @@ async function loadPaperHistory() {
 
 }
 
+async function loadGuestCredits() {
 
-window.onload = () => {
-
-  const token =
+  const guestId =
     localStorage.getItem(
-      "access_token"
+      "guest_id"
     );
 
-  if (!token) {
+  const creditsElement =
+    document.getElementById(
+      "guestCredits"
+    );
 
-    window.location.href =
-      "login.html";
+  if (!creditsElement) return;
+
+  if (!guestId) {
+
+    creditsElement.innerText =
+      "Free Credits: 2";
 
     return;
 
   }
 
+  try {
+
+    const response =
+      await fetch(
+        `${BASE_URL}/guest-credits`,
+        {
+
+          headers: {
+
+            "X-Guest-ID":
+              guestId
+
+          }
+
+        }
+      );
+
+    const data =
+      await response.json();
+
+    creditsElement.innerText =
+      `Free Credits: ${
+        data.credits
+      }`;
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Failed to load guest credits:",
+      error
+    );
+
+    creditsElement.innerText =
+      "Unable to load credits.";
+
+  }
+
+}
+
+window.onload = () => {
+
   loadUserInfo();
+
+  loadGuestCredits();
 
 };
 
@@ -751,3 +869,135 @@ function refreshSectionNames() {
 
 
 addSection();
+
+function showNoCreditsMessage() {
+
+  const existing =
+    document.getElementById(
+      "noCreditsBox"
+    );
+
+  if (existing) {
+
+    existing.style.display =
+      "block";
+
+    return;
+
+  }
+
+  const box =
+    document.createElement(
+      "div"
+    );
+
+  box.id =
+    "noCreditsBox";
+
+  box.innerHTML = `
+
+    <div class="no-credits-content">
+
+      <h2>
+        You've used all your free credits
+      </h2>
+
+      <p>
+        You have 0 credits remaining.
+      </p>
+
+      <p>
+        Choose a plan below to continue
+        generating exam papers.
+      </p>
+
+      <div class="plan-options">
+
+        <div class="plan-option">
+
+          <h3>
+            PRO
+          </h3>
+
+          <p>
+            ₹99 / month
+          </p>
+
+          <p>
+            75 credits
+          </p>
+
+          <button
+            type="button"
+            onclick="buyPlan('PRO')"
+          >
+            Buy PRO
+          </button>
+
+        </div>
+
+
+        <div class="plan-option">
+
+          <h3>
+            PREMIUM
+          </h3>
+
+          <p>
+            ₹399 / 6 months
+          </p>
+
+          <p>
+            600 credits
+          </p>
+
+          <button
+            type="button"
+            onclick="buyPlan('PREMIUM')"
+          >
+            Buy PREMIUM
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+
+  document
+    .querySelector(".form-card")
+    .appendChild(box);
+
+}
+
+function buyPlan(plan) {
+
+  localStorage.setItem(
+    "selected_plan",
+    plan
+  );
+
+  const token =
+    localStorage.getItem(
+      "access_token"
+    );
+
+  if (token) {
+
+    window.location.href =
+      "pricing.html";
+
+    return;
+
+  }
+
+  alert(
+    `Please login or create an account to purchase the ${plan} plan.`
+  );
+
+  window.location.href =
+    "login.html";
+
+}

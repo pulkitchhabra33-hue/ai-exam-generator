@@ -14,6 +14,16 @@ from dotenv import load_dotenv
 import os
 import uuid
 
+class SignupRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
 router= APIRouter()
 
 load_dotenv()

@@ -76,7 +76,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 #SIGNUP
 @router.post("/signup")
 def signup(user: SignupRequest):
-    db: Session= SessionLocal
+    db: Session= SessionLocal()
 
     try:
         existing_user= {

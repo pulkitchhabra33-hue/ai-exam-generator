@@ -88,32 +88,36 @@ async function signupUser(event) {
     }
 
     try {
+        const response= 
+            await apiRequest(
+                "/signup",
+                {
+                    method: "POST",
 
-        await apiRequest(
-            "/signup",
-            {
-                method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password
+                    })
+                }
+            );
 
-                body: JSON.stringify({
-                    name,
-                    email,
-                    password
-                })
-            }
-        );
+            localStorage.setItem(
+                "access_token",
+                response.access_token
+            )
 
-        alert(
-            "Account created successfully. Please login."
-        );
+            alert(
+                "Account created successfully. Continue to generate."
+            );
 
-        window.location.href =
-            "login.html";
-
+            window.location.href =
+                "login.html";
     }
 
     catch (error) {

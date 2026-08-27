@@ -8,6 +8,10 @@ from backend.auth import router as auth_router
 app = FastAPI()
 
 Base.metadata.create_all(bind= engine)
+
+print("DATABASE URL:", engine.url)
+print("DATABASE FILE:", engine.url.database)
+
 app.include_router(auth_router)
 
 app.add_middleware(     

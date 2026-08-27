@@ -117,7 +117,7 @@ async function signupUser(event) {
             );
 
             window.location.href =
-                "login.html";
+                "index.html";
     }
 
     catch (error) {

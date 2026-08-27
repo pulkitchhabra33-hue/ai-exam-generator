@@ -107,8 +107,18 @@ def signup(user: SignupRequest):
         db.commit()
         db.refresh(new_user)
 
+        access_token= create_access_token(
+            data={"sub": new_user.email}
+        )
+
         return {
-            "message": "User created success"
+            "message": "User created successfully",
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "name": new_user.name,
+                "email": new_user.email
+            }
         }
 
     finally:

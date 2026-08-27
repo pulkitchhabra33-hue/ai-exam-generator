@@ -4,10 +4,15 @@ from backend.api.generation_routes import router as generation_router
 from backend.database import engine
 from backend.models import Base
 from backend.auth import router as auth_router
+from pathlib import Path
 
 app = FastAPI()
 
-Base.metadata.create_all(bind= engine)
+database_file = Path(engine.url.database)
+
+if database_file.exists():
+    database_file.unlink()
+Base.metadata.create_all(bind=engine)
 
 print("DATABASE URL:", engine.url)
 print("DATABASE FILE:", engine.url.database)

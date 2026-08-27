@@ -79,11 +79,11 @@ def signup(user: SignupRequest):
     db: Session= SessionLocal()
 
     try:
-        existing_user= {
+        existing_user= (
             db.query(User)
             .filter(User.email == user.email)
             .first()
-        }
+        )
 
         if existing_user:
             raise HTTPException(

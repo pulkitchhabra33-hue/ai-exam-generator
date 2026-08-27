@@ -8,14 +8,14 @@ from pathlib import Path
 
 app = FastAPI()
 
-database_file = Path(engine.url.database)
+# database_file = Path(engine.url.database)
 
-if database_file.exists():
-    database_file.unlink()
+# if database_file.exists():
+#     database_file.unlink()
 Base.metadata.create_all(bind=engine)
 
-print("DATABASE URL:", engine.url)
-print("DATABASE FILE:", engine.url.database)
+# print("DATABASE URL:", engine.url)
+# print("DATABASE FILE:", engine.url.database)
 
 app.include_router(auth_router)
 

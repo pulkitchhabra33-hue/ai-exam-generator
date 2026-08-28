@@ -191,10 +191,6 @@ async function loadCurrentUser() {
             "Failed to load current user:",
             error
         );
-
-        localStorage.removeItem(
-            "access_token"
-        );
     }
 }
 

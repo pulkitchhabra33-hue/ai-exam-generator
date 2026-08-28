@@ -159,3 +159,84 @@ if (signupForm) {
         signupUser
     );
 }
+
+async function loadCurrentUser() {
+
+    const token =
+        localStorage.getItem("access_token");
+
+    if (!token) {
+        return;
+    }
+
+    try {
+
+        const user =
+            await apiRequest(
+                "/current-user",
+                {
+                    method: "GET",
+                    headers: {
+                        "Authorization":
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+        showLoggedInUser(user);
+
+    } catch (error) {
+
+        console.error(
+            "Failed to load current user:",
+            error
+        );
+
+        localStorage.removeItem(
+            "access_token"
+        );
+    }
+}
+
+
+function showLoggedInUser(user) {
+
+    const authButtons =
+        document.getElementById(
+            "authButtons"
+        );
+
+    if (!authButtons) {
+        return;
+    }
+
+    authButtons.innerHTML = `
+        <span id="userName">
+            Hi, ${user.name}
+        </span>
+
+        <button
+            id="logoutBtn"
+            onclick="logoutUser()"
+        >
+            Logout
+        </button>
+    `;
+}
+
+function logoutUser() {
+
+    localStorage.removeItem(
+        "access_token"
+    );
+
+    window.location.href =
+        "index.html";
+}
+
+window.addEventListener(
+    "DOMContentLoaded",
+    () => {
+        loadCurrentUser();
+    }
+);

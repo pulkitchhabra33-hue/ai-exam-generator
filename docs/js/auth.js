@@ -217,7 +217,7 @@ function showLoggedInUser(user) {
 
     authButtons.innerHTML = `
         <span id="userName">
-            Hi, ${user.name}
+            Hi, ${user.name} 👤
         </span>
 
         <button

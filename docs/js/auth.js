@@ -171,9 +171,9 @@ async function loadCurrentUser() {
 
     try {
 
-        const user =
-            await apiRequest(
-                "/current-user",
+        const response =
+            await fetch(
+                `${BASE_URL}/current-user`,
                 {
                     method: "GET",
                     headers: {
@@ -182,6 +182,15 @@ async function loadCurrentUser() {
                     }
                 }
             );
+
+        if (!response.ok) {
+            throw new Error(
+                await response.text()
+            );
+        }
+
+        const user =
+            await response.json();
 
         showLoggedInUser(user);
 

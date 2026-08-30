@@ -18,27 +18,6 @@ RUN apt-get update \
 
 
 # --------------------------------------------------
-# INSTALL LANGUAGE TOOL
-# --------------------------------------------------
-
-ENV LANGUAGETOOL_VERSION=6.8
-ENV LANGUAGETOOL_DIR=/opt/languagetool
-
-
-RUN wget -q \
-        https://languagetool.org/download/LanguageTool-${LANGUAGETOOL_VERSION}.zip \
-        -O /tmp/languagetool.zip \
-    && unzip -q \
-        /tmp/languagetool.zip \
-        -d /opt \
-    && mv \
-        /opt/LanguageTool-${LANGUAGETOOL_VERSION} \
-        ${LANGUAGETOOL_DIR} \
-    && rm \
-        /tmp/languagetool.zip
-
-
-# --------------------------------------------------
 # PYTHON DEPENDENCIES
 # --------------------------------------------------
 
@@ -49,15 +28,23 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 # --------------------------------------------------
+# LANGUAGE TOOL
+# --------------------------------------------------
+
+ENV LTP_PATH=/opt/languagetool
+
+
+RUN python -c "import language_tool_python; language_tool_python.LanguageTool('en-US').close()"
+
+
+ENV LTP_JAR_DIR_PATH=/opt/languagetool
+
+
+# --------------------------------------------------
 # APPLICATION
 # --------------------------------------------------
 
 COPY . .
-
-
-# Tell language_tool_python where the existing
-# LanguageTool installation is located.
-ENV LTP_JAR_DIR_PATH=${LANGUAGETOOL_DIR}
 
 
 # --------------------------------------------------

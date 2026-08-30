@@ -53,438 +53,491 @@ function handleCustom(selectId, inputId) {
 // GENERATE PDF
 async function generatePDF() {
 
-    document.getElementById(
-        "loading"
-    ).style.display = "block";
+  document.getElementById(
+    "loading"
+  ).style.display = "block";
 
-    document.getElementById(
-        "downloadLink"
-    ).innerText = "";
+  document.getElementById(
+    "downloadLink"
+  ).innerText = "";
 
-    try {
+  try {
 
-        const sections = [];
+    const sections = [];
 
-        document
-            .querySelectorAll(".section")
-            .forEach(section => {
+    document
+      .querySelectorAll(".section")
+      .forEach(section => {
 
-                const marks =
-                    section.querySelector(
-                        ".marks"
-                    ).value;
+        const marks =
+          section.querySelector(
+            ".marks"
+          ).value;
 
-                const questions =
-                    section.querySelector(
-                        ".questions"
-                    ).value;
+        const questions =
+          section.querySelector(
+            ".questions"
+          ).value;
 
-                const type =
-                    section.querySelector(
-                        ".questionType"
-                    ).value;
+        const type =
+          section.querySelector(
+            ".questionType"
+          ).value;
 
-                if (marks && questions) {
+        if (marks && questions) {
 
-                    const marksValue =
-                        parseInt(marks);
+          const marksValue =
+            parseInt(marks);
 
-                    const questionCountValue =
-                        parseInt(questions);
+          const questionCountValue =
+            parseInt(questions);
 
-                    sections.push({
+          sections.push({
 
-                        section_name:
-                            section.querySelector(
-                                ".sectionTitle"
-                            ).innerText,
+            section_name:
+              section.querySelector(
+                ".sectionTitle"
+              ).innerText,
 
-                        marks:
-                            marksValue,
+            marks:
+              marksValue,
 
-                        question_count:
-                            questionCountValue,
+            question_count:
+              questionCountValue,
 
-                        marks_per_question:
-                            marksValue /
-                            questionCountValue,
+            marks_per_question:
+              marksValue /
+              questionCountValue,
 
-                        question_type:
-                            type
+            question_type:
+              type
 
-                    });
-                }
+          });
 
-            });
+        }
 
-        const totalMarks =
-          parseInt(
-              document.getElementById(
-                  "total"
-              ).value
-          ) || 0;
+      });
 
-      const sectionTotal =
-          sections.reduce(
-              (sum, section) =>
-                  sum + section.marks,
-              0
-          );
 
-      if (totalMarks !== sectionTotal) {
+    const totalMarks =
+      parseInt(
+        document.getElementById(
+          "total"
+        ).value
+      ) || 0;
 
-          alert(
-              `Total marks are ${totalMarks}, but your sections add up to ${sectionTotal}.`
-          );
 
-          return;
+    const sectionTotal =
+      sections.reduce(
+        (sum, section) =>
+          sum + section.marks,
+        0
+      );
+
+
+    if (totalMarks !== sectionTotal) {
+
+      alert(
+        `Total marks are ${totalMarks}, but your sections add up to ${sectionTotal}.`
+      );
+
+      return;
+
+    }
+
+
+    const selectedTime =
+      document.getElementById(
+        "time_limit"
+      ).value;
+
+
+    const timeLimit =
+      selectedTime === "custom"
+        ? document.getElementById(
+            "custom_time"
+          ).value
+        : selectedTime;
+
+
+    console.log(
+      "SELECTED TIME:",
+      selectedTime
+    );
+
+
+    console.log(
+      "TIME LIMIT SENT:",
+      timeLimit
+    );
+
+
+    const includeAnswers =
+      document.getElementById(
+        "includeAnswers"
+      ).checked;
+
+
+    const data = {
+
+      exam_type:
+        document.getElementById(
+          "exam_type"
+        ).value,
+
+      school_name:
+        document.getElementById(
+          "school_name"
+        ).value,
+
+      exam_name:
+        document.getElementById(
+          "exam_name"
+        ).value,
+
+      time_limit:
+        timeLimit,
+
+      class_name:
+        document.getElementById(
+          "class"
+        ).value,
+
+      subject:
+        document.getElementById(
+          "subject"
+        ).value,
+
+      topics:
+        document.getElementById(
+          "topics"
+        ).value,
+
+      difficulty:
+        document.getElementById(
+          "difficulty"
+        ).value,
+
+      total_marks:
+        parseInt(
+          document.getElementById(
+            "total"
+          ).value
+        ) || 0,
+
+      sections:
+        sections,
+
+      instructions:
+        document.getElementById(
+          "instructions"
+        ).value
+
+    };
+
+
+    const formData =
+      new FormData();
+
+
+    formData.append(
+      "data",
+      JSON.stringify(data)
+    );
+
+
+    const files =
+      document.getElementById(
+        "pyq_files"
+      ).files;
+
+
+    for (
+      let i = 0;
+      i < files.length;
+      i++
+    ) {
+
+      formData.append(
+        "files",
+        files[i]
+      );
+
+    }
+
+
+    /*
+     * Authentication / Guest Identity
+     */
+
+    const token =
+      localStorage.getItem(
+        "access_token"
+      );
+
+
+    const headers = {};
+
+
+    if (token) {
+
+      headers.Authorization =
+        `Bearer ${token}`;
+
+    } else {
+
+      headers["X-Guest-ID"] =
+        getGuestId();
+
+    }
+
+
+    /*
+     * Generate Exam Paper
+     */
+
+    const controller =
+      new AbortController();
+
+
+    const timeoutId =
+      setTimeout(() => {
+
+        controller.abort();
+
+      }, 150000);
+
+
+    const res =
+      await fetch(
+        `${BASE_URL}/generate-paper?include_answers=${includeAnswers}`,
+        {
+          method: "POST",
+
+          headers:
+            headers,
+
+          body:
+            formData,
+
+          signal:
+            controller.signal
+
+        }
+      );
+
+
+    const result =
+      await res.json();
+
+
+    clearTimeout(timeoutId);
+
+
+    /*
+     * No guest credits
+     */
+
+    if (
+      res.status === 403 &&
+      result.detail === "NO_CREDITS"
+    ) {
+
+      showNoCreditsMessage();
+
+      return;
+
+    }
+
+
+    /*
+     * Successful generation
+     */
+
+    if (
+      result.download_url
+    ) {
+
+      const link =
+        document.getElementById(
+          "downloadLink"
+        );
+
+
+      link.href =
+        BASE_URL +
+        result.download_url;
+
+
+      link.innerText =
+        "📥 Download PDF";
+
+
+      /*
+       * Refresh guest credits
+       */
+
+      if (!token) {
+
+        loadGuestCredits();
+
       }
 
+    } else {
 
-        const selectedTime =
-            document.getElementById(
-                "time_limit"
-            ).value;
+      alert(
 
-        const timeLimit =
-            selectedTime === "custom"
-                ? document.getElementById(
-                    "custom_time"
-                ).value
-                : selectedTime;
+        result.detail ||
+        result.error ||
+        "Something went wrong."
 
-        console.log(
-            "SELECTED TIME:",
-            selectedTime
-        );
-
-        console.log(
-            "TIME LIMIT SENT:",
-            timeLimit
-        );
-
-        const includeAnswers =
-            document.getElementById(
-                "includeAnswers"
-            ).checked;
-
-
-        const data = {
-
-            exam_type:
-                document.getElementById(
-                    "exam_type"
-                ).value,
-
-            school_name:
-                document.getElementById(
-                    "school_name"
-                ).value,
-
-            exam_name:
-                document.getElementById(
-                    "exam_name"
-                ).value,
-
-            time_limit:
-                timeLimit,
-
-            class_name:
-                document.getElementById(
-                    "class"
-                ).value,
-
-            subject:
-                document.getElementById(
-                    "subject"
-                ).value,
-
-            topics:
-                document.getElementById(
-                    "topics"
-                ).value,
-
-            difficulty:
-                document.getElementById(
-                    "difficulty"
-                ).value,
-
-            total_marks:
-                parseInt(
-                    document.getElementById(
-                        "total"
-                    ).value
-                ) || 0,
-
-            sections:
-                sections,
-
-            instructions:
-                document.getElementById(
-                    "instructions"
-                ).value
-        };
-
-
-        const formData =
-            new FormData();
-
-        formData.append(
-            "data",
-            JSON.stringify(data)
-        );
-
-
-        const files =
-            document.getElementById(
-                "pyq_files"
-            ).files;
-
-
-        for (
-            let i = 0;
-            i < files.length;
-            i++
-        ) {
-
-            formData.append(
-                "files",
-                files[i]
-            );
-
-        }
-
-
-        /*
-         * Authentication / Guest Identity
-         */
-
-        const token =
-            localStorage.getItem(
-                "access_token"
-            );
-
-        const headers = {};
-
-
-        if (token) {
-
-            headers.Authorization =
-                `Bearer ${token}`;
-
-        }
-
-        else {
-
-            headers["X-Guest-ID"] =
-                getGuestId();
-
-        }
-
-
-        /*
-         * Generate Exam Paper
-         */
-
-        const res =
-            await fetch(
-
-                `${BASE_URL}/generate-paper?include_answers=${includeAnswers}`,
-
-                {
-
-                    method: "POST",
-
-                    headers:
-                        headers,
-
-                    body:
-                        formData
-
-                }
-
-            );
-
-
-        const result =
-            await res.json();
-
-
-        /*
-         * No guest credits
-         */
-
-        if (
-            res.status === 403 &&
-            result.detail === "NO_CREDITS"
-        ) {
-
-            showNoCreditsMessage();
-
-            return;
-
-        }
-
-
-        /*
-         * Successful generation
-         */
-
-        if (
-            result.download_url
-        ) {
-
-            const link =
-                document.getElementById(
-                    "downloadLink"
-                );
-
-            link.href =
-                BASE_URL +
-                result.download_url;
-
-            link.innerText =
-                "📥 Download PDF";
-
-
-            /*
-             * Refresh guest credits
-             */
-
-            if (!token) {
-
-                loadGuestCredits();
-
-            }
-
-        }
-
-        else {
-
-            alert(
-
-                result.detail ||
-                result.error ||
-                "Something went wrong."
-
-            );
-
-        }
+      );
 
     }
 
-    catch (error) {
+  }
 
-        console.error(
-            "Generation Error:",
-            error
-        );
+  catch (error) {
 
-        alert(
-            "Server error. Check the browser console and backend logs."
-        );
+    console.error(
+      "Generation Error:",
+      error
+    );
+
+
+    if (
+      error.name === "AbortError"
+    ) {
+
+      alert(
+        "Exam generation took too long. Please try again."
+      );
+
+    } else {
+
+      alert(
+        "Server error. Check the browser console and backend logs."
+      );
 
     }
 
-    finally {
+  }
 
-        document.getElementById(
-            "loading"
-        ).style.display = "none";
+  finally {
 
-    }
+    document.getElementById(
+      "loading"
+    ).style.display = "none";
+
+  }
 
 }
 
 
 async function loadUserInfo() {
 
-    const token =
-        localStorage.getItem(
-            "access_token"
-        );
+  const token =
+    localStorage.getItem(
+      "access_token"
+    );
 
-    if (!token) {
+  if (!token) {
 
-        return;
-    }
+    return;
 
-    try {
+  }
 
-        const response =
-            await fetch(
-                API_BASE_URL +
-                "/current-user",
-                {
-                    headers: {
-                        Authorization:
-                            `Bearer ${token}`
-                    }
-                }
-            );
+  try {
 
-        if (!response.ok) {
-
-            localStorage.removeItem(
-                "access_token"
-            );
-
-            return;
+    const response =
+      await fetch(
+        API_BASE_URL +
+        "/current-user",
+        {
+          headers: {
+            Authorization:
+              `Bearer ${token}`
+          }
         }
+      );
 
-        const user =
-            await response.json();
 
-        const loginButton =
-            document.getElementById(
-                "loginBtn"
-            );
+    if (!response.ok) {
 
-        const signupButton =
-            document.getElementById(
-                "signupBtn"
-            );
+      localStorage.removeItem(
+        "access_token"
+      );
 
-        if (loginButton) {
-
-            loginButton.style.display =
-                "none";
-        }
-
-        if (signupButton) {
-
-            signupButton.style.display =
-                "none";
-        }
-
-        const userDisplay =
-            document.getElementById(
-                "userDisplay"
-            );
-
-        if (userDisplay) {
-
-            userDisplay.textContent =
-                `👤 ${user.name}`;
-        }
+      return;
 
     }
 
-    catch (error) {
 
-        console.error(
-            "Failed to load user:",
-            error
-        );
+    const user =
+      await response.json();
+
+
+    const loginButton =
+      document.getElementById(
+        "loginBtn"
+      );
+
+
+    const signupButton =
+      document.getElementById(
+        "signupBtn"
+      );
+
+
+    if (loginButton) {
+
+      loginButton.style.display =
+        "none";
 
     }
+
+
+    if (signupButton) {
+
+      signupButton.style.display =
+        "none";
+
+    }
+
+
+    const userDisplay =
+      document.getElementById(
+        "userDisplay"
+      );
+
+
+    if (userDisplay) {
+
+      userDisplay.textContent =
+        `👤 ${user.name}`;
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Failed to load user:",
+      error
+    );
+
+  }
+
 }
 
 
 async function upgradePro() {
 
   const token =
-    localStorage.getItem("access_token");
+    localStorage.getItem(
+      "access_token"
+    );
 
 
   const res =
@@ -529,7 +582,9 @@ async function upgradePro() {
 async function upgradePremium() {
 
   const token =
-    localStorage.getItem("access_token");
+    localStorage.getItem(
+      "access_token"
+    );
 
 
   const res =
@@ -631,6 +686,7 @@ async function loadPaperHistory() {
 
 }
 
+
 async function loadGuestCredits() {
 
   const guestId =
@@ -638,12 +694,15 @@ async function loadGuestCredits() {
       "guest_id"
     );
 
+
   const creditsElement =
     document.getElementById(
       "guestCredits"
     );
 
+
   if (!creditsElement) return;
+
 
   if (!guestId) {
 
@@ -653,6 +712,7 @@ async function loadGuestCredits() {
     return;
 
   }
+
 
   try {
 
@@ -671,8 +731,10 @@ async function loadGuestCredits() {
         }
       );
 
+
     const data =
       await response.json();
+
 
     creditsElement.innerText =
       `Free Credits: ${
@@ -688,12 +750,14 @@ async function loadGuestCredits() {
       error
     );
 
+
     creditsElement.innerText =
       "Unable to load credits.";
 
   }
 
 }
+
 
 window.onload = () => {
 
@@ -898,12 +962,14 @@ function refreshSectionNames() {
 
 addSection();
 
+
 function showNoCreditsMessage() {
 
   const existing =
     document.getElementById(
       "noCreditsBox"
     );
+
 
   if (existing) {
 
@@ -914,13 +980,16 @@ function showNoCreditsMessage() {
 
   }
 
+
   const box =
     document.createElement(
       "div"
     );
 
+
   box.id =
     "noCreditsBox";
+
 
   box.innerHTML = `
 
@@ -994,11 +1063,13 @@ function showNoCreditsMessage() {
 
   `;
 
+
   document
     .querySelector(".form-card")
     .appendChild(box);
 
 }
+
 
 function buyPlan(plan) {
 
@@ -1007,10 +1078,12 @@ function buyPlan(plan) {
     plan
   );
 
+
   const token =
     localStorage.getItem(
       "access_token"
     );
+
 
   if (token) {
 
@@ -1021,9 +1094,11 @@ function buyPlan(plan) {
 
   }
 
+
   alert(
     `Please login or create an account to purchase the ${plan} plan.`
   );
+
 
   window.location.href =
     "login.html";

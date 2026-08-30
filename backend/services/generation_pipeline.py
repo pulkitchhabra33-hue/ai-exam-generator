@@ -11,8 +11,22 @@ from backend.services.final_result_builder import build_final_result
 from backend.utils.logger import logger
 
 
+MAX_PIPELINE_TIME= 150
+
+def check_pipeline_timeout(pipeline_start):
+    elapsed= time.perf_counter() - pipeline_start
+
+    if elapsed >= MAX_PIPELINE_TIME:
+        raise TimeoutError(
+            "Exam generation took too long."
+            "Please try again."
+        )
+
 def generate_exam_paper(teacher_data):
     try:
+        # ---------------------------------------------
+        # AI GENERATION
+        # ---------------------------------------------
         pipeline_start= time.perf_counter()
 
         generation_start= time.perf_counter()
@@ -24,6 +38,10 @@ def generate_exam_paper(teacher_data):
             - generation_start
         )
 
+        # ---------------------------------------------
+        # VALIDATION / ITERATIVE GENERATION
+        # ---------------------------------------------
+
         validation_start= time.perf_counter()
 
         result= iterative_generation(
@@ -33,10 +51,16 @@ def generate_exam_paper(teacher_data):
             teacher_data["subject"]
         )
 
+        check_pipeline_timeout(pipeline_start)
+
         validation_time= (
             time.perf_counter()
             - validation_start
         )
+
+        # ---------------------------------------------
+        # PIPELINE TIME
+        # ---------------------------------------------
 
         pipeline_time= (
             time.perf_counter()
@@ -47,6 +71,10 @@ def generate_exam_paper(teacher_data):
 
         validation_report= result["report"]
         generation_statistics= result["statistics"]
+
+        # ---------------------------------------------
+        # QUALITY
+        # ---------------------------------------------
 
         quality= calculate_quality_score(validation_report)
         confidence= calculate_confidence(validation_report)
@@ -77,6 +105,26 @@ def generate_exam_paper(teacher_data):
                 acceptance,
                 summary
             )
+        }
+
+    except TimeoutError as error:
+        elapsed= (
+            time.perf_counter() - pipeline_start
+        )
+
+        logger.error(
+            f"Generation pipeline timeout "
+            f"after {round(elapsed, 2)} seconds."
+        )
+
+        return {
+            "success": False,
+            "error": (
+                "Exam generation took too long. "
+                "PLease try again."
+            ),
+            "stage": "generation_pipeline",
+            "timeout": True
         }
 
     except Exception as error:

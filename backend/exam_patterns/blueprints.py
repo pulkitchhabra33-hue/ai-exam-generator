@@ -175,10 +175,17 @@ SSC_COGNITIVE_BLUEPRINT = {
     "analysis": 15
 }
 
+DEFAULT_COGNITIVE_BLUEPRINT = {
+    "recall": 25,
+    "understanding": 30,
+    "application": 30,
+    "analysis": 15
+}
+
 
 def get_cognitive_blueprint(exam_type):
     if not exam_type:
-        return {}
+        return DEFAULT_COGNITIVE_BLUEPRINT
     
     exam_type= exam_type.lower()
 
@@ -193,4 +200,4 @@ def get_cognitive_blueprint(exam_type):
     elif "neet" in exam_type:
         return NEET_COGNITIVE_BLUEPRINT
 
-    return {}  
+    return DEFAULT_COGNITIVE_BLUEPRINT

@@ -5,7 +5,7 @@ from backend.services.ai_service import regenerate_paper
 from backend.utils.logger import logger
 
 
-MAX_REGENERATION_ATTEMPTS= 3
+MAX_REGENERATION_ATTEMPTS= 2
 
 DEBUG_PROMPT = False
 

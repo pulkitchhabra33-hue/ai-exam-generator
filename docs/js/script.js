@@ -451,7 +451,7 @@ async function loadUserInfo() {
 
     const response =
       await fetch(
-        API_BASE_URL +
+        BASE_URL +
         "/current-user",
         {
           headers: {

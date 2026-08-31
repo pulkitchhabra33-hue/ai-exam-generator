@@ -322,10 +322,13 @@ def generate(
         # ====================================================
 
         try:
+            print("[GEN] Before OpenAI call", flush=True)
 
             result = generate_exam_paper(
                 teacher_data.model_dump()
             )
+
+            print("[GEN] After OpenAI call", flush=True)
 
         except Exception as error:
 
@@ -418,6 +421,7 @@ def generate(
         # ====================================================
 
         try:
+            print("[GEN] Before PDF generation", flush=True)
 
             file_path = generate_pdf(
                 paper,
@@ -425,6 +429,8 @@ def generate(
                     include_answers
                 )
             )
+
+            print("[GEN] After PDF generation", flush=True)
 
         except Exception as error:
 

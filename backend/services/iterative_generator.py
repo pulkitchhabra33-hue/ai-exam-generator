@@ -26,12 +26,14 @@ def iterative_generation(
     for attempt in range(MAX_REGENERATION_ATTEMPTS):
         attempts_used= attempt + 1
 
+        print(f"[GEN] before validation", flush= True)
         validation= validate_generated_paper(
             generated_paper,
             teacher_data,
             exam_type,
             subject
         )
+        print(f"[GEN] after validation", flush= True)
 
         current_errors= len(
             validation["errors"]

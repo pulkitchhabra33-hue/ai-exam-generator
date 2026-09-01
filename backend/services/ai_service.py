@@ -487,6 +487,8 @@ def regenerate_paper(
         f"REGENERATION PROMPT TOKENS: {prompt_tokens}"
     )
 
+    print("[REGEN] Before OpenAI call", flush=True)
+
     response= client.chat.completions.create(
         model= "gpt-4o-mini",
         timeout= 60.0,
@@ -501,6 +503,8 @@ def regenerate_paper(
             }
         ]
     )
+
+    print("[REGEN] OpenAI returned", flush=True)
 
     print_usage(response)
 

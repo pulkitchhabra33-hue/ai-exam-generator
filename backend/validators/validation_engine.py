@@ -11,7 +11,6 @@ VALIDATORS= [
     validate_blueprint,
     validate_similarity,
     validate_duplicates,
-    validate_grammar
 ]
 
 def validate_generated_paper(

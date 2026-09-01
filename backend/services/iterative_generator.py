@@ -4,8 +4,9 @@ from backend.prompt_engine.regeneration_prompt import build_regeneration_prompt
 from backend.services.ai_service import regenerate_paper
 from backend.utils.logger import logger
 
+import time
 
-MAX_REGENERATION_ATTEMPTS= 2
+MAX_REGENERATION_ATTEMPTS= 1
 
 DEBUG_PROMPT = False
 
@@ -27,13 +28,16 @@ def iterative_generation(
         attempts_used= attempt + 1
 
         print(f"[GEN] before validation", flush= True)
+
+        validation_start= time.time()
+
         validation= validate_generated_paper(
             generated_paper,
             teacher_data,
             exam_type,
             subject
         )
-        print(f"[GEN] after validation", flush= True)
+        print(f"[GEN] after validation - took {time.time() - validation_start:.2f} seconds", flush=True)
 
         current_errors= len(
             validation["errors"]

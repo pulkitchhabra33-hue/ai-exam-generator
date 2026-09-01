@@ -447,8 +447,11 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
 
     print("[GEN] OpenAI returned", flush=True)
 
+    print("[GEN] Parsing OpenAI response", flush=True)
+
     try:
         content = response.choices[0].message.content
+        print("[GEN] Response content received", flush=True)
     except Exception as e:
         return {
             "error": "AI response structure issue",
@@ -458,7 +461,7 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
 
     try:
         parsed = json.loads(content)
-
+        print("[GEN] JSON parsed successfully", flush=True)
         return parsed
 
     except Exception as e:

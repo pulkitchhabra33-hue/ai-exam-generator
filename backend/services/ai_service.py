@@ -436,12 +436,16 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
     logger.info(f"PROMPT TOKENS: {prompt_tokens}")
     logger.info(f"REFERENCE PAPER LENGTH: {len(reference_paper)}")
 
+    print("[GEN] Calling OpenAI now", flush=True)
+
     response = client.chat.completions.create(
     model="gpt-4o-mini",
     timeout= 60.0,
     response_format={"type": "json_object"},
     messages=[{"role": "user", "content": prompt}]
     )
+
+    print("[GEN] OpenAI returned", flush=True)
 
     try:
         content = response.choices[0].message.content

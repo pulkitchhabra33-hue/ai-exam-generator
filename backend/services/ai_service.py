@@ -438,6 +438,7 @@ def generate_paper(data, uploaded_content= "", pattern_summary= ""):
 
     response = client.chat.completions.create(
     model="gpt-4o-mini",
+    timeout= 60.0,
     response_format={"type": "json_object"},
     messages=[{"role": "user", "content": prompt}]
     )
@@ -481,6 +482,7 @@ def regenerate_paper(
 
     response= client.chat.completions.create(
         model= "gpt-4o-mini",
+        timeout= 60.0,
         response_format= {
             "type": "json_object"
         },

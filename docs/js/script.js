@@ -1088,7 +1088,7 @@ function buyPlan(plan) {
   if (token) {
 
     window.location.href =
-      "index.html#pricing";
+      "pricing.html";
 
     return;
 
@@ -1101,7 +1101,7 @@ function buyPlan(plan) {
 
   localStorage.setItem(
     "auth_redirect",
-    "index.html#pricing"
+    "pricing.html"
   );
 
   window.location.href =

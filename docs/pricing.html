@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <title>Pricing - AI Exam Generator</title>
+
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  >
+
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+
+  <nav class="navbar">
+
+    <div class="logo">
+      AI Exam Generator
+    </div>
+
+    <div class="nav-links">
+
+      <div class="home-button">
+        <a href="index.html">
+          Home
+        </a>
+      </div>
+
+      <div class="price-button">
+        <a href="pricing.html">
+          Pricing
+        </a>
+      </div>
+
+      <div class="about-button">
+        <a href="#">
+          About
+        </a>
+      </div>
+
+    </div>
+
+    <div
+      class="auth-buttons"
+      id="authButtons"
+    >
+
+      <button
+        id="loginBtn"
+        onclick="window.location.href='login.html'"
+      >
+        Login
+      </button>
+
+      <button
+        id="signupBtn"
+        onclick="window.location.href='signup.html'"
+      >
+        Signup
+      </button>
+
+    </div>
+
+  </nav>
+
+
+  <!-- MAIN CONTAINER -->
+
+  <div class="container">
+
+    <h1>
+      💳 Choose Your Plan
+    </h1>
+
+    <p class="subtitle">
+      Generate professional exam papers with the plan that fits your needs.
+    </p>
+
+
+    <!-- CURRENT ACCOUNT -->
+
+    <div
+      id="accountCard"
+      class="form-card"
+    >
+
+      <h2>
+        Account
+      </h2>
+
+      <p id="pricingUser">
+        Checking account...
+      </p>
+
+      <p id="pricingPlan">
+      </p>
+
+      <p id="pricingCredits">
+      </p>
+
+    </div>
+
+
+    <!-- PLANS -->
+
+    <div
+      class="form-card"
+      id="plansContainer"
+    >
+
+      <h2>
+        Plans
+      </h2>
+
+
+      <!-- FREE PLAN -->
+
+      <div class="plan-option">
+
+        <h3>
+          FREE
+        </h3>
+
+        <p>
+          ₹0
+        </p>
+
+        <p>
+          2 free credits
+        </p>
+
+        <p>
+          Generate exam papers before upgrading.
+        </p>
+
+        <button
+          type="button"
+          onclick="selectPlan('FREE')"
+        >
+          Continue with Free
+        </button>
+
+      </div>
+
+
+      <!-- PRO PLAN -->
+
+      <div class="plan-option">
+
+        <h3>
+          PRO
+        </h3>
+
+        <p>
+          ₹99 / month
+        </p>
+
+        <p>
+          75 credits
+        </p>
+
+        <p>
+          Suitable for regular exam-paper generation.
+        </p>
+
+        <button
+          type="button"
+          data-plan="PRO"
+          onclick="selectPlan('PRO')"
+        >
+          Choose PRO
+        </button>
+
+      </div>
+
+
+      <!-- PREMIUM PLAN -->
+
+      <div class="plan-option">
+
+        <h3>
+          PREMIUM
+        </h3>
+
+        <p>
+          ₹399 / 6 months
+        </p>
+
+        <p>
+          600 credits
+        </p>
+
+        <p>
+          Best for frequent and long-term usage.
+        </p>
+
+        <button
+          type="button"
+          data-plan="PREMIUM"
+          onclick="selectPlan('PREMIUM')"
+        >
+          Choose PREMIUM
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- PLAN INFORMATION -->
+
+    <div
+      class="form-card"
+      id="planInfo"
+    >
+
+      <h2>
+        Plan Comparison
+      </h2>
+
+      <p>
+        <strong>FREE</strong>
+        — 2 credits
+      </p>
+
+      <p>
+        <strong>PRO</strong>
+        — 75 credits — ₹99/month
+      </p>
+
+      <p>
+        <strong>PREMIUM</strong>
+        — 600 credits — ₹399/6 months
+      </p>
+
+      <p>
+        Your selected plan will be remembered while you complete authentication.
+      </p>
+
+    </div>
+
+
+    <!-- BACK TO GENERATOR -->
+
+    <button
+      type="button"
+      class="btn"
+      onclick="window.location.href='index.html'"
+    >
+      ← Back to Generator
+    </button>
+
+  </div>
+  <!-- AUTH SCRIPT -->
+
+  <script src="js/auth.js"></script>
+  <script src="js/pricing.js"></script>
+
+</body>
+
+</html>

@@ -36,8 +36,13 @@ async function loginUser(event) {
             response.access_token
         );
 
+        const redirect =
+            localStorage.getItem("auth_redirect");
+
+        localStorage.removeItem("auth_redirect");
+
         window.location.href =
-            "index.html";
+            redirect || "index.html";
 
     }
 
@@ -116,8 +121,13 @@ async function signupUser(event) {
                 "Account created successfully. Continue to generate."
             );
 
+            const redirect =
+                localStorage.getItem("auth_redirect");
+
+            localStorage.removeItem("auth_redirect");
+
             window.location.href =
-                "index.html";
+                redirect || "index.html";
     }
 
     catch (error) {

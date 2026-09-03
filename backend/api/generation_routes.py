@@ -220,6 +220,14 @@ def generate(
             authorization
         )
 
+        print(
+            "[DEBUG] user:",
+            user,
+            "type:",
+            type(user),
+            flush=True
+        )
+
         guest = None
 
 

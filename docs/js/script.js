@@ -2,6 +2,8 @@
 const BASE_URL =
   "https://ai-exam-generator-backend.onrender.com";
 
+let isgenerating= false;
+
 function getGuestId() {
 
   let guestId =
@@ -49,9 +51,16 @@ function handleCustom(selectId, inputId) {
 
 }
 
+let isGenerating = false;
 
 // GENERATE PDF
 async function generatePDF() {
+
+  if (isGenerating) {
+        return;
+    }
+
+    isGenerating = true;
 
   document.getElementById(
     "loading"
@@ -334,6 +343,22 @@ async function generatePDF() {
     clearTimeout(timeoutId);
 
 
+    if (
+      res.status === 401 &&
+      result.detail === "AUTHENTICATION_REQUIRED"
+    ) {
+
+      localStorage.removeItem("access_token");
+
+      alert(
+        "Your session has expired. Please log in again to continue."
+      );
+
+      window.location.href = "login.html";
+
+      return;
+    }
+
     /*
      * No guest credits
      */
@@ -424,11 +449,11 @@ async function generatePDF() {
   }
 
   finally {
-
     document.getElementById(
       "loading"
     ).style.display = "none";
 
+    isGenerating= false;
   }
 
 }

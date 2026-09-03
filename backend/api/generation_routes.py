@@ -44,58 +44,63 @@ router = APIRouter()
 # ============================================================
 
 def get_optional_user(
-    authorization: Optional[str]
+        authorization: Optional[str]
 ):
-
     if not authorization:
         return None
 
-    if not authorization.startswith(
-        "Bearer "
-    ):
-        return None
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code= 401,
+            detail= "AUTHENTICATION_REQUIRED"
+        )
 
-    token = authorization.split(
-        " ",
-        1
-    )[1]
+    token= authorization.split(" ", 1)[1]
 
     try:
-
-        secret_key = os.getenv(
-            "SECRET_KEY"
-        )
-
-        payload = jwt.decode(
+        secret_key= os.getenv("SECRET_KEY")
+        payload= jwt.decode(
             token,
             secret_key,
-            algorithms=["HS256"]
+            algorithms= ["HS256"]
         )
 
-        email = payload.get(
-            "sub"
-        )
+        email= payload.get("sub")
 
         if not email:
-            return None
-
-        db = SessionLocal()
-
-        user = (
-            db.query(User)
-            .filter(
-                User.email == email
+            raise HTTPException(
+                status_code= 401,
+                detail= "AUTHENTICATION_REQUIRED"
             )
-            .first()
-        )
 
-        db.close()
+        db= SessionLocal()
+
+        try:
+            user= {
+                db.query(User)
+                .filter(User.email == email)
+                .first()
+            }
+
+        finally:
+            db.close()
+
+        if not user:
+            raise HTTPException(
+                status_code= 401,
+                detail= "AUTHENTICATION_REQUIRED"
+            )
 
         return user
 
-    except Exception:
+    except HTTPException:
         return None
 
+    except Exception:
+        raise HTTPException(
+            status_code= 401,
+            detail= "AUTHENTICATION_REQUIRED"
+        )
 
 # ============================================================
 # GUEST CREDITS

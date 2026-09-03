@@ -411,11 +411,7 @@ async function generatePDF() {
     } else {
 
       alert(
-
-        result.detail ||
-        result.error ||
-        "Something went wrong."
-
+        "Paper generation failed. Please try again."
       );
 
     }

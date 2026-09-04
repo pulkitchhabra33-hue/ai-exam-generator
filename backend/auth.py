@@ -32,7 +32,7 @@ secret_key= os.getenv("SECRET_KEY")
 oauth2_scheme= OAuth2PasswordBearer(tokenUrl= "login")
 
 algorithm= "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES= 1
+ACCESS_TOKEN_EXPIRE_MINUTES= 60
 
 pwd_context= CryptContext(schemes= ["pbkdf2_sha256"], deprecated= "auto")
 

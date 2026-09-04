@@ -1,4 +1,4 @@
-const BASE_URL = 
+const API_BASE_URL = 
   "https://ai-exam-generator-backend.onrender.com";
 
 
@@ -11,7 +11,7 @@ async function loadPaperHistory() {
 
   const res = await fetch(
 
-    `${BASE_URL}/my-papers`,
+    `${API_BASE_URL}/my-papers`,
 
     {
 
@@ -52,7 +52,7 @@ async function loadPaperHistory() {
         </p>
 
         <a
-          href="${BASE_URL}/download/${paper.pdf_path}"
+          href="${API_BASE_URL}/download/${paper.pdf_path}"
           target="_blank"
         >
 

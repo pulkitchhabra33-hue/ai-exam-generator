@@ -7,7 +7,7 @@ from backend.database import SessionLocal
 from backend.models import User, PaperHistory, GuestSession
 
 from passlib.context import CryptContext
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
@@ -58,19 +58,27 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     return encoded_jwt
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
-    payload= jwt.decode(token, secret_key, algorithms= [algorithm])
-    email: str= payload.get("sub")
+    try:
+        payload= jwt.decode(token, secret_key, algorithms= [algorithm])
+        email: str= payload.get("sub")
 
-    if email is None:
-        raise HTTPException(status_code= 401, detail= "Invalid authentication credentials")
+        if email is None:
+            raise HTTPException(status_code= 401, detail= "AUTHENTICATION REQUIRED")
+    except JWTError:
+        raise HTTPException(status_code= 401, detail= "AUTHENTICATION REQUIRED")
     
     db= SessionLocal()
-    user= db.query(User).filter(User.email == email).first()
-    
-    if user is None:
-        raise HTTPException(status_code= 401, detail= "Invalid authentication credentials")
 
-    return user
+    try:
+        user= db.query(User).filter(User.email == email).first()
+    
+        if user is None:
+            raise HTTPException(status_code= 401, detail= "AUTHENTICATION REQUIRED")
+
+        return user
+
+    finally:
+        db.close()
 
 
 #SIGNUP

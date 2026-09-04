@@ -1,5 +1,5 @@
 // Backend URL
-const BASE_URL =
+const API_BASE_URL =
   "https://ai-exam-generator-backend.onrender.com";
 
 let isgenerating= false;
@@ -319,7 +319,7 @@ async function generatePDF() {
 
     const res =
       await fetch(
-        `${BASE_URL}/generate-paper?include_answers=${includeAnswers}`,
+        `${API_BASE_URL}/generate-paper?include_answers=${includeAnswers}`,
         {
           method: "POST",
 
@@ -390,7 +390,7 @@ async function generatePDF() {
 
 
       link.href =
-        BASE_URL +
+        API_BASE_URL +
         result.download_url;
 
 
@@ -472,7 +472,7 @@ async function loadUserInfo() {
 
     const response =
       await fetch(
-        BASE_URL +
+        API_BASE_URL +
         "/current-user",
         {
           headers: {
@@ -563,7 +563,7 @@ async function upgradePro() {
 
   const res =
     await fetch(
-      `${BASE_URL}/upgrade-plan`,
+      `${API_BASE_URL}/upgrade-plan`,
       {
         method: "POST",
 
@@ -610,7 +610,7 @@ async function upgradePremium() {
 
   const res =
     await fetch(
-      `${BASE_URL}/upgrade-plan`,
+      `${API_BASE_URL}/upgrade-plan`,
       {
         method: "POST",
 
@@ -657,7 +657,7 @@ async function loadPaperHistory() {
 
   const res =
     await fetch(
-      `${BASE_URL}/my-papers`,
+      `${API_BASE_URL}/my-papers`,
       {
         headers: {
           Authorization:
@@ -739,7 +739,7 @@ async function loadGuestCredits() {
 
     const response =
       await fetch(
-        `${BASE_URL}/guest-credits`,
+        `${API_BASE_URL}/guest-credits`,
         {
 
           headers: {

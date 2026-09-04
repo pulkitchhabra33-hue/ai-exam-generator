@@ -183,7 +183,7 @@ async function loadCurrentUser() {
 
         const response =
             await fetch(
-                `${BASE_URL}/current-user`,
+                `${API_BASE_URL}/current-user`,
                 {
                     method: "GET",
                     headers: {

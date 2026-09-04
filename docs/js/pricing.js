@@ -1,6 +1,6 @@
 // Backend URL
 
-const BASE_URL =
+const API_BASE_URL =
   "https://ai-exam-generator-backend.onrender.com";
 
 
@@ -67,7 +67,7 @@ async function loadPricingUser() {
 
     const response =
       await fetch(
-        `${BASE_URL}/current-user`,
+        `${API_BASE_URL}/current-user`,
         {
           method: "GET",
 

@@ -76,11 +76,11 @@ def get_optional_user(
         db= SessionLocal()
 
         try:
-            user= {
+            user= (
                 db.query(User)
                 .filter(User.email == email)
                 .first()
-            }
+            )
 
         finally:
             db.close()

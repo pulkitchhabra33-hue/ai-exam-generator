@@ -254,6 +254,10 @@ async function generatePDF() {
       JSON.stringify(data)
     );
 
+    formData.append(
+      "include_answers",
+      includeAnswers
+    );
 
     const files =
       document.getElementById(
@@ -319,7 +323,7 @@ async function generatePDF() {
 
     const res =
       await fetch(
-        `${API_BASE_URL}/generate-paper?include_answers=${includeAnswers}`,
+        `${API_BASE_URL}/generate-paper`,
         {
           method: "POST",
 

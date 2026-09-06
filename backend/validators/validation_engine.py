@@ -32,7 +32,8 @@ def validate_generated_paper(
     for validator in VALIDATORS:
         if validator in (
             validate_structure,
-            validate_marks
+            validate_marks,
+            validate_question_types
         ):
             reports.append(
                 validator(

@@ -43,16 +43,26 @@ def instructions_to_text(instructions_list):
 json_format = """
 {
   "title": "Exam Title",
-  "instructions": ["point1", "point2"],
+  "instructions": [
+    "Instruction 1",
+    "Instruction 2"
+  ],
   "sections": [
     {
       "name": "Section A",
       "questions": [
         {
-          "question": "text",
-          "marks": 2,
-          "answer": "text",
-          "solution": "text"
+          "question": "Question text",
+          "question_type": "MCQ",
+          "marks": 1,
+          "options": [
+            "A) Option 1",
+            "B) Option 2",
+            "C) Option 3",
+            "D) Option 4"
+          ],
+          "answer": "B",
+          "solution": "Explanation of the answer"
         }
       ]
     }

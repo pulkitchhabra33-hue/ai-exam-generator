@@ -2,8 +2,9 @@ from backend.validators.blueprint_validator import validate_blueprint
 from backend.validators.marks_validator import validate_marks
 from backend.validators.structure_validator import validate_structure
 from backend.validators.duplicate_validator import validate_duplicates
-from backend.validators.grammar_validator import validate_grammar
 from backend.validators.similarity_validator import validate_similarity
+from backend.validators.question_type_validator import validate_question_types
+# from backend.validators.grammar_validator import validate_grammar
 
 VALIDATORS= [
     validate_structure,
@@ -11,6 +12,7 @@ VALIDATORS= [
     validate_blueprint,
     validate_similarity,
     validate_duplicates,
+    validate_question_types
 ]
 
 def validate_generated_paper(

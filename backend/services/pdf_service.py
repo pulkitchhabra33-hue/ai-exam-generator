@@ -568,15 +568,15 @@ def render_question_content(
             # Remove AI-provided A), B), C), D)
             # if already present.
 
-            if (
-                len(option_text) >= 2
-                and option_text[:2].upper()
-                in ["A", "B", "C", "D"]
-            ):
-                option_text= (
-                    option_text[2:]
-                    .strip()
-                )
+            # if (
+            #     len(option_text) >= 2
+            #     and option_text[:2].upper()
+            #     in ["A", "B", "C", "D"]
+            # ):
+            #     option_text= (
+            #         option_text[2:]
+            #         .strip()
+            #     )
 
             label= option_labels[index]
 

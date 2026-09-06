@@ -56,10 +56,10 @@ json_format = """
           "question_type": "MCQ",
           "marks": 1,
           "options": [
-            "A) Option 1",
-            "B) Option 2",
-            "C) Option 3",
-            "D) Option 4"
+            "Option 1",
+            "Option 2",
+            "Option 3",
+            "Option 4"
           ],
           "answer": "B",
           "solution": "Explanation of the answer"

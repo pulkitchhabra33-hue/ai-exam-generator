@@ -1,162 +1,179 @@
+from collections import Counter
+
 from backend.utils.question_utils import build_question_id
 
-def normalize_question_type(value):
 
-    if not value:
+def normalize_question_type(question_type):
+    if not question_type:
         return ""
 
-    value = (
-        str(value)
-        .strip()
-        .lower()
-    )
+    value = str(question_type).strip().lower()
 
-    aliases = {
-        "mcq": "mcq",
-
-        "very short answer": "very short answer",
-        "very short": "very short answer",
-
-        "short answer": "short answer",
-        "short": "short answer",
-
-        "long answer": "long answer",
-        "long": "long answer",
-
-        "case study": "case study",
-        "case-study": "case study",
-        "case based": "case study",
-        "case-based": "case study",
-
-        "assertion-reason": "assertion-reason",
-        "assertion reason": "assertion-reason",
-        "assertion/reason": "assertion-reason",
-
-        "application-based": "application-based",
-        "application based": "application-based",
-
-        "hots": "hots",
-
-        "true/false": "true/false",
-        "true false": "true/false",
-
-        "fill in the blanks": "fill in the blanks",
-        "fill-in-the-blanks": "fill in the blanks",
-
-        "match the following": "match the following",
-
-        "one word answer": "one word answer",
-        "one-word answer": "one word answer",
-
-        "source-based questions": "source-based questions",
-        "source based questions": "source-based questions",
-
-        "diagram-based questions": "diagram-based questions",
-        "diagram based questions": "diagram-based questions"
+    mappings = {
+        "mcq": "MCQ",
+        "multiple choice": "MCQ",
+        "multiple choice question": "MCQ",
+        "very short answer": "Very Short Answer",
+        "short answer": "Short Answer",
+        "long answer": "Long Answer",
+        "case study": "Case Study",
+        "assertion-reason": "Assertion-Reason",
+        "assertion reason": "Assertion-Reason",
+        "assertion/reason": "Assertion-Reason",
+        "application-based": "Application-based",
+        "application based": "Application-based",
+        "hots": "HOTS",
+        "true/false": "True/False",
+        "true / false": "True/False",
+        "true or false": "True/False",
+        "fill in the blanks": "Fill in the Blanks",
+        "fill in the blank": "Fill in the Blanks",
+        "match the following": "Match the Following",
+        "one word answer": "One Word Answer",
+        "source-based questions": "Source-Based Questions",
+        "source based questions": "Source-Based Questions",
+        "diagram-based questions": "Diagram-Based Questions",
+        "diagram based questions": "Diagram-Based Questions"
     }
 
-    return aliases.get(
-        value,
-        value
-    )
+    return mappings.get(value, str(question_type).strip())
+
 
 def validate_question_types(
-        generated_paper,
-        teacher_data
+    generated_paper,
+    teacher_data
 ):
     report = {
         "valid": True,
         "errors": []
     }
 
-    generated_sections = (
-        generated_paper.get(
-            "sections",
-            []
-        )
+    generated_sections = generated_paper.get(
+        "sections",
+        []
     )
 
-    expected_sections = (
-        teacher_data.get(
-            "sections",
-            []
-        )
+    expected_sections = teacher_data.get(
+        "sections",
+        []
     )
 
-    for section_index, (
-        expected_section,
-        generated_section
-    ) in enumerate(
-        zip(
-            expected_sections,
-            generated_sections
-        )
-    ):
-
-        expected_type = normalize_question_type(
-            expected_section.get(
-                "question_type",
-                ""
-            )
+    if len(generated_sections) != len(expected_sections):
+        report["valid"] = False
+        report["errors"].append(
+            f"Expected {len(expected_sections)} sections, "
+            f"but generated {len(generated_sections)}."
         )
 
-        generated_questions = (
-            generated_section.get(
-                "questions",
-                []
-            )
+    for section_index, expected_section in enumerate(expected_sections):
+        if section_index >= len(generated_sections):
+            break
+
+        generated_section = generated_sections[section_index]
+
+        expected_groups = expected_section.get(
+            "question_groups",
+            []
         )
+
+        generated_questions = generated_section.get(
+            "questions",
+            []
+        )
+
+        expected_counts = Counter()
+
+        for group in expected_groups:
+            expected_type = normalize_question_type(
+                group.get(
+                    "question_type",
+                    ""
+                )
+            )
+
+            expected_count = int(
+                group.get(
+                    "question_count",
+                    0
+                )
+            )
+
+            if not expected_type:
+                report["valid"] = False
+                report["errors"].append(
+                    f"Section {section_index + 1} contains "
+                    "a question group with no question_type."
+                )
+                continue
+
+            expected_counts[expected_type] += expected_count
+
+        generated_counts = Counter()
+
+        for question in generated_questions:
+            raw_type = question.get(
+                "question_type"
+            )
+
+            if not raw_type:
+                report["valid"] = False
+                report["errors"].append(
+                    f"Section {section_index + 1} contains "
+                    "a question with no question_type."
+                )
+                continue
+
+            normalized_type = normalize_question_type(
+                raw_type
+            )
+
+            generated_counts[normalized_type] += 1
+
+        for expected_type, expected_count in expected_counts.items():
+            actual_count = generated_counts.get(
+                expected_type,
+                0
+            )
+
+            if actual_count != expected_count:
+                report["valid"] = False
+                report["errors"].append(
+                    f"Section {section_index + 1}: "
+                    f"Expected {expected_count} "
+                    f"{expected_type} questions, "
+                    f"but generated {actual_count}."
+                )
+
+        for generated_type in generated_counts:
+            if generated_type not in expected_counts:
+                report["valid"] = False
+                report["errors"].append(
+                    f"Section {section_index + 1}: "
+                    f"Unexpected question type "
+                    f"'{generated_type}'."
+                )
 
         for question_index, question in enumerate(
             generated_questions,
             start=1
         ):
-
             question_id = build_question_id(
                 generated_section,
                 question_index
             )
 
             question_type = question.get(
-                    "question_type"
-                )
+                "question_type"
+            )
 
             if not question_type:
-                report["valid"] = False
-
-                report["errors"].append(
-                    f"{question_id} is missing "
-                    "the question_type field."
-                )
-
                 continue
 
             question_type = normalize_question_type(
                 question_type
             )
 
-            # --------------------------------------------------
-            # TYPE MATCH
-            # --------------------------------------------------
-
-            if question_type != expected_type:
-
-                report["valid"] = False
-
-                report["errors"].append(
-                    f"{question_id} has incorrect "
-                    f"question type. Expected "
-                    f"'{expected_section.get('question_type')}'."
-                )
-
-                continue
-
-            # --------------------------------------------------
-            # MCQ
-            # --------------------------------------------------
-
-            if expected_type == "mcq":
-
+            if question_type == "MCQ":
                 options = question.get(
                     "options"
                 )
@@ -165,40 +182,25 @@ def validate_question_types(
                     options,
                     list
                 ):
-
                     report["valid"] = False
-
                     report["errors"].append(
                         f"{question_id} is an MCQ "
                         "but has no options list."
                     )
-
                     continue
 
                 if len(options) != 4:
-
                     report["valid"] = False
-
                     report["errors"].append(
                         f"{question_id} must have "
-                        f"exactly 4 options, "
-                        f"but has {len(options)}."
+                        "exactly 4 options."
                     )
 
-                    continue
-
-                cleaned_options = [
-                    str(option).strip()
-                    for option in options
-                ]
-
                 if any(
-                    not option
-                    for option in cleaned_options
+                    not str(option).strip()
+                    for option in options
                 ):
-
                     report["valid"] = False
-
                     report["errors"].append(
                         f"{question_id} contains "
                         "an empty MCQ option."
@@ -217,21 +219,13 @@ def validate_question_types(
                     "C",
                     "D"
                 ):
-
                     report["valid"] = False
-
                     report["errors"].append(
                         f"{question_id} has an "
-                        "invalid MCQ answer. "
-                        "Expected A, B, C or D."
+                        "invalid MCQ answer."
                     )
 
-            # --------------------------------------------------
-            # TRUE / FALSE
-            # --------------------------------------------------
-
-            elif expected_type == "true/false":
-
+            elif question_type == "True/False":
                 answer = str(
                     question.get(
                         "answer",
@@ -243,85 +237,66 @@ def validate_question_types(
                     "true",
                     "false"
                 ):
-
                     report["valid"] = False
-
                     report["errors"].append(
                         f"{question_id} must have "
                         "True or False as its answer."
                     )
 
-            # --------------------------------------------------
-            # FILL IN THE BLANKS
-            # --------------------------------------------------
-
-            elif expected_type == "fill in the blanks":
-
+            elif question_type == "Fill in the Blanks":
                 question_text = str(
                     question.get(
                         "question",
                         ""
                     )
-                )
+                ).strip()
 
                 has_blank = (
                     "____" in question_text
                     or
                     "___" in question_text
                     or
-                    "______" in question_text
-                    or
                     "blank" in question_text.lower()
                 )
 
                 if not has_blank:
-
                     report["valid"] = False
-
                     report["errors"].append(
                         f"{question_id} is marked "
                         "as Fill in the Blanks "
                         "but contains no blank."
                     )
 
-            # --------------------------------------------------
-            # ASSERTION - REASON
-            # --------------------------------------------------
+            elif question_type == "Assertion-Reason":
+                assertion = str(
+                    question.get(
+                        "assertion",
+                        ""
+                    )
+                ).strip()
 
-            elif expected_type == "assertion-reason":
-
-                assertion = question.get(
-                    "assertion"
-                )
-
-                reason = question.get(
-                    "reason"
-                )
+                reason = str(
+                    question.get(
+                        "reason",
+                        ""
+                    )
+                ).strip()
 
                 if not assertion:
-
                     report["valid"] = False
-
                     report["errors"].append(
                         f"{question_id} is missing "
                         "the Assertion."
                     )
 
                 if not reason:
-
                     report["valid"] = False
-
                     report["errors"].append(
                         f"{question_id} is missing "
                         "the Reason."
                     )
 
-            # --------------------------------------------------
-            # MATCH THE FOLLOWING
-            # --------------------------------------------------
-
-            elif expected_type == "match the following":
-
+            elif question_type == "Match the Following":
                 left_column = question.get(
                     "left_column"
                 )
@@ -333,10 +308,8 @@ def validate_question_types(
                 if not isinstance(
                     left_column,
                     list
-                ):
-
+                ) or not left_column:
                     report["valid"] = False
-
                     report["errors"].append(
                         f"{question_id} is missing "
                         "the left matching column."
@@ -345,39 +318,47 @@ def validate_question_types(
                 if not isinstance(
                     right_column,
                     list
-                ):
-
+                ) or not right_column:
                     report["valid"] = False
-
                     report["errors"].append(
                         f"{question_id} is missing "
                         "the right matching column."
                     )
 
-            # --------------------------------------------------
-            # ONE WORD ANSWER
-            # --------------------------------------------------
+                if isinstance(left_column, list):
+                    if any(
+                        not str(item).strip()
+                        for item in left_column
+                    ):
+                        report["valid"] = False
+                        report["errors"].append(
+                            f"{question_id} contains "
+                            "an empty left matching item."
+                        )
 
-            elif expected_type == "one word answer":
+                if isinstance(right_column, list):
+                    if any(
+                        not str(item).strip()
+                        for item in right_column
+                    ):
+                        report["valid"] = False
+                        report["errors"].append(
+                            f"{question_id} contains "
+                            "an empty right matching item."
+                        )
 
-                answer = str(
-                    question.get(
-                        "answer",
-                        ""
-                    )
-                ).strip()
-
-                if not answer:
-
+                if (
+                    isinstance(left_column, list)
+                    and
+                    isinstance(right_column, list)
+                    and
+                    len(left_column) != len(right_column)
+                ):
                     report["valid"] = False
-
                     report["errors"].append(
-                        f"{question_id} has no answer."
+                        f"{question_id} has "
+                        "unequal matching columns."
                     )
-
-            # --------------------------------------------------
-            # GENERAL QUESTION CHECK
-            # --------------------------------------------------
 
             question_text = str(
                 question.get(
@@ -387,11 +368,10 @@ def validate_question_types(
             ).strip()
 
             if not question_text:
-
                 report["valid"] = False
-
                 report["errors"].append(
-                    f"{question_id} has no question text."
+                    f"{question_id} has no "
+                    "question text."
                 )
 
     return report

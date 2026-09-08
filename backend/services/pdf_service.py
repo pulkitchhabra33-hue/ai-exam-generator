@@ -12,7 +12,7 @@ from reportlab.lib.styles import (
 )
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_RIGHT
+from reportlab.lib.enums import TA_RIGHT, TA_CENTER
 import os
 import datetime
 import html
@@ -146,6 +146,7 @@ def generate_pdf(
     section_style = ParagraphStyle(
         "SectionStyle",
         parent=styles["Heading2"],
+        alignment=TA_CENTER,
         spaceBefore=12,
         spaceAfter=8
     )
@@ -266,7 +267,10 @@ def generate_pdf(
 
         section_name = section.get(
             "name",
-            ""
+            section.get(
+                "section_name",
+                ""
+            )
         )
 
 
@@ -274,20 +278,111 @@ def generate_pdf(
 
             elements.append(
                 Paragraph(
-                    section_name,
+                    f"<b>{safe_text(section_name)}</b>",
                     section_style
                 )
             )
 
 
         elements.append(
-            Spacer(
-                1,
-                4
+            Table(
+                [[""]],
+                colWidths=[480],
+                rowHeights=[1],
+                style= TableStyle(
+                    [
+                        (
+                            "LINEBELOW",
+                            (0, 0),
+                            (-1, -1),
+                            0.8,
+                            colors.black
+                        )
+                    ]
+                )
             )
         )
 
+    questions = section.get(
+        "questions",
+        []
+    )
 
+    grouped_questions = {}
+
+    for question in questions:
+
+        question_type = normalize_question_type(
+            question.get(
+                "question_type",
+                ""
+            )
+        )
+
+        if question_type not in grouped_questions:
+            grouped_questions[question_type] = []
+
+        grouped_questions[question_type].append(question)
+
+
+    group_order = []
+
+    for group in section.get(
+        "question_groups",
+        []
+    ):
+
+        question_type = normalize_question_type(
+            group.get(
+                "question_type",
+                ""
+            )
+        )
+
+        if (
+            question_type
+            and
+            question_type not in group_order
+        ):
+            group_order.append(
+                question_type
+            )
+
+
+    ordered_types = (
+        group_order
+        +
+        [
+            question_type
+            for question_type in grouped_questions
+            if question_type not in group_order
+        ]
+    )
+
+
+    for question_type in ordered_types:
+
+        type_questions = grouped_questions.get(
+            question_type,
+            []
+        )
+
+        if not type_questions:
+            continue
+
+        heading = question_type
+
+        if heading == "MCQ":
+            heading = "Multiple Choice Questions"
+
+        elements.append(
+            Paragraph(
+                f"<b>{safe_text(heading)}</b>",
+                section_style
+            )
+        )
+
+    for question in type_questions:
         for question in section.get(
             "questions",
             []
@@ -599,21 +694,12 @@ def render_question_content(
     # TRUE / FALSE
 
     if question_type == "True/False":
-        elements.append(
-            Paragraph(
-                "<b>True / False</b>",
-                styles["OptionStyle"]
-            )
-        )
-
-        elements.append(
+        return [
             Spacer(
                 1,
-                5
+                3
             )
-        )
-
-        return elements
+        ]
 
     # Fill in the Blanks
 
@@ -633,14 +719,24 @@ def render_question_content(
         # Assertion-Reason
 
     if question_type == "Assertion-Reason":
-        assertion= safe_text(
+
+        assertion = safe_text(
             question.get(
                 "assertion",
                 ""
             )
         )
 
+        reason = safe_text(
+            question.get(
+                "reason",
+                ""
+            )
+        )
+
+
         if assertion:
+
             elements.append(
                 Paragraph(
                     f"<b>Assertion:</b> {assertion}",
@@ -648,20 +744,16 @@ def render_question_content(
                 )
             )
 
-        reason= safe_text(
-            question.get(
-                "reason",
-                ""
-            )
-        )
 
         if reason:
+
             elements.append(
                 Paragraph(
                     f"<b>Reason:</b> {reason}",
                     styles["OptionStyle"]
                 )
             )
+
 
         elements.append(
             Spacer(

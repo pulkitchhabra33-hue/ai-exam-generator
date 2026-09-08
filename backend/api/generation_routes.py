@@ -235,18 +235,7 @@ def generate(
         # CREDIT COST
         # ====================================================
 
-        credit_cost = 1
-
-        if teacher_data.exam_type:
-
-            exam_type = (
-                teacher_data.exam_type.upper()
-            )
-
-            if exam_type == "JEE":
-
-                credit_cost = 2
-
+        credit_cost= 2 if teacher_data.exam_type else 1
 
         # ====================================================
         # AUTHENTICATED USER

@@ -139,15 +139,160 @@ General rules:
 - Every question must contain a non-empty "question" field.
 """
 
-def regenerate_paper(regeneration_prompt):
-    encoding = tiktoken.get_encoding(
-        "cl100k_base"
+def generate_paper(data, uploaded_content="", pattern_summary=""):
+    logger.info("Received paper generation request.")
+
+    exam_prompt = get_exam_prompt(data["exam_type"])
+    exam_blueprint = get_blueprint(data["exam_type"])
+
+    section_data = ""
+    exam_type = data.get("exam_type", "General Exam Paper")
+
+    if data.get("sections"):
+        for index, section in enumerate(data["sections"]):
+            section_name = section.get("section_name") or f"Section {chr(65 + index)}"
+            total_marks = section["marks"]
+            total_questions = section["question_count"]
+
+            section_data += f"""
+{section_name}:
+Total Marks: {total_marks}
+Total Questions: {total_questions}
+
+QUESTION TYPE GROUPS:
+"""
+
+            for group in section.get("question_groups", []):
+                question_type = group["question_type"]
+                question_count = group["question_count"]
+                marks_per_question = group["marks_per_question"]
+                group_marks = group["marks"]
+
+                allocation = allocate_questions(exam_type, question_count)
+
+                logger.info(
+                    f"{section_name} - {question_type} Allocation: {allocation}"
+                )
+
+                section_data += f"""
+- Question Type: {question_type}
+  Question Count: {question_count}
+  Marks Per Question: {marks_per_question}
+  Total Marks: {group_marks}
+
+  COGNITIVE DISTRIBUTION:
+  - Recall Questions: {allocation["recall"]}
+  - Understanding Questions: {allocation["understanding"]}
+  - Application Questions: {allocation["application"]}
+  - Analysis Questions: {allocation["analysis"]}
+
+  IMPORTANT:
+  Generate EXACTLY {question_count} questions of type {question_type}.
+  Each question must carry exactly {marks_per_question} marks.
+"""
+
+            section_data += f"""
+IMPORTANT:
+- Generate EXACTLY {total_questions} questions in {section_name}.
+- Generate EXACTLY the specified question count for every question type group.
+- Do NOT move questions between question type groups.
+- Preserve the exact order of the question type groups.
+"""
+
+    else:
+        section_data = "Use standard exam pattern"
+
+    instructions_list = format_instructions(data.get("instructions", ""))
+    instructions = instructions_to_text(instructions_list)
+
+    cognitive_blueprint = get_cognitive_blueprint(exam_type)
+
+    reference_paper = ""
+
+    if pattern_summary.strip():
+        reference_paper = f"""
+REFERENCE PAPER ANALYSIS
+
+{pattern_summary}
+
+IMPORTANT:
+
+Use this analysis to generate a NEW examination paper.
+
+Follow:
+- The same pattern
+- Similar difficulty
+- Similar structure
+- Similar assessment style
+
+Do NOT copy any question.
+
+Create completely original questions.
+"""
+
+    prompt = build_prompt(
+        data=data,
+        exam_type=exam_type,
+        section_data=section_data,
+        instructions=instructions,
+        reference_paper=reference_paper,
+        json_format=json_format,
+        cognitive_blueprint=cognitive_blueprint,
+        exam_prompt=exam_prompt,
+        exam_blueprint=exam_blueprint
     )
 
-    prompt_tokens = len(
-        encoding.encode(
-            regeneration_prompt
+    encoding = tiktoken.get_encoding("cl100k_base")
+    prompt_tokens = len(encoding.encode(prompt))
+
+    logger.info(f"PROMPT TOKENS: {prompt_tokens}")
+    logger.info(f"REFERENCE PAPER LENGTH: {len(reference_paper)}")
+
+    print("[GEN] Calling OpenAI now", flush=True)
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            timeout=60.0,
+            response_format={"type": "json_object"},
+            messages=[{"role": "user", "content": prompt}]
         )
+    except Exception as e:
+        logger.exception("Generation OpenAI API call failed.")
+        return {
+            "error": "Generation AI request failed.",
+            "details": str(e)
+        }
+
+    print("[GEN] OpenAI returned", flush=True)
+    print("[GEN] Parsing OpenAI response", flush=True)
+
+    try:
+        content = response.choices[0].message.content
+        print("[GEN] Response content received", flush=True)
+    except Exception as e:
+        return {
+            "error": "AI response structure issue",
+            "details": str(e),
+            "raw": str(response)
+        }
+
+    try:
+        parsed = json.loads(content)
+        print("[GEN] JSON parsed successfully", flush=True)
+        return parsed
+    except Exception as e:
+        return {
+            "error": "Invalid JSON from AI",
+            "details": str(e),
+            "raw_response": content
+        }
+
+def regenerate_paper(regeneration_prompt):
+    encoding = tiktoken.get_encoding("cl100k_base")
+
+    prompt_tokens = len(
+        encoding.encode(regeneration_prompt)
     )
 
     logger.info(
@@ -275,12 +420,10 @@ IMPORTANT:
                 }
             ]
         )
-
     except Exception as e:
         logger.exception(
             "Regeneration OpenAI API call failed."
         )
-
         return {
             "error": "Regeneration AI request failed.",
             "details": str(e)
@@ -293,7 +436,6 @@ IMPORTANT:
 
     try:
         print_usage(response)
-
     except Exception as e:
         logger.error(
             f"Unable to read OpenAI usage data: {e}"
@@ -301,7 +443,6 @@ IMPORTANT:
 
     try:
         content = response.choices[0].message.content
-
     except Exception as e:
         return {
             "error": "AI response structure issue",
@@ -310,13 +451,9 @@ IMPORTANT:
         }
 
     try:
-        parsed = json.loads(
-            content
-        )
+        parsed = json.loads(content)
         return parsed
-
     except Exception as e:
-
         return {
             "error": "Invalid JSON from AI",
             "details": str(e),

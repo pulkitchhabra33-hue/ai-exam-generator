@@ -51,6 +51,23 @@ def generate_exam_paper(teacher_data):
             teacher_data["subject"]
         )
 
+        if not result.get("success", True):
+            logger.error(
+                result.get(
+                    "error",
+                    "Unable to generate a valid exam paper."
+                )
+            )
+
+            return {
+                "success": False,
+                "error": (
+                    "We couldn't generate the exam paper "
+                    "correctly right now. Please try again."
+                ),
+                "stage": "iterative_generation"
+            }
+
         check_pipeline_timeout(pipeline_start)
 
         validation_time= (
@@ -121,7 +138,7 @@ def generate_exam_paper(teacher_data):
             "success": False,
             "error": (
                 "Exam generation took too long. "
-                "PLease try again."
+                "Please try again."
             ),
             "stage": "generation_pipeline",
             "timeout": True

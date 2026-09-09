@@ -5,7 +5,7 @@ from backend.services.ai_service import regenerate_paper
 from backend.utils.logger import logger
 
 
-MAX_REGENERATION_ATTEMPTS = 5
+MAX_REGENERATION_ATTEMPTS = 3
 
 DEBUG_PROMPT = False
 
@@ -112,19 +112,18 @@ def iterative_generation(
 
             logger.info(prompt)
 
-        generated_paper = regenerate_paper(
-            prompt
-        )
-
         # --------------------------------------------------
         # REGENERATION API FAILURE
         # --------------------------------------------------
+
+        generated_paper = regenerate_paper(
+            prompt
+        )
 
         if not isinstance(
             generated_paper,
             dict
         ):
-
             logger.error(
                 "Regeneration returned invalid data."
             )
@@ -132,7 +131,6 @@ def iterative_generation(
             continue
 
         if "error" in generated_paper:
-
             logger.error(
                 "Regeneration failed."
             )

@@ -302,37 +302,49 @@
 
       <!-- GENERATE BUTTON -->
 
-      <div id="planCard"
-           style="display: none;"
+      <div 
+          id="planCard"
+          style="display: none;"
       >
-        <div id="guestCreditsCard">
+          <h3>Your Plan</h3>
 
-          <h2>
-            Free Credits
-          </h2>
-
-          <p id="guestCredits">
-            Loading credits...
+          <p>
+            Plan:
+            <span id="userPlan">
+              Free
+            </span>
           </p>
 
-        </div>
+          <p>
+            Status:
+            <span id="userStatus">
+              Active
+            </span>
+          </p>
 
-        <h2>
-          Account Dashboard
-        </h2>
+          <p>
+            Expiry:
+            <span id="userExpiry">
+              N/A
+            </span>
+          </p>
 
-        <p id="userPlan">
+          <p>
+            Credits:
+            <span id="userCredits">
+              0
+            </span>
+          </p>
+      </div>
+
+      <div id="guestCreditsCard">
+        <h3>Free Credits</h3>
+        <p>
+          Credits remaining:
+          <span id="guestCredits">
+            0
+          </span>
         </p>
-
-        <p id="userCredits">
-        </p>
-
-        <p id="userStatus">
-        </p>
-
-        <p id="userExpiry">
-        </p>
-
       </div>
 
       <button

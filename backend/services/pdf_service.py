@@ -3,7 +3,8 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
     Table,
-    TableStyle
+    TableStyle,
+    KeepTogether
 )
 
 from reportlab.lib.styles import (
@@ -16,6 +17,7 @@ from reportlab.lib.enums import TA_RIGHT, TA_CENTER
 import os
 import datetime
 import html
+import uuid
 
 def normalize_question_type(question_type):
     if not question_type:
@@ -89,13 +91,11 @@ def generate_pdf(
     # CREATE UNIQUE FILENAME
     # --------------------------------------------------
 
-    if not filename:
+    if not filename or filename == "paper.pdf":
 
-        timestamp = datetime.datetime.now().strftime(
-            "%Y%m%d_%H%M%S"
+        filename = (
+            f"paper_{uuid.uuid4().hex}.pdf"
         )
-
-        filename = f"paper_{timestamp}.pdf"
 
 
     # --------------------------------------------------
@@ -147,6 +147,7 @@ def generate_pdf(
         "SectionStyle",
         parent=styles["Heading2"],
         alignment=TA_CENTER,
+        keepWithNext=1,
         spaceBefore=12,
         spaceAfter=8
     )
@@ -303,12 +304,12 @@ def generate_pdf(
             )
         )
 
-    questions = section.get(
-        "questions",
-        []
-    )
+        questions = section.get(
+            "questions",
+            []
+        )
 
-    grouped_questions = {}
+        grouped_questions = {}
 
     for question in questions:
 
@@ -324,8 +325,7 @@ def generate_pdf(
 
         grouped_questions[question_type].append(question)
 
-
-    group_order = []
+        group_order = []
 
     for group in section.get(
         "question_groups",
@@ -349,16 +349,27 @@ def generate_pdf(
             )
 
 
-    ordered_types = (
-        group_order
-        +
-        [
-            question_type
-            for question_type in grouped_questions
-            if question_type not in group_order
-        ]
-    )
+        ordered_types = (
+            group_order
+            +
+            [
+                question_type
+                for question_type in grouped_questions
+                if question_type not in group_order
+            ]
+        )
 
+    # --------------------------------------------------
+    # RENDER QUESTIONS BY QUESTION TYPE
+    # --------------------------------------------------
+
+    question_type_style = ParagraphStyle(
+        "QuestionTypeHeading",
+        parent=section_style,
+        keepWithNext=1,
+        spaceBefore=10,
+        spaceAfter=8
+    )
 
     for question_type in ordered_types:
 
@@ -375,28 +386,34 @@ def generate_pdf(
         if heading == "MCQ":
             heading = "Multiple Choice Questions"
 
+        # Keep the question-type heading with the
+        # first question of that type.
         elements.append(
             Paragraph(
                 f"<b>{safe_text(heading)}</b>",
-                section_style
+                question_type_style
             )
         )
 
-    for question in type_questions:
-        for question in section.get(
-            "questions",
-            []
-        ):
-            question_text= safe_text(
+        # --------------------------------------------------
+        # RENDER EACH QUESTION EXACTLY ONCE
+        # --------------------------------------------------
+
+        for question in type_questions:
+
+            question_text = safe_text(
                 question.get(
                     "question",
                     ""
                 )
             )
 
-            marks= question.get("marks", "")
+            marks = question.get(
+                "marks",
+                ""
+            )
 
-            question_type= normalize_question_type(
+            question_type = normalize_question_type(
                 question.get(
                     "question_type",
                     ""
@@ -404,25 +421,22 @@ def generate_pdf(
             )
 
             # --------------------------------------------------
-            # QUESTION + MARKS
+            # QUESTION NUMBER + MARKS
             # --------------------------------------------------
 
             question_number = (
                 f"<b>{question_counter}.</b>"
             )
 
-
             question_paragraph = Paragraph(
                 f"{question_number} {question_text}",
                 question_style
             )
 
-
             marks_paragraph = Paragraph(
                 f"<b>[{safe_text(marks)}]</b>",
                 marks_style
             )
-
 
             question_table = Table(
                 [
@@ -437,7 +451,6 @@ def generate_pdf(
                 ],
                 hAlign="LEFT"
             )
-
 
             question_table.setStyle(
                 TableStyle(
@@ -476,34 +489,38 @@ def generate_pdf(
                 )
             )
 
-
-            elements.append(
-                question_table
-            )
-
-
-            elements.append(
-                Spacer(
-                    1,
-                    4
-                )
-            )
-
+            # --------------------------------------------------
             # TYPE-SPECIFIC CONTENT
+            # --------------------------------------------------
 
             render_styles = {
                 "Normal": styles["Normal"],
                 "OptionStyle": option_style
             }
 
-            type_elements= render_question_content(
+            type_elements = render_question_content(
                 question,
                 question_type,
                 render_styles
             )
 
-            elements.extend(
-                type_elements
+            # --------------------------------------------------
+            # KEEP COMPLETE QUESTION TOGETHER
+            # --------------------------------------------------
+
+            question_block = [
+                question_table,
+                Spacer(
+                    1,
+                    4
+                ),
+                *type_elements
+            ]
+
+            elements.append(
+                KeepTogether(
+                    question_block
+                )
             )
 
             question_counter += 1

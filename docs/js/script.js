@@ -665,6 +665,7 @@ async function generatePDF() {
 }
 
 async function loadUserInfo() {
+
     const token =
         localStorage.getItem("access_token");
 
@@ -673,6 +674,7 @@ async function loadUserInfo() {
     }
 
     try {
+
         const response =
             await fetch(
                 `${API_BASE_URL}/current-user`,
@@ -685,12 +687,20 @@ async function loadUserInfo() {
             );
 
         if (!response.ok) {
-            localStorage.removeItem("access_token");
+
+            localStorage.removeItem(
+                "access_token"
+            );
+
             return;
         }
 
         const user =
             await response.json();
+
+        // ------------------------------------------
+        // HIDE LOGIN / SIGNUP
+        // ------------------------------------------
 
         const loginButton =
             document.getElementById("loginBtn");
@@ -699,29 +709,136 @@ async function loadUserInfo() {
             document.getElementById("signupBtn");
 
         if (loginButton) {
-            loginButton.style.display = "none";
+            loginButton.style.display =
+                "none";
         }
 
         if (signupButton) {
-            signupButton.style.display = "none";
+            signupButton.style.display =
+                "none";
         }
+
+        // ------------------------------------------
+        // HIDE GUEST CREDIT CARD
+        // ------------------------------------------
+
+        const guestCreditsCard =
+            document.getElementById(
+                "guestCreditsCard"
+            );
+
+        if (guestCreditsCard) {
+            guestCreditsCard.style.display =
+                "none";
+        }
+
+        // ------------------------------------------
+        // SHOW ACCOUNT DASHBOARD
+        // ------------------------------------------
+
+        const planCard =
+            document.getElementById(
+                "planCard"
+            );
+
+        if (planCard) {
+            planCard.style.display =
+                "block";
+        }
+
+        // ------------------------------------------
+        // USER NAME
+        // ------------------------------------------
 
         const userDisplay =
-            document.getElementById("userDisplay");
+            document.getElementById(
+                "userDisplay"
+            );
 
         if (userDisplay) {
+
             userDisplay.textContent =
-                `👤 ${user.name}`;
+                `👤 ${user.name || "Account"}`;
         }
 
-        const creditsElement =
-            document.getElementById("guestCredits");
+        // ------------------------------------------
+        // PLAN
+        // ------------------------------------------
 
-        if (creditsElement && user.credits_remaining !== undefined) {
-            creditsElement.innerText =
-                `Credits: ${user.credits_remaining}`;
+        const userPlan =
+            document.getElementById(
+                "userPlan"
+            );
+
+        if (userPlan) {
+
+            userPlan.innerText =
+                `Plan: ${
+                    user.plan ||
+                    user.plan_name ||
+                    "Free"
+                }`;
         }
+
+        // ------------------------------------------
+        // CREDITS
+        // ------------------------------------------
+
+        const userCredits =
+            document.getElementById(
+                "userCredits"
+            );
+
+        if (
+            userCredits &&
+            user.credits_remaining !== undefined
+        ) {
+
+            userCredits.innerText =
+                `Credits: ${
+                    user.credits_remaining
+                }`;
+        }
+
+        // ------------------------------------------
+        // STATUS
+        // ------------------------------------------
+
+        const userStatus =
+            document.getElementById(
+                "userStatus"
+            );
+
+        if (userStatus) {
+
+            userStatus.innerText =
+                `Status: ${
+                    user.status ||
+                    "Active"
+                }`;
+        }
+
+        // ------------------------------------------
+        // EXPIRY
+        // ------------------------------------------
+
+        const userExpiry =
+            document.getElementById(
+                "userExpiry"
+            );
+
+        if (userExpiry) {
+
+            userExpiry.innerText =
+                `Expiry: ${
+                    user.expiry ||
+                    user.expiry_date ||
+                    "N/A"
+                }`;
+        }
+
     } catch (error) {
+
         console.error(
             "Failed to load user:",
             error
@@ -889,6 +1006,7 @@ function openMyPapers() {
 document.addEventListener(
     "DOMContentLoaded",
     () => {
+
         if (
             document.getElementById("sectionsContainer") &&
             document.querySelectorAll(".section").length === 0
@@ -896,7 +1014,18 @@ document.addEventListener(
             addSection();
         }
 
-        loadUserInfo();
-        loadGuestCredits();
+        const token =
+            localStorage.getItem(
+                "access_token"
+            );
+
+        if (token) {
+
+            loadUserInfo();
+
+        } else {
+
+            loadGuestCredits();
+        }
     }
 );

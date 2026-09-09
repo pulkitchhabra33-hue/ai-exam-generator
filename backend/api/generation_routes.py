@@ -13,6 +13,8 @@ from fastapi import (
     Form
 )
 
+from collections import Counter
+
 from fastapi.responses import FileResponse
 from jose import jwt
 
@@ -35,8 +37,148 @@ from backend.models import (
     GuestSession
 )
 
+from backend.validators.question_type_validator import normalize_question_type
+
 
 router = APIRouter()
+
+def validate_generated_question_counts(
+    paper,
+    teacher_data
+):
+    """
+Final safety check before PDF generation.
+
+The PDF must only be created when the generated paper
+contains exactly the number of questions requested by
+the teacher, both per section and per question type.
+    """
+
+    generated_sections= paper.get(
+        "sections",
+        []
+    )
+
+    expected_sections= teacher_data.sections
+
+    #SECTION COUNT
+
+    if len(generated_sections) != len(expected_sections):
+        raise HTTPException(
+            status_code=500,
+            detail= (
+                "Generated section count mismatch: "
+                f"expected {len(expected_sections)},"
+                f"got {len(generated_sections)}."
+            )
+        )
+
+    expected_total= 0
+    generated_total= 0
+
+    # CHECK EACH SECTION
+
+    for section_index, expected_section in enumerate(
+        expected_sections
+    ):
+        generated_section= generated_sections[
+            section_index
+        ]
+
+        expected_count= int(
+            expected_section.question_count
+        )
+
+        generated_questions= generated_section.get(
+            "questions",
+            []
+        )
+
+        generated_count= len(
+            generated_questions
+        )
+
+        expected_total += expected_count
+        generated_total += generated_count
+
+        # SECTION QUESTION COUNT
+
+        if generated_count != expected_count:
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"Question count mismatch in "
+                    f"{expected_section.section_name}: "
+                    f"expected {expected_count}, "
+                    f"got {generated_count}."
+                )
+            )
+
+        # EXPECTED QUESTION-TYPE COUNTS
+
+        expected_types= Counter()
+
+        for group in expected_section.question_groups:
+            question_type= normalize_question_type(
+                group.question_type
+            )
+
+            expected_types[question_type] += int(
+                group.question_count
+            )
+
+        # GENERATED QUESTION-TYPE COUNTS
+
+        generated_types= Counter()
+
+        for question in generated_questions:
+            question_type= normalize_question_type(
+                question.get(
+                    "question_type",
+                    ""
+                )
+            )
+
+            if not question_type:
+                raise HTTPException(
+                    status_code=500,
+                    detail= (
+                        f"A generated question in "
+                        f"{expected_section.section_name} "
+                        "is missing question_type."
+                    )
+                )
+
+            generated_types[
+                question_type
+            ] += 1
+
+        # QUESTION-TYPE COUNT CHECK
+
+        if generated_types != expected_types:
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"Question type count mismatch in "
+                    f"{expected_section.section_name}: "
+                    f"expected {dict(expected_types)}, "
+                    f"got {dict(generated_types)}."
+                )
+            )
+
+    # TOTAL QUESTION COUNT
+
+    if generated_total != expected_total:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Total question count mismatch: "
+                f"expected {expected_total}, "
+                f"got {generated_total}."
+            )
+        )
+
+    return generated_total
 
 
 # ============================================================
@@ -94,7 +236,7 @@ def get_optional_user(
         return user
 
     except HTTPException:
-        return None
+        raise
 
     except Exception:
         raise HTTPException(
@@ -419,14 +561,30 @@ def generate(
 
 
         # ====================================================
+        # FINAL QUESTION COUNT SAFETY CHECK
+        # ====================================================
+
+        validate_generated_question_counts(
+            paper,
+            teacher_data
+        )
+
+        # ====================================================
         # GENERATE PDF
         # ====================================================
 
         try:
-            print("[GEN] Before PDF generation", flush=True)
+
+            print(
+                "[GEN] Before PDF generation",
+                flush=True
+            )
+
+            filename = f"paper_{uuid.uuid4().hex}.pdf"
 
             file_path = generate_pdf(
                 paper,
+                filename=filename,
                 include_answers=(
                     include_answers
                 )
@@ -559,29 +717,49 @@ def generate(
 @router.get(
     "/download/{filename}"
 )
-def download_file(
-    filename: str
-):
 
-    file_path = os.path.join(
-        "backend",
-        "pdfs",
-        filename
+def download_file(filename: str):
+    pdf_folder= os.path.abspath(
+        os.path.join(
+            "backend",
+            "pdfs"
+        )
     )
 
+    safe_filename= os.path.basename(filename)
 
-    if not os.path.exists(
+    file_path= os.path.abspath(
+        os.path.join(
+            pdf_folder,
+            safe_filename
+        )
+    )
+
+    #Prevent Path Traversal
+    if (
+        os.path.commonpath(
+            [
+                pdf_folder,
+                file_path
+            ]
+        )
+        != pdf_folder
+    ):
+        raise HTTPException(
+            status_code=404,
+            detail= "PDF file not found."
+        )
+
+    if not os.path.isfile(
         file_path
     ):
-
         raise HTTPException(
             status_code=404,
             detail="PDF file not found."
         )
 
-
     return FileResponse(
-        path=file_path,
-        media_type="application/pdf",
-        filename=filename
+        path= file_path,
+        media_type= "application/pdf",
+        filename= safe_filename
     )

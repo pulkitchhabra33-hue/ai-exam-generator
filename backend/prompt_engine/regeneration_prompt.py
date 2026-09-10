@@ -2,6 +2,81 @@ from backend.prompt_engine.regeneration_rules import get_regeneration_rules
 import json
 
 
+def build_locked_blueprint(
+        teacher_data
+):
+
+    blueprint = []
+
+    for section_index, section in enumerate(
+        teacher_data.get(
+            "sections",
+            []
+        ),
+        start=1
+    ):
+
+        section_name = section.get(
+            "section_name"
+        ) or f"Section {section_index}"
+
+        section_data = {
+            "section_name": section_name,
+            "question_count": int(
+                section.get(
+                    "question_count",
+                    0
+                )
+            ),
+            "marks": int(
+                section.get(
+                    "marks",
+                    0
+                )
+            ),
+            "question_groups": []
+        }
+
+        for group in section.get(
+            "question_groups",
+            []
+        ):
+
+            section_data[
+                "question_groups"
+            ].append(
+                {
+                    "question_type": group.get(
+                        "question_type"
+                    ),
+                    "question_count": int(
+                        group.get(
+                            "question_count",
+                            0
+                        )
+                    ),
+                    "marks_per_question": int(
+                        group.get(
+                            "marks_per_question",
+                            0
+                        )
+                    ),
+                    "marks": int(
+                        group.get(
+                            "marks",
+                            0
+                        )
+                    )
+                }
+            )
+
+        blueprint.append(
+            section_data
+        )
+
+    return blueprint
+
+
 def build_regeneration_prompt(
         teacher_data,
         generated_paper,
@@ -9,10 +84,24 @@ def build_regeneration_prompt(
 ):
 
     teacher_requirements = (
-        f"Exam Type: {teacher_data.get('exam_type')}\n"
-        f"Subject: {teacher_data.get('subject')}\n"
-        f"Class: {teacher_data.get('class')}\n"
-        f"Total Marks: {teacher_data.get('total_marks')}"
+        f"Exam Type: "
+        f"{teacher_data.get('exam_type')}\n"
+        f"Subject: "
+        f"{teacher_data.get('subject')}\n"
+        f"Class: "
+        f"{teacher_data.get('class_name')}\n"
+        f"Total Marks: "
+        f"{teacher_data.get('total_marks')}"
+    )
+
+    locked_blueprint = build_locked_blueprint(
+        teacher_data
+    )
+
+    blueprint_json = json.dumps(
+        locked_blueprint,
+        indent=4,
+        ensure_ascii=False
     )
 
     paper_json = json.dumps(
@@ -29,19 +118,11 @@ def build_regeneration_prompt(
     rules = get_regeneration_rules()
 
     prompt = f"""
-You are an expert examination paper setter repairing an already generated examination paper.
+You are repairing an already generated examination paper.
 
-The paper below has already been generated.
+You MUST repair the existing paper.
 
-A validation engine has identified specific problems.
-
-Your task is to repair the existing paper.
-
-DO NOT generate a completely new paper.
-
-DO NOT redesign the paper.
-
-DO NOT change the paper structure.
+You are NOT allowed to redesign the paper.
 
 ==================================================
 TEACHER REQUIREMENTS
@@ -50,7 +131,19 @@ TEACHER REQUIREMENTS
 {teacher_requirements}
 
 ==================================================
-EXISTING GENERATED PAPER
+LOCKED EXAM BLUEPRINT
+==================================================
+
+The following blueprint is authoritative.
+
+It comes directly from the teacher's requested paper structure.
+
+{blueprint_json}
+
+The final paper MUST match this blueprint exactly.
+
+==================================================
+EXISTING PAPER
 ==================================================
 
 {paper_json}
@@ -62,36 +155,37 @@ VALIDATION FEEDBACK
 {feedback_text}
 
 ==================================================
-MANDATORY STRUCTURE PRESERVATION
+ABSOLUTE STRUCTURE RULES
 ==================================================
 
-The existing generated paper is the base paper.
+The locked blueprint has priority over the generated paper.
 
-You MUST preserve:
+The final paper MUST have:
 
-- The exact number of sections.
-- The exact section order.
-- The exact section names.
-- The exact number of questions in every section.
-- The exact question order.
-- The exact number of questions for every question type.
-- The position of every question.
-- The marks of every question unless a validation error explicitly requires correcting marks.
+- Exactly the specified number of sections.
+- Exactly the specified section names.
+- Exactly the specified section order.
+- Exactly the specified number of questions in every section.
+- Exactly the specified number of questions for every question type.
+- Exactly the specified marks per question.
+- Exactly the specified section marks.
+- Exactly the specified total marks.
 
-DO NOT:
+Do NOT:
 
 - Add questions.
 - Remove questions.
 - Merge questions.
 - Split questions.
 - Move questions between sections.
-- Add sections.
-- Remove sections.
+- Invent new question groups.
+- Remove question groups.
+- Change question counts.
 - Change section names.
-- Change the total number of questions.
-- Change question types merely to make the paper easier to generate.
 
-If a question is invalid, repair or replace the CONTENT of that existing question while keeping its position and required structure.
+If the existing paper contains an incorrect question type, replace that question with the required question type while keeping the same position.
+
+If the existing paper contains incorrect content, rewrite that question.
 
 ==================================================
 QUESTION METADATA
@@ -107,171 +201,108 @@ Every question MUST contain:
 - answer
 - solution
 
-difficulty MUST be exactly:
+difficulty must be one of:
 
 - Easy
 - Medium
 - Hard
 
-cognitive MUST be exactly:
+cognitive must be one of:
 
 - Recall
 - Understanding
 - Application
 - Analysis
 
-NEVER omit difficulty.
-
-NEVER omit cognitive.
-
-If the existing question already has valid difficulty and cognitive values, preserve them.
-
-Only change them when the validation feedback requires a correction.
-
 ==================================================
-QUESTION TYPE STRUCTURE
+SPECIAL QUESTION TYPES
 ==================================================
 
 MCQ:
-
 - Exactly four options.
-- Options must be non-empty.
 - Answer must be A, B, C, or D.
 
 True/False:
-
 - No MCQ options.
 - Answer must be True or False.
 
 Fill in the Blanks:
-
 - Question must contain ______.
-- No MCQ options.
 
 Assertion-Reason:
-
-- Keep "assertion" as a separate field.
-- Keep "reason" as a separate field.
-- Both must be non-empty.
-- Do not combine them into the question field.
+- assertion must be a separate non-empty field.
+- reason must be a separate non-empty field.
 
 Match the Following:
-
-- Include "left_column".
-- Include "right_column".
-- Both must be lists.
-- Both must be non-empty.
-- Both must contain the same number of items.
-- Do not use MCQ options.
+- left_column must be a non-empty list.
+- right_column must be a non-empty list.
+- Both columns must have equal length.
 
 Source-Based Questions:
-
-- Include a meaningful "source" field.
+- source must be present and meaningful.
 
 Diagram-Based Questions:
-
-- Include a meaningful "diagram" field.
+- diagram must be present and meaningful.
 
 Case Study:
-
-- Include a meaningful "case" field.
-
-==================================================
-MARKS
-==================================================
-
-Preserve valid question marks.
-
-The section marks must remain correct.
-
-The total paper marks must remain correct.
-
-If the validation feedback identifies a marks mismatch, correct the marks of the existing questions rather than adding or removing questions.
-
-==================================================
-QUESTION COUNTS
-==================================================
-
-The regenerated paper MUST contain exactly the same number of questions as the existing generated paper.
-
-The regenerated paper MUST satisfy the requested question counts in teacher_data.
-
-If a question type count is wrong, repair the type/content of existing questions.
-
-Do not create additional questions.
-
-Do not delete questions.
+- case must be present and meaningful.
 
 ==================================================
 VALIDATION REPAIR
 ==================================================
 
-Fix every validation error in the feedback.
+Fix every validation error.
 
-For missing fields:
+However, fixing an error MUST NOT violate the locked blueprint.
 
-- Add the missing field to the existing affected question.
+If question-type counts are wrong:
 
-For Assertion-Reason errors:
+- Correct existing questions.
+- Do not add or remove questions.
 
-- Add or repair assertion and reason fields.
+If marks are wrong:
 
-For Match the Following errors:
+- Correct existing question marks.
+- Do not add or remove questions.
 
-- Add or repair left_column and right_column.
+If difficulty or cognitive values are wrong:
 
-For question-type errors:
+- Correct the metadata of existing questions.
 
-- Correct the affected existing question while preserving its position.
+If a special field is missing:
 
-For marks errors:
+- Add it to the affected existing question.
 
-- Correct existing question marks without changing the number of questions.
+If a question is duplicated or too similar:
 
-For difficulty errors:
-
-- Correct the difficulty values of existing questions.
-
-For cognitive errors:
-
-- Correct the cognitive values of existing questions.
-
-For duplicate/similarity errors:
-
-- Rewrite only the affected question content while preserving its type, marks, difficulty, cognitive level and position.
+- Rewrite its content while preserving its required type, position and marks.
 
 ==================================================
-FINAL CHECK
+FINAL VERIFICATION
 ==================================================
 
-Before returning the paper, verify:
+Before returning JSON verify:
 
-- Section count.
-- Section names.
-- Section order.
-- Question count.
-- Question order.
-- Question-type distribution.
-- Marks per question.
-- Section marks.
-- Total marks.
-- Difficulty distribution.
-- Cognitive distribution.
-- Every question has question.
-- Every question has question_type.
-- Every question has marks.
+- Section count exactly matches the locked blueprint.
+- Section names exactly match.
+- Section order exactly matches.
+- Question count exactly matches.
+- Every question-type count exactly matches.
+- Every question has the required marks.
+- Every section has the required marks.
+- Total marks exactly match.
 - Every question has difficulty.
 - Every question has cognitive.
 - Every question has answer.
 - Every question has solution.
-- Special question-type fields are present and valid.
+- All special question-type fields are valid.
 
-Return the complete repaired paper.
+Return the COMPLETE repaired paper.
 
 Return ONLY valid JSON.
 
 ==================================================
-REGENERATION RULES
+EXISTING REGENERATION RULES
 ==================================================
 
 {rules}

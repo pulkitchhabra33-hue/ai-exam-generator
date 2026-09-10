@@ -47,7 +47,10 @@ def format_instructions(text):
 
 
 def instructions_to_text(instructions_list):
-    return "\n".join(f"- {i}" for i in instructions_list)
+    return "\n".join(
+        f"- {i}"
+        for i in instructions_list
+    )
 
 
 json_format = """
@@ -78,256 +81,283 @@ Return ONLY valid JSON in this structure:
         }
     ]
 }
+"""
 
-Question-type rules:
 
-MCQ:
-- Include exactly four options.
-- The answer must identify one option using A, B, C, or D.
-- Include question, question_type, marks, difficulty, cognitive, options, answer and solution.
+def get_question_type_rules(question_type):
 
-True/False:
-- Include question, question_type, marks, difficulty, cognitive, answer and solution.
-- Do NOT include options.
-- Answer must be "True" or "False".
+    rules = {
+        "MCQ": """
+- question_type must be "MCQ".
+- Generate exactly four non-empty options.
+- answer must be A, B, C, or D.
+- Do not omit options.
+""",
 
-Fill in the Blanks:
-- Include the blank directly in the question using ______.
-- Do NOT include MCQ options.
-- Include question, question_type, marks, difficulty, cognitive, answer and solution.
+        "True/False": """
+- question_type must be "True/False".
+- Do not include MCQ options.
+- answer must be "True" or "False".
+""",
 
-Assertion-Reason:
-- Include:
-  "question": "Read the following Assertion and Reason.",
-  "assertion": "...",
-  "reason": "...",
-  "question_type": "Assertion-Reason",
-  "marks": 1,
-  "difficulty": "Medium",
-  "cognitive": "Understanding",
-  "answer": "...",
-  "solution": "..."
-- Assertion and Reason must be separate fields.
-- Do NOT put Assertion and Reason together in one field.
+        "Fill in the Blanks": """
+- question_type must be "Fill in the Blanks".
+- The question must contain ______.
+- Do not include MCQ options.
+""",
 
-Match the Following:
-- Include:
-  "question": "...",
-  "left_column": ["..."],
-  "right_column": ["..."],
-  "question_type": "Match the Following",
-  "marks": 1,
-  "difficulty": "Medium",
-  "cognitive": "Understanding",
-  "answer": "...",
-  "solution": "..."
-- left_column and right_column must both be non-empty.
+        "Assertion-Reason": """
+- question_type must be "Assertion-Reason".
+- Include a separate non-empty "assertion" field.
+- Include a separate non-empty "reason" field.
+- Do not combine assertion and reason into the question field.
+""",
+
+        "Match the Following": """
+- question_type must be "Match the Following".
+- Include non-empty "left_column".
+- Include non-empty "right_column".
 - Both columns must contain the same number of items.
-- Do NOT use MCQ options for Match the Following.
+- Do not use MCQ options.
+""",
 
-Source-Based:
-- Include:
-  "question": "...",
-  "source": "...",
-  "question_type": "Source-Based Questions",
-  "marks": 1,
-  "difficulty": "Medium",
-  "cognitive": "Understanding",
-  "answer": "...",
-  "solution": "..."
-- The source/passage must be meaningful and relevant to the question.
+        "Source-Based Questions": """
+- question_type must be "Source-Based Questions".
+- Include a meaningful non-empty "source" field.
+""",
 
-Diagram-Based:
-- Include:
-  "question": "...",
-  "diagram": "...",
-  "question_type": "Diagram-Based Questions",
-  "marks": 1,
-  "difficulty": "Medium",
-  "cognitive": "Application",
-  "answer": "...",
-  "solution": "..."
-- The diagram field must describe the required diagram clearly.
+        "Diagram-Based Questions": """
+- question_type must be "Diagram-Based Questions".
+- Include a meaningful non-empty "diagram" field.
+""",
 
-Case Study:
-- Include:
-  "question": "...",
-  "case": "...",
-  "question_type": "Case Study",
-  "marks": 1,
-  "difficulty": "Medium",
-  "cognitive": "Application",
-  "answer": "...",
-  "solution": "..."
-- The case must be meaningful and relevant to the questions.
+        "Case Study": """
+- question_type must be "Case Study".
+- Include a meaningful non-empty "case" field.
+""",
 
-General rules:
+        "Application-based": """
+- question_type must be "Application-based".
+""",
 
-- Generate exactly the requested number of questions.
-- Generate exactly the requested question type for each group.
-- Preserve the order of the question groups.
-- Do not merge different question types.
-- Do not add extra questions.
-- Every question must contain a non-empty "question" field.
-- Every question must contain "question_type".
-- Every question must contain "marks".
-- Every question must contain "difficulty".
-- Every question must contain "cognitive".
-- Every question must contain "answer".
-- Every question must contain "solution".
-- difficulty must be exactly "Easy", "Medium", or "Hard".
-- cognitive must be exactly "Recall", "Understanding", "Application", or "Analysis".
-- Follow the requested difficulty distribution.
-- Follow the requested cognitive distribution.
+        "HOTS": """
+- question_type must be "HOTS".
+""",
+
+        "One Word Answer": """
+- question_type must be "One Word Answer".
+""",
+
+        "Very Short Answer": """
+- question_type must be "Very Short Answer".
+""",
+
+        "Short Answer": """
+- question_type must be "Short Answer".
+""",
+
+        "Long Answer": """
+- question_type must be "Long Answer".
+"""
+    }
+
+    return rules.get(
+        question_type,
+        f"""
+- question_type must be "{question_type}".
+"""
+    )
+
+
+def build_group_prompt(
+        data,
+        section,
+        group,
+        exam_prompt,
+        exam_blueprint,
+        cognitive_blueprint,
+        instructions,
+        reference_paper
+):
+
+    section_name = section.get(
+        "section_name",
+        "Section A"
+    )
+
+    question_type = group["question_type"]
+    question_count = int(
+        group["question_count"]
+    )
+
+    marks_per_question = int(
+        group["marks_per_question"]
+    )
+
+    allocation = allocate_questions(
+        data.get(
+            "exam_type",
+            "General Exam Paper"
+        ),
+        question_count
+    )
+
+    question_type_rules = get_question_type_rules(
+        question_type
+    )
+
+    prompt = f"""
+You are generating one question-type group for an examination paper.
+
+You are NOT generating the complete examination paper.
+
+You are generating ONLY the requested question group below.
+
+==================================================
+EXAMINATION
+==================================================
+
+Exam Type: {data.get("exam_type")}
+Subject: {data.get("subject")}
+Class: {data.get("class_name")}
+Topics: {data.get("topics")}
+Overall Difficulty: {data.get("difficulty")}
+
+==================================================
+SECTION
+==================================================
+
+Section Name: {section_name}
+
+==================================================
+LOCKED QUESTION GROUP
+==================================================
+
+Question Type: {question_type}
+Question Count: {question_count}
+Marks Per Question: {marks_per_question}
+Group Total Marks: {group.get("marks")}
+
+THE FOLLOWING VALUES ARE ABSOLUTE:
+
+- Generate EXACTLY {question_count} questions.
+- Every generated question MUST have question_type "{question_type}".
+- Every generated question MUST have exactly {marks_per_question} marks.
+- Do NOT generate any other question type.
+- Do NOT generate fewer questions.
+- Do NOT generate additional questions.
+- Do NOT create sections.
+- Do NOT return questions belonging to another group.
+
+==================================================
+COGNITIVE ALLOCATION
+==================================================
+
+Recall: {allocation["recall"]}
+Understanding: {allocation["understanding"]}
+Application: {allocation["application"]}
+Analysis: {allocation["analysis"]}
+
+Use these integer allocations when assigning the cognitive field.
+
+==================================================
+REQUIRED METADATA
+==================================================
+
+Every question MUST contain:
+
+- question
+- question_type
+- marks
+- difficulty
+- cognitive
+- answer
+- solution
+
+difficulty must be exactly one of:
+
+- Easy
+- Medium
+- Hard
+
+cognitive must be exactly one of:
+
+- Recall
+- Understanding
+- Application
+- Analysis
+
+==================================================
+QUESTION TYPE RULES
+==================================================
+
+{question_type_rules}
+
+==================================================
+EXAM REQUIREMENTS
+==================================================
+
+{exam_prompt}
+
+==================================================
+EXAM BLUEPRINT
+==================================================
+
+{exam_blueprint}
+
+==================================================
+INSTRUCTIONS
+==================================================
+
+{instructions}
+
+==================================================
+REFERENCE INFORMATION
+==================================================
+
+{reference_paper}
+
+==================================================
+OUTPUT
+==================================================
+
+Return ONLY valid JSON.
+
+Return exactly this structure:
+
+{{
+    "questions": [
+        {{
+            "question": "Question text",
+            "question_type": "{question_type}",
+            "marks": {marks_per_question},
+            "difficulty": "Medium",
+            "cognitive": "Application",
+            "answer": "Answer",
+            "solution": "Solution"
+        }}
+    ]
+}}
+
+The questions array MUST contain exactly {question_count} items.
+
+Every item MUST have question_type exactly "{question_type}".
+
+Every item MUST have marks exactly {marks_per_question}.
+
+Do not return a title.
+
+Do not return sections.
+
+Do not return explanations outside JSON.
+
+Return ONLY JSON.
 """
 
+    return prompt
 
-def generate_paper(data, uploaded_content="", pattern_summary=""):
 
-    logger.info("Received paper generation request.")
-
-    exam_prompt = get_exam_prompt(data["exam_type"])
-    exam_blueprint = get_blueprint(data["exam_type"])
-
-    section_data = ""
-    exam_type = data.get(
-        "exam_type",
-        "General Exam Paper"
-    )
-
-    if data.get("sections"):
-
-        for index, section in enumerate(data["sections"]):
-
-            section_name = (
-                section.get("section_name")
-                or f"Section {chr(65 + index)}"
-            )
-
-            total_marks = section["marks"]
-            total_questions = section["question_count"]
-
-            section_data += f"""
-{section_name}:
-Total Marks: {total_marks}
-Total Questions: {total_questions}
-
-QUESTION TYPE GROUPS:
-"""
-
-            for group in section.get("question_groups", []):
-
-                question_type = group["question_type"]
-                question_count = group["question_count"]
-                marks_per_question = group["marks_per_question"]
-                group_marks = group["marks"]
-
-                allocation = allocate_questions(
-                    exam_type,
-                    question_count
-                )
-
-                logger.info(
-                    f"{section_name} - {question_type} Allocation: {allocation}"
-                )
-
-                section_data += f"""
-- Question Type: {question_type}
-  Question Count: {question_count}
-  Marks Per Question: {marks_per_question}
-  Total Marks: {group_marks}
-
-  COGNITIVE DISTRIBUTION:
-  - Recall Questions: {allocation["recall"]}
-  - Understanding Questions: {allocation["understanding"]}
-  - Application Questions: {allocation["application"]}
-  - Analysis Questions: {allocation["analysis"]}
-
-  IMPORTANT:
-  Generate EXACTLY {question_count} questions of type {question_type}.
-  Each question must carry exactly {marks_per_question} marks.
-"""
-
-            section_data += f"""
-IMPORTANT:
-- Generate EXACTLY {total_questions} questions in {section_name}.
-- Generate EXACTLY the specified question count for every question type group.
-- Do NOT move questions between question type groups.
-- Preserve the exact order of the question type groups.
-"""
-
-    else:
-
-        section_data = "Use standard exam pattern"
-
-    instructions_list = format_instructions(
-        data.get("instructions", "")
-    )
-
-    instructions = instructions_to_text(
-        instructions_list
-    )
-
-    cognitive_blueprint = get_cognitive_blueprint(
-        exam_type
-    )
-
-    reference_paper = ""
-
-    if pattern_summary.strip():
-
-        reference_paper = f"""
-REFERENCE PAPER ANALYSIS
-
-{pattern_summary}
-
-IMPORTANT:
-
-Use this analysis to generate a NEW examination paper.
-
-Follow:
-- The same pattern
-- Similar difficulty
-- Similar structure
-- Similar assessment style
-
-Do NOT copy any question.
-
-Create completely original questions.
-"""
-
-    prompt = build_prompt(
-        data=data,
-        exam_type=exam_type,
-        section_data=section_data,
-        instructions=instructions,
-        reference_paper=reference_paper,
-        json_format=json_format,
-        cognitive_blueprint=cognitive_blueprint,
-        exam_prompt=exam_prompt,
-        exam_blueprint=exam_blueprint
-    )
-
-    encoding = tiktoken.get_encoding(
-        "cl100k_base"
-    )
-
-    prompt_tokens = len(
-        encoding.encode(prompt)
-    )
-
-    logger.info(
-        f"PROMPT TOKENS: {prompt_tokens}"
-    )
-
-    logger.info(
-        f"REFERENCE PAPER LENGTH: {len(reference_paper)}"
-    )
-
-    print(
-        "[GEN] Calling OpenAI now",
-        flush=True
-    )
+def call_openai_json(prompt):
 
     try:
 
@@ -348,73 +378,466 @@ Create completely original questions.
     except Exception as e:
 
         logger.exception(
-            "Generation OpenAI API call failed."
+            "OpenAI API call failed."
         )
 
         return {
-            "error": "Generation AI request failed.",
+            "error": "AI request failed.",
             "details": str(e)
         }
-
-    print(
-        "[GEN] OpenAI returned",
-        flush=True
-    )
-
-    print(
-        "[GEN] Parsing OpenAI response",
-        flush=True
-    )
 
     try:
 
         content = response.choices[0].message.content
 
-        print(
-            "[GEN] Response content received",
-            flush=True
-        )
-
     except Exception as e:
 
         return {
-            "error": "AI response structure issue",
+            "error": "AI response structure issue.",
             "details": str(e),
             "raw": str(response)
         }
 
     try:
 
-        parsed = json.loads(content)
-
-        print(
-            "[GEN] JSON parsed successfully",
-            flush=True
-        )
-
-        return parsed
+        return json.loads(content)
 
     except Exception as e:
 
         return {
-            "error": "Invalid JSON from AI",
+            "error": "Invalid JSON from AI.",
             "details": str(e),
             "raw_response": content
         }
 
 
-def regenerate_paper(regeneration_prompt):
+def validate_group_output(
+        result,
+        question_type,
+        question_count,
+        marks_per_question
+):
+
+    if not isinstance(result, dict):
+
+        return False
+
+    questions = result.get(
+        "questions",
+        []
+    )
+
+    if not isinstance(
+        questions,
+        list
+    ):
+
+        return False
+
+    if len(questions) != question_count:
+
+        return False
+
+    for question in questions:
+
+        if not isinstance(
+            question,
+            dict
+        ):
+
+            return False
+
+        if question.get(
+            "question_type"
+        ) != question_type:
+
+            return False
+
+        if question.get(
+            "marks"
+        ) != marks_per_question:
+
+            return False
+
+        if not str(
+            question.get(
+                "question",
+                ""
+            )
+        ).strip():
+
+            return False
+
+        if not str(
+            question.get(
+                "difficulty",
+                ""
+            )
+        ).strip():
+
+            return False
+
+        if question.get(
+            "difficulty"
+        ) not in (
+            "Easy",
+            "Medium",
+            "Hard"
+        ):
+
+            return False
+
+        if question.get(
+            "cognitive"
+        ) not in (
+            "Recall",
+            "Understanding",
+            "Application",
+            "Analysis"
+        ):
+
+            return False
+
+        if not str(
+            question.get(
+                "answer",
+                ""
+            )
+        ).strip():
+
+            return False
+
+        if not str(
+            question.get(
+                "solution",
+                ""
+            )
+        ).strip():
+
+            return False
+
+    return True
+
+
+def generate_question_group(
+        data,
+        section,
+        group,
+        exam_prompt,
+        exam_blueprint,
+        cognitive_blueprint,
+        instructions,
+        reference_paper
+):
+
+    question_type = group["question_type"]
+
+    question_count = int(
+        group["question_count"]
+    )
+
+    marks_per_question = int(
+        group["marks_per_question"]
+    )
+
+    max_attempts = 3
+
+    for attempt in range(
+        1,
+        max_attempts + 1
+    ):
+
+        logger.info(
+            f"Generating group: "
+            f"{question_type} | "
+            f"Attempt {attempt}/{max_attempts}"
+        )
+
+        prompt = build_group_prompt(
+            data=data,
+            section=section,
+            group=group,
+            exam_prompt=exam_prompt,
+            exam_blueprint=exam_blueprint,
+            cognitive_blueprint=cognitive_blueprint,
+            instructions=instructions,
+            reference_paper=reference_paper
+        )
+
+        encoding = tiktoken.get_encoding(
+            "cl100k_base"
+        )
+
+        logger.info(
+            f"GROUP PROMPT TOKENS: "
+            f"{len(encoding.encode(prompt))}"
+        )
+
+        result = call_openai_json(
+            prompt
+        )
+
+        if (
+            "error" not in result
+            and validate_group_output(
+                result,
+                question_type,
+                question_count,
+                marks_per_question
+            )
+        ):
+
+            logger.info(
+                f"Group generated successfully: "
+                f"{question_type}"
+            )
+
+            return result["questions"]
+
+        logger.warning(
+            f"Invalid group output for "
+            f"{question_type} on attempt {attempt}."
+        )
+
+    return {
+        "error": (
+            f"Unable to generate exactly "
+            f"{question_count} questions of type "
+            f"{question_type}."
+        )
+    }
+
+
+def generate_paper(
+        data,
+        uploaded_content="",
+        pattern_summary=""
+):
+
+    logger.info(
+        "Received paper generation request."
+    )
+
+    exam_type = data.get(
+        "exam_type",
+        "General Exam Paper"
+    )
+
+    exam_prompt = get_exam_prompt(
+        exam_type
+    )
+
+    exam_blueprint = get_blueprint(
+        exam_type
+    )
+
+    cognitive_blueprint = get_cognitive_blueprint(
+        exam_type
+    )
+
+    instructions_list = format_instructions(
+        data.get(
+            "instructions",
+            ""
+        )
+    )
+
+    instructions = instructions_to_text(
+        instructions_list
+    )
+
+    reference_paper = ""
+
+    if pattern_summary.strip():
+
+        reference_paper = f"""
+REFERENCE PAPER ANALYSIS
+
+{pattern_summary}
+
+Use this information for:
+
+- Similar difficulty.
+- Similar assessment style.
+- Similar structure.
+
+Do NOT copy questions.
+
+Generate completely original questions.
+"""
+
+    sections = []
+
+    for section in data.get(
+        "sections",
+        []
+    ):
+
+        section_name = (
+            section.get(
+                "section_name"
+            )
+            or "Section A"
+        )
+
+        expected_questions = int(
+            section["question_count"]
+        )
+
+        expected_marks = int(
+            section["marks"]
+        )
+
+        groups = section.get(
+            "question_groups",
+            []
+        )
+
+        generated_questions = []
+
+        for group in groups:
+
+            questions = generate_question_group(
+                data=data,
+                section=section,
+                group=group,
+                exam_prompt=exam_prompt,
+                exam_blueprint=exam_blueprint,
+                cognitive_blueprint=cognitive_blueprint,
+                instructions=instructions,
+                reference_paper=reference_paper
+            )
+
+            if isinstance(
+                questions,
+                dict
+            ) and "error" in questions:
+
+                return questions
+
+            generated_questions.extend(
+                questions
+            )
+
+        actual_question_count = len(
+            generated_questions
+        )
+
+        actual_marks = sum(
+            int(
+                question.get(
+                    "marks",
+                    0
+                )
+            )
+            for question in generated_questions
+        )
+
+        if actual_question_count != expected_questions:
+
+            return {
+                "error": (
+                    f"{section_name} generation failed: "
+                    f"expected {expected_questions} "
+                    f"questions, got "
+                    f"{actual_question_count}."
+                )
+            }
+
+        if actual_marks != expected_marks:
+
+            return {
+                "error": (
+                    f"{section_name} generation failed: "
+                    f"expected {expected_marks} marks, "
+                    f"got {actual_marks}."
+                )
+            }
+
+        sections.append(
+            {
+                "section_name": section_name,
+                "questions": generated_questions
+            }
+        )
+
+    total_questions = sum(
+        len(
+            section["questions"]
+        )
+        for section in sections
+    )
+
+    total_marks = sum(
+        sum(
+            int(
+                question.get(
+                    "marks",
+                    0
+                )
+            )
+            for question in section["questions"]
+        )
+        for section in sections
+    )
+
+    if total_questions != sum(
+        int(
+            section["question_count"]
+        )
+        for section in data.get(
+            "sections",
+            []
+        )
+    ):
+
+        return {
+            "error": (
+                "Final generation failed: "
+                "total question count mismatch."
+            )
+        }
+
+    if total_marks != int(
+        data.get(
+            "total_marks",
+            0
+        )
+    ):
+
+        return {
+            "error": (
+                "Final generation failed: "
+                "total marks mismatch."
+            )
+        }
+
+    return {
+        "title": data.get(
+            "exam_name",
+            "Exam Paper"
+        ),
+        "sections": sections
+    }
+
+
+def regenerate_paper(
+        regeneration_prompt
+):
 
     encoding = tiktoken.get_encoding(
         "cl100k_base"
     )
 
     prompt_tokens = len(
-        encoding.encode(regeneration_prompt)
+        encoding.encode(
+            regeneration_prompt
+        )
     )
 
     logger.info(
-        f"REGENERATION PROMPT TOKENS: {prompt_tokens}"
+        f"REGENERATION PROMPT TOKENS: "
+        f"{prompt_tokens}"
     )
 
     print(
@@ -425,53 +848,15 @@ def regenerate_paper(regeneration_prompt):
     full_regeneration_prompt = f"""
 {regeneration_prompt}
 
-============================================================
-FINAL REGENERATION REQUIREMENTS
-============================================================
+==================================================
+REGENERATION OUTPUT RULES
+==================================================
 
-You are repairing an already generated examination paper.
+Repair the existing examination paper.
 
-You MUST modify the existing paper rather than redesigning it.
+Return ONLY valid JSON.
 
-The validation feedback identifies specific problems.
-Fix those problems while preserving everything that is already valid.
-
-============================================================
-STRUCTURE PRESERVATION
-============================================================
-
-The regenerated paper MUST preserve:
-
-- The exact number of sections.
-- The exact section order.
-- The exact section names.
-- The exact number of questions in every section.
-- The exact question order.
-- The exact question-type distribution in every section.
-- The exact question type of every existing question.
-- The exact marks of every question unless the validation feedback explicitly identifies a marks error.
-- The existing question group structure.
-
-Do NOT:
-
-- Add extra questions.
-- Remove questions.
-- Merge questions.
-- Split questions.
-- Move questions between sections.
-- Change a question from one question type to another.
-- Create a new section.
-- Delete a section.
-- Change section names.
-- Change question counts merely to solve another validation error.
-
-If a question is invalid, replace or rewrite the CONTENT of that question while keeping its position, question type, marks and required metadata.
-
-============================================================
-QUESTION METADATA
-============================================================
-
-EVERY question in the regenerated paper MUST contain:
+Every question MUST contain:
 
 - question
 - question_type
@@ -481,282 +866,85 @@ EVERY question in the regenerated paper MUST contain:
 - answer
 - solution
 
-difficulty MUST be exactly one of:
+difficulty must be exactly:
 
-- Easy
-- Medium
-- Hard
+Easy
+Medium
+Hard
 
-cognitive MUST be exactly one of:
+cognitive must be exactly:
 
-- Recall
-- Understanding
-- Application
-- Analysis
+Recall
+Understanding
+Application
+Analysis
 
-Do NOT omit difficulty.
+For Assertion-Reason questions:
 
-Do NOT omit cognitive.
+- Include assertion.
+- Include reason.
+- Keep them as separate fields.
 
-Do NOT replace difficulty or cognitive with null, empty strings, or other values.
+For Match the Following questions:
 
-Preserve the existing difficulty and cognitive values when they are already valid.
+- Include left_column.
+- Include right_column.
+- Both must be non-empty.
+- Both must have equal length.
 
-Only change them when necessary to satisfy the validation feedback or the required blueprint.
+For MCQ:
 
-============================================================
-QUESTION-TYPE REQUIREMENTS
-============================================================
-
-MCQ:
-
-- question must be non-empty.
-- question_type must be "MCQ".
 - Include exactly four options.
-- options must contain four non-empty items.
-- answer must be A, B, C, or D.
-- Include solution.
+- Answer must be A, B, C, or D.
 
-True/False:
+For True/False:
 
-- question_type must be "True/False".
-- Do not include MCQ options.
-- answer must be "True" or "False".
-- Include solution.
+- Answer must be True or False.
 
-Fill in the Blanks:
+For Fill in the Blanks:
 
-- question_type must be "Fill in the Blanks".
-- The question must contain a blank using ______.
-- Do not include MCQ options.
-- Include answer and solution.
+- Include ______ in the question.
 
-Assertion-Reason:
+For Source-Based Questions:
 
-- question_type must be "Assertion-Reason".
-- Include a separate "assertion" field.
-- Include a separate "reason" field.
-- Assertion must be non-empty.
-- Reason must be non-empty.
-- Do NOT combine Assertion and Reason into the question field.
-- Include answer and solution.
+- Include source.
 
-Match the Following:
+For Diagram-Based Questions:
 
-- question_type must be "Match the Following".
-- Include "left_column".
-- Include "right_column".
-- Both columns must be non-empty lists.
-- Both columns must contain the same number of items.
-- Do not use MCQ options.
-- Include answer and solution.
+- Include diagram.
 
-Source-Based Questions:
+For Case Study:
 
-- question_type must be "Source-Based Questions".
-- Include a meaningful non-empty "source" field.
-- Include answer and solution.
+- Include case.
 
-Diagram-Based Questions:
+MOST IMPORTANT:
 
-- question_type must be "Diagram-Based Questions".
-- Include a meaningful non-empty "diagram" field.
-- Include answer and solution.
+Do not change the number of sections.
 
-Case Study:
+Do not change section order.
 
-- question_type must be "Case Study".
-- Include a meaningful non-empty "case" field.
-- Include answer and solution.
+Do not change section names.
 
-Other question types:
+Do not add questions.
 
-- Preserve their existing question_type.
-- Preserve their position.
-- Preserve their marks.
-- Include question, question_type, marks, difficulty, cognitive, answer and solution.
+Do not remove questions.
 
-============================================================
-MARKS PRESERVATION
-============================================================
+Do not move questions between sections.
 
-Preserve the marks of every valid question.
+Do not change question types unless the validation feedback explicitly identifies a wrong question type.
 
-The sum of question marks in each section MUST remain equal to the required section marks.
+Do not change valid marks.
 
-The total paper marks MUST remain equal to the required total marks.
-
-Do not reduce the number of questions to solve a marks problem.
-
-Do not increase the number of questions to solve a marks problem.
-
-Correct the marks of existing questions only when the validation feedback explicitly identifies a marks mismatch.
-
-============================================================
-VALIDATION REPAIR
-============================================================
-
-Fix EVERY validation error supplied in the regeneration prompt.
-
-When the feedback says that a question type count is wrong:
-
-- Keep the total number of questions unchanged.
-- Keep the section unchanged.
-- Keep the required question positions.
-- Correct the question type distribution by replacing the content/type of existing questions where necessary.
-
-When the feedback identifies missing fields:
-
-- Add the missing field to the affected question.
-- Do not remove the question.
-- Do not create an additional question.
-
-When the feedback identifies difficulty or cognitive distribution problems:
-
-- Correct the difficulty/cognitive values of existing questions.
-- Do not change the number of questions.
-- Keep the required question types and marks unchanged.
-
-When the feedback identifies duplicate or similar questions:
-
-- Rewrite the affected question content.
-- Preserve its question type, marks, difficulty, cognitive level and position unless the validation feedback requires otherwise.
-
-============================================================
-FINAL SELF-CHECK
-============================================================
-
-Before returning the JSON, verify ALL of the following:
-
-- Correct number of sections.
-- Correct section names.
-- Correct section order.
-- Correct number of questions per section.
-- Correct question order.
-- Correct question-type counts.
-- Correct marks per question.
-- Correct section marks.
-- Correct total marks.
-- Every question has question.
-- Every question has question_type.
-- Every question has marks.
-- Every question has difficulty.
-- Every question has cognitive.
-- Every question has answer.
-- Every question has solution.
-- Assertion-Reason questions have assertion and reason.
-- Match the Following questions have valid left_column and right_column.
-- MCQs have exactly four options.
-- True/False questions have True or False answers.
-- Fill in the Blanks questions contain a blank.
-- Source-Based questions contain source.
-- Diagram-Based questions contain diagram.
-- Case Study questions contain case.
-
-Return the COMPLETE repaired paper.
-
-Return ONLY valid JSON.
-
-============================================================
-JSON STRUCTURE
-============================================================
-
-{{
-    "title": "Exam Paper Title",
-    "sections": [
-        {{
-            "section_name": "Section A",
-            "questions": [
-                {{
-                    "question": "Question text",
-                    "question_type": "MCQ",
-                    "marks": 1,
-                    "difficulty": "Medium",
-                    "cognitive": "Application",
-                    "options": [
-                        "Option 1",
-                        "Option 2",
-                        "Option 3",
-                        "Option 4"
-                    ],
-                    "answer": "A",
-                    "solution": "Explanation of the answer"
-                }}
-            ]
-        }}
-    ]
-}}
+Return the complete repaired paper.
 
 Return ONLY JSON.
 """
 
-    try:
-
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            timeout=60.0,
-            response_format={
-                "type": "json_object"
-            },
-            messages=[
-                {
-                    "role": "user",
-                    "content": full_regeneration_prompt
-                }
-            ]
-        )
-
-    except Exception as e:
-
-        logger.exception(
-            "Regeneration OpenAI API call failed."
-        )
-
-        return {
-            "error": "Regeneration AI request failed.",
-            "details": str(e)
-        }
-
-    print(
-        "[REGEN] OpenAI returned",
-        flush=True
+    result = call_openai_json(
+        full_regeneration_prompt
     )
 
-    try:
-
-        print_usage(response)
-
-    except Exception as e:
-
-        logger.error(
-            f"Unable to read OpenAI usage data: {e}"
-        )
-
-    try:
-
-        content = response.choices[0].message.content
-
-    except Exception as e:
-
-        return {
-            "error": "AI response structure issue",
-            "details": str(e),
-            "raw": str(response)
-        }
-
-    try:
-
-        parsed = json.loads(content)
-
-        return parsed
-
-    except Exception as e:
-
-        return {
-            "error": "Invalid JSON from AI",
-            "details": str(e),
-            "raw_response": content
-        }
+    return result
 
 
 def print_usage(response):
@@ -766,13 +954,16 @@ def print_usage(response):
     print()
 
     logger.info(
-        f"Prompt Tokens: {usage.prompt_tokens}"
+        f"Prompt Tokens: "
+        f"{usage.prompt_tokens}"
     )
 
     logger.info(
-        f"Completion Tokens: {usage.completion_tokens}"
+        f"Completion Tokens: "
+        f"{usage.completion_tokens}"
     )
 
     logger.info(
-        f"Total Tokens: {usage.total_tokens}"
+        f"Total Tokens: "
+        f"{usage.total_tokens}"
     )

@@ -53,6 +53,8 @@ Return ONLY valid JSON in this structure:
                     "question": "Question text",
                     "question_type": "MCQ",
                     "marks": 1,
+                    "difficulty": "Medium",
+                    "cognitive": "Application",
                     "options": [
                         "Option 1",
                         "Option 2",
@@ -131,12 +133,23 @@ Case Study:
 - The case must be meaningful and relevant to the questions.
 
 General rules:
+
 - Generate exactly the requested number of questions.
 - Generate exactly the requested question type for each group.
 - Preserve the order of the question groups.
 - Do not merge different question types.
 - Do not add extra questions.
 - Every question must contain a non-empty "question" field.
+- Every question must contain "question_type".
+- Every question must contain "marks".
+- Every question must contain "difficulty".
+- Every question must contain "cognitive".
+- Every question must contain "answer".
+- Every question must contain "solution".
+- difficulty must be exactly "Easy", "Medium", or "Hard".
+- cognitive must be exactly "Recall", "Understanding", "Application", or "Analysis".
+- Follow the requested difficulty distribution.
+- Follow the requested cognitive distribution.
 """
 
 def generate_paper(data, uploaded_content="", pattern_summary=""):

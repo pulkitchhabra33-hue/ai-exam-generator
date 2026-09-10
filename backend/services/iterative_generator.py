@@ -35,6 +35,19 @@ def iterative_generation(
             subject
         )
 
+        logger.info(
+            f"VALIDATION ERRORS: {validation.get('errors', [])}"
+        )
+
+        for validator_name, validator_result in validation.get(
+                "details",
+                {}
+        ).items():
+            logger.info(
+                f"{validator_name}: "
+                f"{len(validator_result.get('errors', []))} errors"
+            )
+
         current_errors = len(
             validation["errors"]
         )

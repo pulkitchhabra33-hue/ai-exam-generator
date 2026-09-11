@@ -329,42 +329,179 @@ def build_group_prompt(
 
     if question_type == "MCQ":
         output_example = f"""
-    {{
-        "questions": [
-            {{
-                "question": "Question text",
-                "question_type": "MCQ",
-                "marks": {marks_per_question},
-                "difficulty": "Medium",
-                "cognitive": "Application",
-                "options": [
-                    "Option 1",
-                    "Option 2",
-                    "Option 3",
-                    "Option 4"
-                ],
-                "answer": "A",
-                "solution": "Explanation of the correct answer"
-            }}
-        ]
-    }}
-    """
+        {{
+            "questions": [
+                {{
+                    "question": "Question text",
+                    "question_type": "MCQ",
+                    "marks": {marks_per_question},
+                    "difficulty": "Medium",
+                    "cognitive": "Application",
+                    "options": [
+                        "Option 1",
+                        "Option 2",
+                        "Option 3",
+                        "Option 4"
+                    ],
+                    "answer": "A",
+                    "solution": "Explanation of the correct answer"
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "True/False":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "Statement that can be evaluated as true or false.",
+                    "question_type": "True/False",
+                    "marks": {marks_per_question},
+                    "difficulty": "Easy",
+                    "cognitive": "Recall",
+                    "answer": "True",
+                    "solution": "Explanation of why the statement is true or false."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "Fill in the Blanks":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "The SI unit of force is ______.",
+                    "question_type": "Fill in the Blanks",
+                    "marks": {marks_per_question},
+                    "difficulty": "Easy",
+                    "cognitive": "Recall",
+                    "answer": "Newton",
+                    "solution": "The SI unit of force is Newton."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "Assertion-Reason":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "Select the correct relationship between the Assertion and Reason.",
+                    "question_type": "Assertion-Reason",
+                    "marks": {marks_per_question},
+                    "difficulty": "Medium",
+                    "cognitive": "Analysis",
+                    "assertion": "A separate assertion statement.",
+                    "reason": "A separate reason statement.",
+                    "answer": "Both Assertion and Reason are true, and Reason correctly explains Assertion.",
+                    "solution": "Explanation of the relationship between the assertion and reason."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "Match the Following":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "Match Column I with Column II.",
+                    "question_type": "Match the Following",
+                    "marks": {marks_per_question},
+                    "difficulty": "Medium",
+                    "cognitive": "Understanding",
+                    "left_column": [
+                        "Item 1",
+                        "Item 2",
+                        "Item 3",
+                        "Item 4"
+                    ],
+                    "right_column": [
+                        "Option A",
+                        "Option B",
+                        "Option C",
+                        "Option D"
+                    ],
+                    "answer": "1-A, 2-C, 3-D, 4-B",
+                    "solution": "Explanation of each correct matching."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "Source-Based Questions":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "Answer the question based on the given source.",
+                    "question_type": "Source-Based Questions",
+                    "marks": {marks_per_question},
+                    "difficulty": "Medium",
+                    "cognitive": "Analysis",
+                    "source": "A meaningful source passage, data, statement, extract, or information related to the subject.",
+                    "answer": "Answer based on the source.",
+                    "solution": "Explanation using the information provided in the source."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "Diagram-Based Questions":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "Study the diagram and answer the question.",
+                    "question_type": "Diagram-Based Questions",
+                    "marks": {marks_per_question},
+                    "difficulty": "Medium",
+                    "cognitive": "Application",
+                    "diagram": "Description of the required diagram or visual representation.",
+                    "answer": "Answer based on the diagram.",
+                    "solution": "Explanation based on the diagram."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "Case Study":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "Answer the question based on the case study.",
+                    "question_type": "Case Study",
+                    "marks": {marks_per_question},
+                    "difficulty": "Medium",
+                    "cognitive": "Application",
+                    "case": "A detailed and meaningful case, scenario, experiment, passage, or real-world situation related to the subject.",
+                    "answer": "Answer based on the case.",
+                    "solution": "Explanation of the answer using the case information."
+                }}
+            ]
+        }}
+        """
+
     else:
         output_example = f"""
-    {{
-        "questions": [
-            {{
-                "question": "Question text",
-                "question_type": "{question_type}",
-                "marks": {marks_per_question},
-                "difficulty": "Medium",
-                "cognitive": "Application",
-                "answer": "Answer",
-                "solution": "Solution"
-            }}
-        ]
-    }}
-    """
+        {{
+            "questions": [
+                {{
+                    "question": "Question text",
+                    "question_type": "{question_type}",
+                    "marks": {marks_per_question},
+                    "difficulty": "Medium",
+                    "cognitive": "Application",
+                    "answer": "Answer",
+                    "solution": "Solution"
+                }}
+            ]
+        }}
+        """
         
     prompt = f"""
 You are generating one question-type group for an examination paper.

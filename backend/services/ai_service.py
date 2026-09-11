@@ -169,16 +169,136 @@ def get_question_type_rules(question_type):
     )
 
 
+def allocate_integer_counts(total_questions, distribution):
+
+    if total_questions <= 0 or not distribution:
+        return {}
+
+    total_distribution = sum(distribution.values())
+
+    if total_distribution <= 0:
+        return {}
+
+    normalized = {
+        key: value / total_distribution
+        for key, value in distribution.items()
+    }
+
+    raw = {
+        key: total_questions * value
+        for key, value in normalized.items()
+    }
+
+    counts = {
+        key: int(value)
+        for key, value in raw.items()
+    }
+
+    remaining = total_questions - sum(counts.values())
+
+    remainders = sorted(
+        normalized.keys(),
+        key=lambda key: raw[key] - counts[key],
+        reverse=True
+    )
+
+    for key in remainders[:remaining]:
+        counts[key] += 1
+
+    return counts
+
+
+def distribute_targets(total_targets, group_sizes):
+
+    remaining_targets = dict(total_targets)
+
+    remaining_questions = sum(group_sizes)
+
+    allocations = []
+
+    for index, group_size in enumerate(group_sizes):
+
+        if index == len(group_sizes) - 1:
+
+            allocation = dict(remaining_targets)
+
+        else:
+
+            raw = {}
+
+            for key, target in remaining_targets.items():
+
+                raw[key] = (
+                    target * group_size
+                    / remaining_questions
+                )
+
+            allocation = {
+                key: int(value)
+                for key, value in raw.items()
+            }
+
+            remaining = group_size - sum(
+                allocation.values()
+            )
+
+            remainders = sorted(
+                raw.keys(),
+                key=lambda key: (
+                    raw[key] - allocation[key]
+                ),
+                reverse=True
+            )
+
+            for key in remainders[:remaining]:
+                allocation[key] += 1
+
+        allocations.append(allocation)
+
+        for key, value in allocation.items():
+
+            remaining_targets[key] = (
+                remaining_targets.get(key, 0) - value
+            )
+
+        remaining_questions -= group_size
+
+    return allocations
+
+
 def build_group_prompt(
-        data,
-        section,
-        group,
-        exam_prompt,
-        exam_blueprint,
-        cognitive_blueprint,
-        instructions,
-        reference_paper
+    data,
+    section,
+    group,
+    exam_prompt,
+    exam_blueprint,
+    cognitive_blueprint,
+    instructions,
+    reference_paper,
+    existing_questions=None,
+    cognitive_allocation=None
 ):
+
+    if existing_questions is None:
+        existing_questions = []
+
+    if cognitive_allocation is None:
+
+        cognitive_allocation = {
+            "recall": 0,
+            "understanding": 0,
+            "application": 0,
+            "analysis": 0
+        }
+
+    existing_question_text = "\n".join(
+        f"- {question.get('question', '').strip()}"
+        for question in existing_questions
+        if question.get("question")
+    )
+
+    if not existing_question_text:
+        existing_question_text = "No previous questions."
 
     section_name = section.get(
         "section_name",
@@ -186,20 +306,13 @@ def build_group_prompt(
     )
 
     question_type = group["question_type"]
+
     question_count = int(
         group["question_count"]
     )
 
     marks_per_question = int(
         group["marks_per_question"]
-    )
-
-    allocation = allocate_questions(
-        data.get(
-            "exam_type",
-            "General Exam Paper"
-        ),
-        question_count
     )
 
     question_type_rules = get_question_type_rules(
@@ -253,12 +366,15 @@ THE FOLLOWING VALUES ARE ABSOLUTE:
 COGNITIVE ALLOCATION
 ==================================================
 
-Recall: {allocation["recall"]}
-Understanding: {allocation["understanding"]}
-Application: {allocation["application"]}
-Analysis: {allocation["analysis"]}
+Recall: {cognitive_allocation.get("recall", 0)}
+Understanding: {cognitive_allocation.get("understanding", 0)}
+Application: {cognitive_allocation.get("application", 0)}
+Analysis: {cognitive_allocation.get("analysis", 0)}
 
-Use these integer allocations when assigning the cognitive field.
+These are exact integer targets for this group.
+
+The total number of questions assigned across these cognitive
+levels MUST equal {question_count}.
 
 ==================================================
 REQUIRED METADATA
@@ -316,6 +432,25 @@ REFERENCE INFORMATION
 ==================================================
 
 {reference_paper}
+
+==================================================
+QUESTIONS ALREADY GENERATED IN THIS PAPER
+==================================================
+
+{existing_question_text}
+
+Every new question must be substantially different from every
+question listed above.
+
+Do not repeat:
+
+- The same question wording.
+- The same numerical values.
+- The same scenario.
+- The same concept using nearly identical wording.
+- The same answer with only superficial wording changes.
+
+Create genuinely different questions.
 
 ==================================================
 OUTPUT
@@ -412,14 +547,13 @@ def call_openai_json(prompt):
 
 
 def validate_group_output(
-        result,
-        question_type,
-        question_count,
-        marks_per_question
+    result,
+    question_type,
+    question_count,
+    marks_per_question
 ):
 
     if not isinstance(result, dict):
-
         return False
 
     questions = result.get(
@@ -431,11 +565,9 @@ def validate_group_output(
         questions,
         list
     ):
-
         return False
 
     if len(questions) != question_count:
-
         return False
 
     for question in questions:
@@ -444,19 +576,16 @@ def validate_group_output(
             question,
             dict
         ):
-
             return False
 
         if question.get(
             "question_type"
         ) != question_type:
-
             return False
 
         if question.get(
             "marks"
         ) != marks_per_question:
-
             return False
 
         if not str(
@@ -465,16 +594,6 @@ def validate_group_output(
                 ""
             )
         ).strip():
-
-            return False
-
-        if not str(
-            question.get(
-                "difficulty",
-                ""
-            )
-        ).strip():
-
             return False
 
         if question.get(
@@ -484,7 +603,6 @@ def validate_group_output(
             "Medium",
             "Hard"
         ):
-
             return False
 
         if question.get(
@@ -495,7 +613,6 @@ def validate_group_output(
             "Application",
             "Analysis"
         ):
-
             return False
 
         if not str(
@@ -504,7 +621,6 @@ def validate_group_output(
                 ""
             )
         ).strip():
-
             return False
 
         if not str(
@@ -513,22 +629,25 @@ def validate_group_output(
                 ""
             )
         ).strip():
-
             return False
 
     return True
 
-
 def generate_question_group(
-        data,
-        section,
-        group,
-        exam_prompt,
-        exam_blueprint,
-        cognitive_blueprint,
-        instructions,
-        reference_paper
+    data,
+    section,
+    group,
+    exam_prompt,
+    exam_blueprint,
+    cognitive_blueprint,
+    instructions,
+    reference_paper,
+    existing_questions=None,
+    cognitive_allocation=None
 ):
+
+    if existing_questions is None:
+        existing_questions = []
 
     question_type = group["question_type"]
 
@@ -561,7 +680,9 @@ def generate_question_group(
             exam_blueprint=exam_blueprint,
             cognitive_blueprint=cognitive_blueprint,
             instructions=instructions,
-            reference_paper=reference_paper
+            reference_paper=reference_paper,
+            existing_questions=existing_questions,
+            cognitive_allocation=cognitive_allocation
         )
 
         encoding = tiktoken.get_encoding(
@@ -578,7 +699,8 @@ def generate_question_group(
         )
 
         if (
-            "error" not in result
+            isinstance(result, dict)
+            and "error" not in result
             and validate_group_output(
                 result,
                 question_type,
@@ -609,9 +731,9 @@ def generate_question_group(
 
 
 def generate_paper(
-        data,
-        uploaded_content="",
-        pattern_summary=""
+    data,
+    uploaded_content="",
+    pattern_summary=""
 ):
 
     logger.info(
@@ -666,7 +788,110 @@ Do NOT copy questions.
 Generate completely original questions.
 """
 
+    all_groups = []
+
+    for section in data.get(
+        "sections",
+        []
+    ):
+
+        for group in section.get(
+            "question_groups",
+            []
+        ):
+
+            all_groups.append(
+                {
+                    "section": section,
+                    "group": group
+                }
+            )
+
+    total_questions = sum(
+        int(item["group"]["question_count"])
+        for item in all_groups
+    )
+
+    global_cognitive = allocate_integer_counts(
+        total_questions,
+        {
+            "recall": cognitive_blueprint.get(
+                "recall",
+                0
+            ),
+            "understanding": cognitive_blueprint.get(
+                "understanding",
+                0
+            ),
+            "application": cognitive_blueprint.get(
+                "application",
+                0
+            ),
+            "analysis": cognitive_blueprint.get(
+                "analysis",
+                0
+            )
+        }
+    )
+
+    group_sizes = [
+        int(item["group"]["question_count"])
+        for item in all_groups
+    ]
+
+    group_cognitive_allocations = distribute_targets(
+        global_cognitive,
+        group_sizes
+    )
+
     sections = []
+
+    generated_by_section = {}
+
+    for index, item in enumerate(all_groups):
+
+        section = item["section"]
+
+        group = item["group"]
+
+        section_name = (
+            section.get("section_name")
+            or "Section A"
+        )
+
+        if section_name not in generated_by_section:
+
+            generated_by_section[section_name] = []
+
+        generated_questions = generated_by_section[
+            section_name
+        ]
+
+        questions = generate_question_group(
+            data=data,
+            section=section,
+            group=group,
+            exam_prompt=exam_prompt,
+            exam_blueprint=exam_blueprint,
+            cognitive_blueprint=cognitive_blueprint,
+            instructions=instructions,
+            reference_paper=reference_paper,
+            existing_questions=generated_questions,
+            cognitive_allocation=(
+                group_cognitive_allocations[index]
+            )
+        )
+
+        if (
+            isinstance(questions, dict)
+            and "error" in questions
+        ):
+
+            return questions
+
+        generated_questions.extend(
+            questions
+        )
 
     for section in data.get(
         "sections",
@@ -674,10 +899,13 @@ Generate completely original questions.
     ):
 
         section_name = (
-            section.get(
-                "section_name"
-            )
+            section.get("section_name")
             or "Section A"
+        )
+
+        generated_questions = generated_by_section.get(
+            section_name,
+            []
         )
 
         expected_questions = int(
@@ -687,37 +915,6 @@ Generate completely original questions.
         expected_marks = int(
             section["marks"]
         )
-
-        groups = section.get(
-            "question_groups",
-            []
-        )
-
-        generated_questions = []
-
-        for group in groups:
-
-            questions = generate_question_group(
-                data=data,
-                section=section,
-                group=group,
-                exam_prompt=exam_prompt,
-                exam_blueprint=exam_blueprint,
-                cognitive_blueprint=cognitive_blueprint,
-                instructions=instructions,
-                reference_paper=reference_paper
-            )
-
-            if isinstance(
-                questions,
-                dict
-            ) and "error" in questions:
-
-                return questions
-
-            generated_questions.extend(
-                questions
-            )
 
         actual_question_count = len(
             generated_questions
@@ -761,14 +958,12 @@ Generate completely original questions.
             }
         )
 
-    total_questions = sum(
-        len(
-            section["questions"]
-        )
+    final_question_count = sum(
+        len(section["questions"])
         for section in sections
     )
 
-    total_marks = sum(
+    final_marks = sum(
         sum(
             int(
                 question.get(
@@ -781,7 +976,7 @@ Generate completely original questions.
         for section in sections
     )
 
-    if total_questions != sum(
+    expected_total_questions = sum(
         int(
             section["question_count"]
         )
@@ -789,7 +984,9 @@ Generate completely original questions.
             "sections",
             []
         )
-    ):
+    )
+
+    if final_question_count != expected_total_questions:
 
         return {
             "error": (
@@ -798,7 +995,7 @@ Generate completely original questions.
             )
         }
 
-    if total_marks != int(
+    if final_marks != int(
         data.get(
             "total_marks",
             0
@@ -819,7 +1016,7 @@ Generate completely original questions.
         ),
         "sections": sections
     }
-
+    
 
 def regenerate_paper(
         regeneration_prompt

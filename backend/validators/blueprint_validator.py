@@ -1,115 +1,193 @@
 from collections import Counter
-from backend.services.expected_blueprint import (get_expected_blueprint, normalize_distribution)
+from backend.services.expected_blueprint import (
+    get_expected_blueprint
+)
 
-TOLERANCE= 0.05
 
-def validate_distribution(
-        generated_counter,
-        expected_counter,
-        report,
-        title
+def allocate_integer_counts(
+        total_questions,
+        distribution
 ):
-    for key, expected_count in expected_counter.items():
-        actual_count= generated_counter.get(key, 0)
 
-        if abs(actual_count - expected_count) > TOLERANCE:
+    if total_questions <= 0 or not distribution:
+        return {}
+
+    raw = {
+        key: total_questions * value
+        for key, value in distribution.items()
+    }
+
+    counts = {
+        key: int(value)
+        for key, value in raw.items()
+    }
+
+    remaining = (
+        total_questions
+        - sum(counts.values())
+    )
+
+    remainders = sorted(
+        distribution.keys(),
+        key=lambda key: (
+            raw[key] - counts[key]
+        ),
+        reverse=True
+    )
+
+    for key in remainders[:remaining]:
+        counts[key] += 1
+
+    return counts
+
+
+def validate_count_distribution(
+        generated_counter,
+        expected_distribution,
+        report,
+        title,
+        total_questions
+):
+
+    expected_counts = allocate_integer_counts(
+        total_questions,
+        expected_distribution
+    )
+
+    all_keys = set(
+        expected_counts
+    ) | set(
+        generated_counter
+    )
+
+    for key in all_keys:
+
+        expected_count = expected_counts.get(
+            key,
+            0
+        )
+
+        actual_count = generated_counter.get(
+            key,
+            0
+        )
+
+        if actual_count != expected_count:
+
             report["valid"] = False
+
             report["errors"].append(
                 f"{title} '{key}' mismatch: "
-                f"expected {expected_count * 100:.2f}%,"
-                f"got {actual_count * 100:.2f}%"
+                f"expected {expected_count} questions, "
+                f"got {actual_count}"
             )
+
 
 def validate_blueprint(
         generated_paper,
         exam_type,
         subject
 ):
-    report= {
+
+    report = {
         "valid": True,
         "errors": []
     }
 
-    expected= get_expected_blueprint(
+    expected = get_expected_blueprint(
         exam_type,
         subject
     )
 
-    generated_difficulty= Counter()
-    generated_cognitive= Counter()
-    generated_types= Counter()
+    generated_questions = []
 
+    for section in generated_paper.get(
+        "sections",
+        []
+    ):
 
-    # -----------------------------
-    # Single traversal
-    # -----------------------------
+        generated_questions.extend(
+            section.get(
+                "questions",
+                []
+            )
+        )
 
-    for section in generated_paper.get("sections", []):
-        for question in section.get("questions", []):
-
-            difficulty= question.get("difficulty")
-            cognitive= question.get("cognitive")
-            qtype= question.get("question_type")
-
-            if difficulty:
-                generated_difficulty[difficulty] += 1
-            
-            if cognitive:
-                generated_cognitive[cognitive] += 1
-
-            if qtype:
-                generated_types[qtype] += 1
-
-
-    generated_difficulty = normalize_distribution(
-    generated_difficulty
+    total_questions = len(
+        generated_questions
     )
 
-    generated_cognitive = normalize_distribution(
-        generated_cognitive
-    )
+    if total_questions == 0:
+        return report
 
-    generated_types = normalize_distribution(
-        generated_types
-    )
+    generated_difficulty = Counter()
+    generated_cognitive = Counter()
+    generated_types = Counter()
 
-    # -----------------------------
-    # Difficulty
-    # -----------------------------
+    for question in generated_questions:
 
-    validate_distribution(
+        difficulty = question.get(
+            "difficulty"
+        )
+
+        cognitive = question.get(
+            "cognitive"
+        )
+
+        question_type = question.get(
+            "question_type"
+        )
+
+        if difficulty:
+            generated_difficulty[
+                difficulty
+            ] += 1
+
+        if cognitive:
+            generated_cognitive[
+                cognitive
+            ] += 1
+
+        if question_type:
+            generated_types[
+                question_type
+            ] += 1
+
+    validate_count_distribution(
         generated_difficulty,
-        expected.get("difficulty_distribution", {}),
+        expected.get(
+            "difficulty_distribution",
+            {}
+        ),
         report,
-        "Difficulty"
+        "Difficulty",
+        total_questions
     )
-            
 
-    # -----------------------------
-    # Cognitive
-    # -----------------------------
-
-    validate_distribution(
+    validate_count_distribution(
         generated_cognitive,
-        expected.get("cognitive_distribution", {}),
+        expected.get(
+            "cognitive_distribution",
+            {}
+        ),
         report,
-        "Cognitive"
+        "Cognitive",
+        total_questions
     )
 
-    # -----------------------------
-    # Question Type
-    # -----------------------------
-
-    expected_types= expected.get(
+    expected_types = expected.get(
         "question_type_distribution",
         {}
     )
 
-    validate_distribution(
-        generated_types,
-        expected_types,
-        report,
-        "Question Type"
-    )
+    if expected_types:
+
+        validate_count_distribution(
+            generated_types,
+            expected_types,
+            report,
+            "Question Type",
+            total_questions
+        )
 
     return report

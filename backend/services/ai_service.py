@@ -1,10 +1,11 @@
 import json
 from backend.exam_patterns import get_exam_prompt, get_blueprint
 from backend.exam_patterns.blueprints import get_cognitive_blueprint
-from backend.services.question_allocator import allocate_questions
+from backend.services.expected_blueprint import get_expected_blueprint
 from backend.prompt_engine.prompt_builder import build_prompt
 from backend.core.ai_client import client
 from backend.utils.logger import logger
+from collections import Counter
 import tiktoken
 
 
@@ -276,19 +277,26 @@ def build_group_prompt(
     instructions,
     reference_paper,
     existing_questions=None,
-    cognitive_allocation=None
+    cognitive_allocation=None,
+    difficulty_allocation=None
 ):
 
     if existing_questions is None:
         existing_questions = []
 
     if cognitive_allocation is None:
-
         cognitive_allocation = {
-            "recall": 0,
-            "understanding": 0,
-            "application": 0,
-            "analysis": 0
+            "Recall": 0,
+            "Understanding": 0,
+            "Application": 0,
+            "Analysis": 0
+        }
+
+    if difficulty_allocation is None:
+        difficulty_allocation = {
+            "Easy": 0,
+            "Medium": 0,
+            "Hard": 0
         }
 
     existing_question_text = "\n".join(
@@ -366,15 +374,27 @@ THE FOLLOWING VALUES ARE ABSOLUTE:
 COGNITIVE ALLOCATION
 ==================================================
 
-Recall: {cognitive_allocation.get("recall", 0)}
-Understanding: {cognitive_allocation.get("understanding", 0)}
-Application: {cognitive_allocation.get("application", 0)}
-Analysis: {cognitive_allocation.get("analysis", 0)}
+Recall: {cognitive_allocation.get("Recall", 0)}
+Understanding: {cognitive_allocation.get("Understanding", 0)}
+Application: {cognitive_allocation.get("Application", 0)}
+Analysis: {cognitive_allocation.get("Analysis", 0)}
 
 These are exact integer targets for this group.
 
 The total number of questions assigned across these cognitive
 levels MUST equal {question_count}.
+
+==================================================
+EXACT DIFFICULTY ALLOCATION
+==================================================
+
+Easy: {difficulty_allocation.get("Easy", 0)}
+Medium: {difficulty_allocation.get("Medium", 0)}
+Hard: {difficulty_allocation.get("Hard", 0)}
+
+The difficulty allocation above is an EXACT requirement.
+The group MUST contain exactly these numbers of Easy, Medium and Hard questions.
+The sum MUST equal exactly {question_count}.
 
 ==================================================
 REQUIRED METADATA
@@ -495,143 +515,88 @@ Return ONLY JSON.
 def call_openai_json(prompt):
 
     try:
-
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             timeout=60.0,
-            response_format={
-                "type": "json_object"
-            },
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
+            response_format={"type": "json_object"},
+            messages=[{"role": "user", "content": prompt}]
         )
-
     except Exception as e:
-
-        logger.exception(
-            "OpenAI API call failed."
-        )
-
-        return {
-            "error": "AI request failed.",
-            "details": str(e)
-        }
+        logger.exception("OpenAI API call failed.")
+        return {"error": "AI request failed.", "details": str(e)}
 
     try:
-
         content = response.choices[0].message.content
-
     except Exception as e:
-
-        return {
-            "error": "AI response structure issue.",
-            "details": str(e),
-            "raw": str(response)
-        }
+        return {"error": "AI response structure issue.", "details": str(e), "raw": str(response)}
 
     try:
-
         return json.loads(content)
-
     except Exception as e:
-
-        return {
-            "error": "Invalid JSON from AI.",
-            "details": str(e),
-            "raw_response": content
-        }
+        return {"error": "Invalid JSON from AI.", "details": str(e), "raw_response": content}
 
 
 def validate_group_output(
-    result,
-    question_type,
-    question_count,
-    marks_per_question
+        result,
+        question_type,
+        question_count,
+        marks_per_question,
+        cognitive_allocation=None,
+        difficulty_allocation=None
 ):
 
     if not isinstance(result, dict):
         return False
 
-    questions = result.get(
-        "questions",
-        []
-    )
+    questions = result.get("questions", [])
 
-    if not isinstance(
-        questions,
-        list
-    ):
+    if not isinstance(questions, list) or len(questions) != question_count:
         return False
 
-    if len(questions) != question_count:
-        return False
+    cognitive_counts = Counter()
+    difficulty_counts = Counter()
 
     for question in questions:
 
-        if not isinstance(
-            question,
-            dict
-        ):
+        if not isinstance(question, dict):
             return False
 
-        if question.get(
-            "question_type"
-        ) != question_type:
+        if question.get("question_type") != question_type:
             return False
 
-        if question.get(
-            "marks"
-        ) != marks_per_question:
+        if question.get("marks") != marks_per_question:
             return False
 
-        if not str(
-            question.get(
-                "question",
-                ""
-            )
-        ).strip():
+        if not str(question.get("question", "")).strip():
             return False
 
-        if question.get(
-            "difficulty"
-        ) not in (
-            "Easy",
-            "Medium",
-            "Hard"
-        ):
+        if question.get("difficulty") not in ("Easy", "Medium", "Hard"):
             return False
 
-        if question.get(
-            "cognitive"
-        ) not in (
-            "Recall",
-            "Understanding",
-            "Application",
-            "Analysis"
-        ):
+        if question.get("cognitive") not in ("Recall", "Understanding", "Application", "Analysis"):
             return False
 
-        if not str(
-            question.get(
-                "answer",
-                ""
-            )
-        ).strip():
+        if not str(question.get("answer", "")).strip():
             return False
 
-        if not str(
-            question.get(
-                "solution",
-                ""
-            )
-        ).strip():
+        if not str(question.get("solution", "")).strip():
             return False
+
+        cognitive_counts[question["cognitive"]] += 1
+        difficulty_counts[question["difficulty"]] += 1
+
+    if cognitive_allocation is not None:
+        for key, expected in cognitive_allocation.items():
+            if cognitive_counts.get(key, 0) != expected:
+                return False
+
+    if difficulty_allocation is not None:
+        for key, expected in difficulty_allocation.items():
+            if difficulty_counts.get(key, 0) != expected:
+                return False
 
     return True
+
 
 def generate_question_group(
     data,
@@ -643,7 +608,8 @@ def generate_question_group(
     instructions,
     reference_paper,
     existing_questions=None,
-    cognitive_allocation=None
+    cognitive_allocation=None,
+    difficulty_allocation=None
 ):
 
     if existing_questions is None:
@@ -682,7 +648,8 @@ def generate_question_group(
             instructions=instructions,
             reference_paper=reference_paper,
             existing_questions=existing_questions,
-            cognitive_allocation=cognitive_allocation
+            cognitive_allocation=cognitive_allocation,
+            difficulty_allocation=difficulty_allocation
         )
 
         encoding = tiktoken.get_encoding(
@@ -705,7 +672,9 @@ def generate_question_group(
                 result,
                 question_type,
                 question_count,
-                marks_per_question
+                marks_per_question,
+                cognitive_allocation,
+                difficulty_allocation
             )
         ):
 
@@ -812,26 +781,35 @@ Generate completely original questions.
         for item in all_groups
     )
 
+    expected_blueprint = get_expected_blueprint(
+        exam_type,
+        data.get("subject", "")
+    )
+
+    expected_cognitive_distribution = expected_blueprint.get(
+        "cognitive_distribution",
+        {}
+    )
+
+    if not expected_cognitive_distribution:
+        expected_cognitive_distribution = {
+            "Recall": cognitive_blueprint.get("recall", 0),
+            "Understanding": cognitive_blueprint.get("understanding", 0),
+            "Application": cognitive_blueprint.get("application", 0),
+            "Analysis": cognitive_blueprint.get("analysis", 0)
+        }
+
     global_cognitive = allocate_integer_counts(
         total_questions,
-        {
-            "recall": cognitive_blueprint.get(
-                "recall",
-                0
-            ),
-            "understanding": cognitive_blueprint.get(
-                "understanding",
-                0
-            ),
-            "application": cognitive_blueprint.get(
-                "application",
-                0
-            ),
-            "analysis": cognitive_blueprint.get(
-                "analysis",
-                0
-            )
-        }
+        expected_cognitive_distribution
+    )
+
+    global_difficulty = allocate_integer_counts(
+        total_questions,
+        expected_blueprint.get(
+            "difficulty_distribution",
+            {"Easy": 0.30, "Medium": 0.50, "Hard": 0.20}
+        )
     )
 
     group_sizes = [
@@ -841,6 +819,11 @@ Generate completely original questions.
 
     group_cognitive_allocations = distribute_targets(
         global_cognitive,
+        group_sizes
+    )
+
+    group_difficulty_allocations = distribute_targets(
+        global_difficulty,
         group_sizes
     )
 
@@ -879,6 +862,9 @@ Generate completely original questions.
             existing_questions=generated_questions,
             cognitive_allocation=(
                 group_cognitive_allocations[index]
+            ),
+            difficulty_allocation=(
+                group_difficulty_allocations[index]
             )
         )
 

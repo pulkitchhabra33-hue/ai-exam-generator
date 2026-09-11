@@ -486,6 +486,108 @@ def build_group_prompt(
         }}
         """
 
+    elif question_type == "Application-based":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "A real-world or practical situation is described. Apply the relevant concept, principle, formula, or method to solve the given problem.",
+                    "question_type": "Application-based",
+                    "marks": {marks_per_question},
+                    "difficulty": "Medium",
+                    "cognitive": "Application",
+                    "answer": "Answer obtained by applying the relevant concept.",
+                    "solution": "Step-by-step explanation showing how the relevant concept is applied to reach the answer."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "HOTS":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "A challenging higher-order question requiring deep reasoning, analysis, evaluation, or multi-step problem solving.",
+                    "question_type": "HOTS",
+                    "marks": {marks_per_question},
+                    "difficulty": "Hard",
+                    "cognitive": "Analysis",
+                    "answer": "Final answer based on the reasoning.",
+                    "solution": "Detailed step-by-step reasoning explaining how the answer is obtained."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "One Word Answer":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "What is the SI unit of force?",
+                    "question_type": "One Word Answer",
+                    "marks": {marks_per_question},
+                    "difficulty": "Easy",
+                    "cognitive": "Recall",
+                    "answer": "Newton",
+                    "solution": "The SI unit of force is Newton."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "Very Short Answer":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "Define velocity.",
+                    "question_type": "Very Short Answer",
+                    "marks": {marks_per_question},
+                    "difficulty": "Easy",
+                    "cognitive": "Recall",
+                    "answer": "Velocity is the rate of change of displacement with respect to time.",
+                    "solution": "Velocity is defined as the rate of change of displacement with time."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "Short Answer":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "Explain the relationship between force, mass, and acceleration.",
+                    "question_type": "Short Answer",
+                    "marks": {marks_per_question},
+                    "difficulty": "Medium",
+                    "cognitive": "Understanding",
+                    "answer": "Force is equal to the product of mass and acceleration.",
+                    "solution": "According to Newton's second law, force is proportional to the rate of change of momentum. For constant mass, this gives F = ma."
+                }}
+            ]
+        }}
+        """
+
+    elif question_type == "Long Answer":
+        output_example = f"""
+        {{
+            "questions": [
+                {{
+                    "question": "Explain Newton's laws of motion in detail with suitable examples.",
+                    "question_type": "Long Answer",
+                    "marks": {marks_per_question},
+                    "difficulty": "Hard",
+                    "cognitive": "Understanding",
+                    "answer": "Newton's three laws describe the relationship between the motion of an object and the forces acting on it.",
+                    "solution": "Provide a detailed explanation of all three laws, their mathematical expressions where applicable, and suitable examples demonstrating each law."
+                }}
+            ]
+        }}
+        """
+
     else:
         output_example = f"""
         {{

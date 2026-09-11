@@ -546,56 +546,92 @@ def validate_group_output(
 ):
 
     if not isinstance(result, dict):
-        return False
+        return False, "Result is not a JSON object."
 
     questions = result.get("questions", [])
 
-    if not isinstance(questions, list) or len(questions) != question_count:
-        return False
+    if not isinstance(questions, list):
+        return False, "questions is not a list."
+
+    if len(questions) != question_count:
+        return False, f"Expected {question_count} questions, got {len(questions)}."
 
     cognitive_counts = Counter()
     difficulty_counts = Counter()
 
-    for question in questions:
-
+    for index, question in enumerate(questions, 1):
         if not isinstance(question, dict):
-            return False
-
+            return False, f"Question {index} is not an object."
         if question.get("question_type") != question_type:
-            return False
-
+            return False, f"Question {index} has wrong question_type."
         if question.get("marks") != marks_per_question:
-            return False
-
+            return False, f"Question {index} has wrong marks."
         if not str(question.get("question", "")).strip():
-            return False
-
+            return False, f"Question {index} has empty question text."
         if question.get("difficulty") not in ("Easy", "Medium", "Hard"):
-            return False
-
+            return False, f"Question {index} has invalid difficulty."
         if question.get("cognitive") not in ("Recall", "Understanding", "Application", "Analysis"):
-            return False
-
+            return False, f"Question {index} has invalid cognitive level."
         if not str(question.get("answer", "")).strip():
-            return False
-
+            return False, f"Question {index} has empty answer."
         if not str(question.get("solution", "")).strip():
-            return False
+            return False, f"Question {index} has empty solution."
+
+        if question_type == "MCQ":
+            options = question.get("options")
+            if not isinstance(options, list) or len(options) != 4:
+                return False, f"Question {index} MCQ must have exactly 4 options."
+            if any(not str(option).strip() for option in options):
+                return False, f"Question {index} MCQ has an empty option."
+            if question.get("answer") not in ("A", "B", "C", "D"):
+                return False, f"Question {index} MCQ answer must be A/B/C/D."
+
+        if question_type == "True/False":
+            if str(question.get("answer", "")).strip().lower() not in ("true", "false"):
+                return False, f"Question {index} True/False answer is invalid."
+
+        if question_type == "Fill in the Blanks" and "______" not in str(question.get("question", "")):
+            return False, f"Question {index} Fill in the Blanks is missing ______."
+
+        if question_type == "Assertion-Reason":
+            if not str(question.get("assertion", "")).strip() or not str(question.get("reason", "")).strip():
+                return False, f"Question {index} Assertion-Reason is missing assertion or reason."
+
+        if question_type == "Match the Following":
+            left = question.get("left_column")
+            right = question.get("right_column")
+            if not isinstance(left, list) or not left:
+                return False, f"Question {index} Match the Following is missing left_column."
+            if not isinstance(right, list) or not right:
+                return False, f"Question {index} Match the Following is missing right_column."
+            if len(left) != len(right):
+                return False, f"Question {index} Match the Following columns have different lengths."
+
+        if question_type == "Source-Based Questions" and not str(question.get("source", "")).strip():
+            return False, f"Question {index} Source-Based Questions is missing source."
+
+        if question_type == "Diagram-Based Questions" and not str(question.get("diagram", "")).strip():
+            return False, f"Question {index} Diagram-Based Questions is missing diagram."
+
+        if question_type == "Case Study" and not str(question.get("case", "")).strip():
+            return False, f"Question {index} Case Study is missing case."
 
         cognitive_counts[question["cognitive"]] += 1
         difficulty_counts[question["difficulty"]] += 1
 
     if cognitive_allocation is not None:
         for key, expected in cognitive_allocation.items():
-            if cognitive_counts.get(key, 0) != expected:
-                return False
+            actual = cognitive_counts.get(key, 0)
+            if actual != expected:
+                return False, f"Cognitive '{key}' expected {expected}, got {actual}."
 
     if difficulty_allocation is not None:
         for key, expected in difficulty_allocation.items():
-            if difficulty_counts.get(key, 0) != expected:
-                return False
+            actual = difficulty_counts.get(key, 0)
+            if actual != expected:
+                return False, f"Difficulty '{key}' expected {expected}, got {actual}."
 
-    return True
+    return True, "valid"
 
 
 def generate_question_group(
@@ -675,7 +711,7 @@ def generate_question_group(
                 marks_per_question,
                 cognitive_allocation,
                 difficulty_allocation
-            )
+            )[0]
         ):
 
             logger.info(
@@ -685,9 +721,19 @@ def generate_question_group(
 
             return result["questions"]
 
+        if isinstance(result, dict) and "error" in result:
+            reason = result.get("error", "AI request failed.")
+        else:
+            _, reason = validate_group_output(
+                result,
+                question_type,
+                question_count,
+                marks_per_question,
+                cognitive_allocation,
+                difficulty_allocation
+            )
         logger.warning(
-            f"Invalid group output for "
-            f"{question_type} on attempt {attempt}."
+            f"Invalid group output for {question_type} on attempt {attempt}: {reason}"
         )
 
     return {

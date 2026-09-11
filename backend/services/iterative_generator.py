@@ -24,6 +24,41 @@ def iterative_generation(
 
     attempts_used = 0
 
+    if not isinstance(generated_paper, dict):
+        logger.error("Initial AI generation returned invalid data.")
+        return {
+            "success": False,
+            "error": "AI generation returned invalid data.",
+            "stage": "ai_generation",
+            "attempts": 0
+        }
+
+    if "error" in generated_paper:
+        error_message = generated_paper.get(
+            "error",
+            "AI generation failed."
+        )
+        logger.error(
+            f"Initial AI generation failed: {error_message}"
+        )
+        return {
+            "success": False,
+            "error": error_message,
+            "stage": "ai_generation",
+            "attempts": 0
+        }
+
+    if "sections" not in generated_paper:
+        logger.error(
+            "Initial AI generation returned a paper without sections."
+        )
+        return {
+            "success": False,
+            "error": "AI generation did not return a complete exam paper.",
+            "stage": "ai_generation",
+            "attempts": 0
+        }
+
     for attempt in range(MAX_REGENERATION_ATTEMPTS):
 
         attempts_used = attempt + 1
@@ -152,6 +187,12 @@ def iterative_generation(
                 generated_paper["error"]
             )
 
+            continue
+
+        if "sections" not in generated_paper:
+            logger.error(
+                "Regeneration returned a paper without sections."
+            )
             continue
 
     # ------------------------------------------------------

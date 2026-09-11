@@ -327,6 +327,45 @@ def build_group_prompt(
         question_type
     )
 
+    if question_type == "MCQ":
+        output_example = f"""
+    {{
+        "questions": [
+            {{
+                "question": "Question text",
+                "question_type": "MCQ",
+                "marks": {marks_per_question},
+                "difficulty": "Medium",
+                "cognitive": "Application",
+                "options": [
+                    "Option 1",
+                    "Option 2",
+                    "Option 3",
+                    "Option 4"
+                ],
+                "answer": "A",
+                "solution": "Explanation of the correct answer"
+            }}
+        ]
+    }}
+    """
+    else:
+        output_example = f"""
+    {{
+        "questions": [
+            {{
+                "question": "Question text",
+                "question_type": "{question_type}",
+                "marks": {marks_per_question},
+                "difficulty": "Medium",
+                "cognitive": "Application",
+                "answer": "Answer",
+                "solution": "Solution"
+            }}
+        ]
+    }}
+    """
+        
     prompt = f"""
 You are generating one question-type group for an examination paper.
 
@@ -478,21 +517,18 @@ OUTPUT
 
 Return ONLY valid JSON.
 
-Return exactly this structure:
+Return exactly this JSON structure:
 
-{{
-    "questions": [
-        {{
-            "question": "Question text",
-            "question_type": "{question_type}",
-            "marks": {marks_per_question},
-            "difficulty": "Medium",
-            "cognitive": "Application",
-            "answer": "Answer",
-            "solution": "Solution"
-        }}
-    ]
-}}
+{output_example}
+
+The JSON structure above is mandatory.
+
+For MCQ questions:
+- The "options" field is REQUIRED.
+- It MUST be a JSON array.
+- It MUST contain exactly 4 non-empty strings.
+- "answer" MUST be exactly one of "A", "B", "C", or "D".
+- Never omit the "options" field.
 
 The questions array MUST contain exactly {question_count} items.
 
@@ -562,18 +598,25 @@ def validate_group_output(
     for index, question in enumerate(questions, 1):
         if not isinstance(question, dict):
             return False, f"Question {index} is not an object."
+
         if question.get("question_type") != question_type:
             return False, f"Question {index} has wrong question_type."
+        
         if question.get("marks") != marks_per_question:
             return False, f"Question {index} has wrong marks."
+        
         if not str(question.get("question", "")).strip():
             return False, f"Question {index} has empty question text."
+        
         if question.get("difficulty") not in ("Easy", "Medium", "Hard"):
             return False, f"Question {index} has invalid difficulty."
+        
         if question.get("cognitive") not in ("Recall", "Understanding", "Application", "Analysis"):
             return False, f"Question {index} has invalid cognitive level."
+        
         if not str(question.get("answer", "")).strip():
             return False, f"Question {index} has empty answer."
+        
         if not str(question.get("solution", "")).strip():
             return False, f"Question {index} has empty solution."
 
@@ -581,8 +624,10 @@ def validate_group_output(
             options = question.get("options")
             if not isinstance(options, list) or len(options) != 4:
                 return False, f"Question {index} MCQ must have exactly 4 options."
+            
             if any(not str(option).strip() for option in options):
                 return False, f"Question {index} MCQ has an empty option."
+            
             if question.get("answer") not in ("A", "B", "C", "D"):
                 return False, f"Question {index} MCQ answer must be A/B/C/D."
 
@@ -602,8 +647,10 @@ def validate_group_output(
             right = question.get("right_column")
             if not isinstance(left, list) or not left:
                 return False, f"Question {index} Match the Following is missing left_column."
+            
             if not isinstance(right, list) or not right:
                 return False, f"Question {index} Match the Following is missing right_column."
+            
             if len(left) != len(right):
                 return False, f"Question {index} Match the Following columns have different lengths."
 

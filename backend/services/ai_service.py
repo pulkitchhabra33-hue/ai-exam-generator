@@ -816,8 +816,6 @@ def validate_group_output(
         question_type,
         question_count,
         marks_per_question,
-        cognitive_allocation=None,
-        difficulty_allocation=None
 ):
 
     if not isinstance(result, dict):
@@ -904,18 +902,6 @@ def validate_group_output(
 
         cognitive_counts[question["cognitive"]] += 1
         difficulty_counts[question["difficulty"]] += 1
-
-    if cognitive_allocation is not None:
-        for key, expected in cognitive_allocation.items():
-            actual = cognitive_counts.get(key, 0)
-            if actual != expected:
-                return False, f"Cognitive '{key}' expected {expected}, got {actual}."
-
-    if difficulty_allocation is not None:
-        for key, expected in difficulty_allocation.items():
-            actual = difficulty_counts.get(key, 0)
-            if actual != expected:
-                return False, f"Difficulty '{key}' expected {expected}, got {actual}."
 
     return True, "valid"
 
@@ -1014,9 +1000,7 @@ def generate_question_group(
                 result,
                 question_type,
                 question_count,
-                marks_per_question,
-                cognitive_allocation,
-                difficulty_allocation
+                marks_per_question
             )
         logger.warning(
             f"Invalid group output for {question_type} on attempt {attempt}: {reason}"

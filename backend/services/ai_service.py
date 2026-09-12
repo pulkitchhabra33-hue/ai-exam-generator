@@ -980,9 +980,7 @@ def generate_question_group(
                 result,
                 question_type,
                 question_count,
-                marks_per_question,
-                cognitive_allocation,
-                difficulty_allocation
+                marks_per_question
             )[0]
         ):
 

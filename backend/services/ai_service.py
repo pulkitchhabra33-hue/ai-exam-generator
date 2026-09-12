@@ -86,86 +86,172 @@ Return ONLY valid JSON in this structure:
 
 
 def get_question_type_rules(question_type):
-
-    rules = {
-        "MCQ": """
-- question_type must be "MCQ".
-- Generate exactly four non-empty options.
-- answer must be A, B, C, or D.
-- Do not omit options.
+    rules={
+        "MCQ":"""
+MCQ RULES
+- Generate exactly one clear multiple-choice question.
+- Provide exactly 4 answer options.
+- Every option must be a complete, meaningful and plausible answer.
+- Only one option must be correct unless the teacher explicitly requested otherwise.
+- The options must be labeled A, B, C and D through the options array.
+- The answer field must contain only A, B, C or D.
+- Do not place the correct answer outside the options.
+- Do not create duplicate or nearly identical options.
+- Distractors must be plausible but objectively incorrect.
+- Avoid clues such as noticeably longer correct options or grammatical mismatch.
 """,
 
-        "True/False": """
-- question_type must be "True/False".
-- Do not include MCQ options.
-- answer must be "True" or "False".
+        "True/False":"""
+TRUE/FALSE RULES
+- Generate exactly one objectively true or false statement.
+- The statement must be unambiguous.
+- Avoid statements that depend on opinion, interpretation or incomplete context.
+- The answer field must contain exactly True or False.
+- Do not provide multiple statements in one question.
+- Do not use double negatives unless absolutely necessary.
+- The statement must be factually consistent with the requested syllabus.
 """,
 
-        "Fill in the Blanks": """
-- question_type must be "Fill in the Blanks".
-- The question must contain ______.
-- Do not include MCQ options.
+        "Fill in the Blanks":"""
+FILL IN THE BLANKS RULES
+- Generate exactly one sentence or statement containing a meaningful blank.
+- The question text must contain a visible blank represented by "______".
+- The blank must test a specific concept, fact, term, formula, value or relationship.
+- The expected answer must be clearly identifiable.
+- Do not create multiple possible answers unless the question explicitly allows them.
+- Do not put the answer directly into the blank.
+- The answer field must contain the expected missing word, phrase, value or expression.
 """,
 
-        "Assertion-Reason": """
-- question_type must be "Assertion-Reason".
-- Include a separate non-empty "assertion" field.
-- Include a separate non-empty "reason" field.
-- Do not combine assertion and reason into the question field.
+        "Assertion-Reason":"""
+ASSERTION-REASON RULES
+- Generate one Assertion and one Reason.
+- The assertion and reason must be written as separate fields.
+- Both must be clear, academically meaningful and related to the same concept.
+- The question must allow evaluation of both the truth of the Assertion and the truth of the Reason, as well as their logical relationship.
+- Do not combine Assertion and Reason into a single question string.
+- Avoid trivial or obviously unrelated assertion-reason pairs.
+- The answer must identify the correct assertion-reason relationship according to the provided answer convention.
+- The reason should explain or logically relate to the assertion rather than merely repeat it.
 """,
 
-        "Match the Following": """
-- question_type must be "Match the Following".
-- Include non-empty "left_column".
-- Include non-empty "right_column".
+        "Match the Following":"""
+MATCH THE FOLLOWING RULES
+- Generate a genuine matching question with at least 2 items.
+- Provide a left column and a right column as separate lists.
+- left_column and right_column must both be non-empty.
 - Both columns must contain the same number of items.
-- Do not use MCQ options.
+- Each left-column item must have one logically correct corresponding right-column item.
+- Items must be clearly distinguishable.
+- Do not provide a malformed or incomplete matching structure.
+- The answer must clearly indicate the correct matching pairs.
+- Distractors may be used only when they remain logically valid and unambiguous.
 """,
 
-        "Source-Based Questions": """
-- question_type must be "Source-Based Questions".
-- Include a meaningful non-empty "source" field.
+        "Source-Based Questions":"""
+SOURCE-BASED QUESTION RULES
+- Provide a meaningful source, passage, data extract, quotation, table or other source material.
+- The source must be relevant to the requested subject, topic and syllabus.
+- Generate the question from the supplied source rather than asking an unrelated textbook question.
+- The source must contain enough information to answer the question.
+- Do not invent unsupported facts that are not reasonably inferable from the source.
+- The source field and question field must be separate.
+- The answer must be directly supported by or logically derived from the source.
 """,
 
-        "Diagram-Based Questions": """
-- question_type must be "Diagram-Based Questions".
-- Include a meaningful non-empty "diagram" field.
+        "Diagram-Based Questions":"""
+DIAGRAM-BASED QUESTION RULES
+- Generate a question that genuinely requires interpretation of a diagram, figure, graph, circuit, structure, labelled representation or visual relationship.
+- The diagram field must describe the required diagram clearly enough for rendering or creation.
+- The question must actually depend on the diagram.
+- Do not label a normal text-only question as Diagram-Based.
+- Labels, components or relationships required to answer the question must be represented in the diagram description.
+- The answer must be determinable from the diagram and relevant subject knowledge.
+- Do not require an unavailable image that is not represented in the output.
 """,
 
-        "Case Study": """
-- question_type must be "Case Study".
-- Include a meaningful non-empty "case" field.
+        "Case Study":"""
+CASE STUDY RULES
+- Provide a meaningful case, scenario, passage, experiment, situation or real-world context.
+- The case field must be separate from the question field.
+- The question must genuinely depend on the case.
+- The case must contain enough information for the student to reason toward the answer.
+- Do not create a generic textbook question and merely attach an unrelated case.
+- The case must be appropriate for the requested class, subject and syllabus.
+- The answer must be supported by the case and relevant subject knowledge.
 """,
 
-        "Application-based": """
-- question_type must be "Application-based".
+        "Application-based":"""
+APPLICATION-BASED RULES
+- Generate a question that requires the student to apply a learned concept, principle, formula, method or rule to a new situation.
+- Do not merely ask the student to recall or define a fact.
+- Use a realistic numerical, experimental, practical, contextual or unfamiliar scenario when appropriate.
+- The student must determine how to apply the relevant concept to reach the answer.
+- The situation should be different from a direct textbook definition or memorized example.
+- The answer and solution must show the relevant application.
+- Ensure the difficulty is appropriate for the requested class and marks.
 """,
 
-        "HOTS": """
-- question_type must be "HOTS".
+        "HOTS":"""
+HOTS RULES
+- Generate a genuinely higher-order thinking question.
+- The question should require reasoning, analysis, evaluation, comparison, interpretation, synthesis or multi-step thinking.
+- Do not classify a simple recall or direct formula-substitution question as HOTS.
+- Avoid questions that can be answered by memorizing a single fact.
+- When appropriate, provide data, conditions, competing explanations, constraints or a non-routine situation.
+- The student should need to reason through the problem before reaching the answer.
+- The solution must explain the reasoning, not only provide the final answer.
 """,
 
-        "One Word Answer": """
-- question_type must be "One Word Answer".
+        "One Word Answer":"""
+ONE WORD ANSWER RULES
+- Generate a question whose correct response is one word or a single concise term.
+- The answer must be specific and objectively verifiable.
+- Do not require a sentence, paragraph, derivation or explanation.
+- Avoid questions with multiple equally valid one-word answers.
+- The question should test a meaningful syllabus-based concept rather than trivial wording.
+- The answer field must contain the expected single word or term.
 """,
 
-        "Very Short Answer": """
-- question_type must be "Very Short Answer".
+        "Very Short Answer":"""
+VERY SHORT ANSWER RULES
+- Generate a concise conceptual or factual question suitable for a very short response.
+- The expected answer should normally require only a few words or a very short statement.
+- Do not require lengthy explanation, derivation or multi-step analysis.
+- The question must still test a meaningful syllabus concept.
+- Avoid questions whose correct answer is ambiguous.
+- The solution may briefly explain the answer but must remain consistent with the requested difficulty and marks.
 """,
 
-        "Short Answer": """
-- question_type must be "Short Answer".
+        "Short Answer":"""
+SHORT ANSWER RULES
+- Generate a question requiring a concise explanation, calculation, derivation, comparison or reasoning appropriate to the marks.
+- The question should require more than a one-word or one-line response.
+- Do not turn it into a long essay question.
+- The expected answer should be proportional to the marks assigned.
+- Include all necessary information, values and conditions needed to answer the question.
+- The solution should show the essential reasoning or calculation.
 """,
 
-        "Long Answer": """
-- question_type must be "Long Answer".
+        "Long Answer":"""
+LONG ANSWER RULES
+- Generate a question requiring a detailed explanation, derivation, multi-step calculation, analysis or structured response.
+- The question should justify the marks assigned.
+- Include sufficient context, data and conditions for a complete answer.
+- The expected answer should require multiple logically connected steps or points.
+- Do not generate a simple one-line factual question as a Long Answer.
+- The solution must provide the major reasoning steps, derivation or explanation needed for a complete response.
 """
     }
 
     return rules.get(
         question_type,
         f"""
-- question_type must be "{question_type}".
+QUESTION TYPE RULES
+- Generate exactly the requested question type: {question_type}.
+- The question must genuinely behave as that question type.
+- Do not substitute another question type.
+- Ensure the question is appropriate for the requested subject, class, syllabus, difficulty and marks.
 """
     )
 
@@ -649,30 +735,44 @@ THE FOLLOWING VALUES ARE ABSOLUTE:
 - Do NOT return questions belonging to another group.
 
 ==================================================
-COGNITIVE ALLOCATION
+COGNITIVE GUIDANCE FOR THIS GROUP
 ==================================================
+
+The complete examination paper has a target cognitive distribution.
+
+For this question group, use the following distribution as a strong generation
+guideline:
 
 Recall: {cognitive_allocation.get("Recall", 0)}
 Understanding: {cognitive_allocation.get("Understanding", 0)}
 Application: {cognitive_allocation.get("Application", 0)}
 Analysis: {cognitive_allocation.get("Analysis", 0)}
 
-These are exact integer targets for this group.
+Prefer these cognitive levels when creating the questions.
 
-The total number of questions assigned across these cognitive
-levels MUST equal {question_count}.
+IMPORTANT:
+- These values guide the generation of this group.
+- Do not sacrifice question quality just to force an unnatural cognitive label.
+- Choose the cognitive level that genuinely matches what the question requires.
+- The final examination paper will be checked against the overall cognitive blueprint.
 
 ==================================================
-EXACT DIFFICULTY ALLOCATION
+DIFFICULTY GUIDANCE FOR THIS GROUP
 ==================================================
+
+Target difficulty distribution for this group:
 
 Easy: {difficulty_allocation.get("Easy", 0)}
 Medium: {difficulty_allocation.get("Medium", 0)}
 Hard: {difficulty_allocation.get("Hard", 0)}
 
-The difficulty allocation above is an EXACT requirement.
-The group MUST contain exactly these numbers of Easy, Medium and Hard questions.
-The sum MUST equal exactly {question_count}.
+Use these values as strong guidance while generating the group.
+
+IMPORTANT:
+- Easy questions should test straightforward knowledge or simple application.
+- Medium questions should require understanding or moderate application.
+- Hard questions should require deeper reasoning, multi-step work, or analysis.
+- Do not artificially label a question Easy/Medium/Hard merely to satisfy a number.
 
 ==================================================
 REQUIRED METADATA
@@ -700,6 +800,28 @@ cognitive must be exactly one of:
 - Understanding
 - Application
 - Analysis
+
+==================================================
+QUESTION TYPE IS LOCKED
+==================================================
+
+You are generating ONLY this question type:
+
+"{question_type}"
+
+You must understand the meaning of this question type before generating.
+
+Do not confuse it with another question type.
+
+The question_type field MUST be exactly:
+"{question_type}"
+
+Generate exactly {question_count} questions of this type.
+
+Each question must genuinely behave like a "{question_type}" question,
+not merely have "{question_type}" written in its question_type field.
+
+Follow the specific structure and requirements given below for this type.
 
 ==================================================
 QUESTION TYPE RULES
@@ -1343,15 +1465,34 @@ def regenerate_paper(
     )
 
     full_regeneration_prompt = f"""
+You are an expert examination-paper correction engine.
+
+The complete regeneration context, including the existing examination paper,
+teacher requirements and validation feedback, is provided below.
+
+Your task is to REPAIR the existing examination paper according to that
+validation feedback.
+
+This is a REPAIR operation, not a random regeneration operation.
+
+Preserve everything that is already valid.
+
+Only make changes that are necessary to resolve the identified validation
+errors.
+
+Do not randomly rewrite valid questions.
+
+Do not weaken or ignore any validation requirement.
+
+==================================================
+REGENERATION CONTEXT
+==================================================
+
 {regeneration_prompt}
 
 ==================================================
-REGENERATION OUTPUT RULES
+REQUIRED QUESTION FIELDS
 ==================================================
-
-Repair the existing examination paper.
-
-Return ONLY valid JSON.
 
 Every question MUST contain:
 
@@ -1363,58 +1504,120 @@ Every question MUST contain:
 - answer
 - solution
 
-difficulty must be exactly:
+difficulty must be exactly one of:
 
 Easy
 Medium
 Hard
 
-cognitive must be exactly:
+cognitive must be exactly one of:
 
 Recall
 Understanding
 Application
 Analysis
 
-For Assertion-Reason questions:
+==================================================
+QUESTION TYPE REQUIREMENTS
+==================================================
+
+MCQ:
+
+- Include exactly four options.
+- All four options must be non-empty.
+- Only one option should be correct.
+- The answer must be A, B, C or D.
+- The answer must correspond to one of the four options.
+- Options must be meaningful and plausible.
+- Do not create duplicate options.
+
+True/False:
+
+- The question must be a clear factual statement.
+- The answer must be exactly True or False.
+- Do not create ambiguous statements.
+
+Fill in the Blanks:
+
+- The question MUST contain "______".
+- The blank must test a meaningful concept.
+- The answer must provide the missing word, phrase, value or expression.
+
+Assertion-Reason:
 
 - Include assertion.
 - Include reason.
-- Keep them as separate fields.
+- Keep assertion and reason as separate fields.
+- The assertion and reason must be logically related.
+- The answer must correctly represent their relationship.
 
-For Match the Following questions:
+Match the Following:
 
 - Include left_column.
 - Include right_column.
-- Both must be non-empty.
-- Both must have equal length.
+- Both columns must be non-empty.
+- Both columns must contain the same number of items.
+- The answer must identify the correct matching pairs.
 
-For MCQ:
-
-- Include exactly four options.
-- Answer must be A, B, C, or D.
-
-For True/False:
-
-- Answer must be True or False.
-
-For Fill in the Blanks:
-
-- Include ______ in the question.
-
-For Source-Based Questions:
+Source-Based Questions:
 
 - Include source.
+- The question must genuinely depend on the provided source.
+- The source must contain sufficient information to answer the question.
 
-For Diagram-Based Questions:
+Diagram-Based Questions:
 
 - Include diagram.
+- The question must genuinely depend on the diagram.
+- The diagram description must contain enough information for the question to be answered.
 
-For Case Study:
+Case Study:
 
 - Include case.
+- The question must genuinely depend on the case.
+- The case must contain sufficient information for reasoning.
 
-MOST IMPORTANT:
+Application-based:
+
+- The question must require application of a learned concept, principle,
+  formula or method to a new situation.
+- Do not turn it into a simple recall or definition question.
+- The student must actually apply the concept to solve the problem.
+
+HOTS:
+
+- The question must require genuine higher-order reasoning.
+- It should involve analysis, evaluation, interpretation, comparison,
+  synthesis or non-routine reasoning.
+- Do not use a simple recall or direct formula-substitution question as HOTS.
+
+One Word Answer:
+
+- The expected answer must be one word or one concise term.
+- The answer must be specific and objectively verifiable.
+- Do not require a sentence or explanation as the answer.
+
+Very Short Answer:
+
+- The question must require a very short response.
+- Do not require lengthy explanation, derivation or multi-step analysis.
+
+Short Answer:
+
+- The question must require a concise explanation, calculation,
+  derivation, comparison or reasoning appropriate to the assigned marks.
+- Do not make it a one-word question.
+- Do not make it an unnecessarily long essay.
+
+Long Answer:
+
+- The question must require a detailed explanation, derivation,
+  multi-step calculation, analysis or structured response.
+- The expected response must be appropriate for the assigned marks.
+
+==================================================
+STRUCTURE PRESERVATION
+==================================================
 
 Do not change the number of sections.
 
@@ -1422,19 +1625,281 @@ Do not change section order.
 
 Do not change section names.
 
+Do not add sections.
+
+Do not remove sections.
+
 Do not add questions.
 
 Do not remove questions.
 
 Do not move questions between sections.
 
-Do not change question types unless the validation feedback explicitly identifies a wrong question type.
+Do not change the total number of questions.
+
+Preserve the existing question grouping.
+
+Do not change question types unless the validation feedback explicitly
+identifies a wrong question type.
 
 Do not change valid marks.
 
-Return the complete repaired paper.
+Do not change valid section marks.
 
-Return ONLY JSON.
+Do not change the total marks.
+
+==================================================
+VALIDATION REPAIR INSTRUCTIONS
+==================================================
+
+The previous paper failed validation.
+
+Repair ONLY the problems identified in the validation feedback contained
+in the regeneration context.
+
+For every validation error:
+
+1. Identify exactly what is wrong.
+2. Determine the smallest necessary correction.
+3. Preserve everything that is already valid.
+4. Do not rewrite the entire paper unnecessarily.
+5. Do not change valid section structure.
+6. Do not change valid question types.
+7. Do not change valid marks.
+8. Do not remove valid questions.
+9. Do not add extra questions.
+10. Do not move questions between sections.
+11. Do not unnecessarily change syllabus coverage.
+12. Do not introduce new validation problems while fixing an existing problem.
+
+==================================================
+COGNITIVE BLUEPRINT REPAIR
+==================================================
+
+The cognitive distribution is validated across the COMPLETE examination paper.
+
+Use the expected cognitive counts explicitly stated in the validation
+feedback contained in the regeneration context.
+
+For example, if validation says:
+
+"Cognitive 'Application' mismatch: expected 8 questions, got 9"
+
+then the final complete paper MUST contain exactly 8 Application questions.
+
+If validation says:
+
+"Cognitive 'Analysis' mismatch: expected 4 questions, got 5"
+
+then the final complete paper MUST contain exactly 4 Analysis questions.
+
+Apply the same rule to:
+
+- Recall
+- Understanding
+- Application
+- Analysis
+
+Do NOT invent target counts.
+
+Do NOT use different target counts.
+
+Do NOT simply change cognitive labels only to manipulate the count.
+
+The cognitive level must genuinely match the question.
+
+When repairing the cognitive distribution:
+
+- Prefer changing an existing suitable question when possible.
+- Only change its cognitive level when the question genuinely supports it.
+- If necessary, rewrite the smallest number of questions.
+- Keep question type unchanged.
+- Keep marks unchanged.
+- Keep section unchanged.
+- Keep total question count unchanged.
+- Preserve syllabus relevance.
+
+The final COMPLETE paper must satisfy the cognitive distribution required
+by the validation feedback.
+
+==================================================
+DIFFICULTY REPAIR
+==================================================
+
+If validation feedback identifies a difficulty distribution problem:
+
+- Repair the difficulty distribution across the COMPLETE paper.
+- Preserve question type.
+- Preserve marks.
+- Preserve section.
+- Do not change difficulty merely to manipulate counts.
+- The assigned difficulty must genuinely match the question.
+- Use the expected counts explicitly stated in the validation feedback.
+- Do not invent target counts.
+
+==================================================
+DUPLICATE REPAIR
+==================================================
+
+If duplicate validation identifies a duplicate question:
+
+- Replace only the duplicated question.
+- Generate a genuinely different question.
+- Preserve the same section.
+- Preserve the same question type.
+- Preserve the same marks.
+- Preserve syllabus relevance.
+- Preserve the intended learning objective.
+- Do not merely change names, values or wording while keeping essentially
+  the same question.
+
+==================================================
+SIMILARITY REPAIR
+==================================================
+
+If similarity validation identifies excessive similarity:
+
+- Rewrite or replace only the affected question.
+- Preserve the same section.
+- Preserve the same question type.
+- Preserve the same marks.
+- Preserve the intended learning objective.
+- Use substantially different wording and question construction.
+- Do not copy the structure of the reference question.
+
+==================================================
+CONTENT AND QUALITY REPAIR
+==================================================
+
+For every question that is modified:
+
+- Ensure it is factually correct.
+- Ensure it is grammatically correct.
+- Ensure it is clear and unambiguous.
+- Ensure it is appropriate for the subject and class.
+- Ensure it is syllabus relevant.
+- Ensure the answer is correct.
+- Ensure the solution matches the answer.
+- Ensure the question type is genuine.
+- Ensure the difficulty is appropriate.
+- Ensure the cognitive level genuinely matches the question.
+
+==================================================
+FINAL VALIDATION CHECK
+==================================================
+
+Before returning the paper, internally verify all of the following:
+
+1. A complete "sections" array exists.
+
+2. The number of sections is unchanged.
+
+3. Section order is unchanged.
+
+4. Section names are unchanged.
+
+5. Every section contains the correct number of questions.
+
+6. The total number of questions is unchanged.
+
+7. Every question has the correct question_type.
+
+8. Every question has the correct marks.
+
+9. Section marks are correct.
+
+10. Total marks are correct.
+
+11. Every question has a valid difficulty:
+    Easy
+    Medium
+    Hard
+
+12. Every question has a valid cognitive level:
+    Recall
+    Understanding
+    Application
+    Analysis
+
+13. The COMPLETE paper satisfies the cognitive counts required by the
+    validation feedback.
+
+14. If difficulty-count errors were reported, the COMPLETE paper satisfies
+    the required difficulty counts.
+
+15. MCQs contain exactly four options.
+
+16. MCQ answers are A, B, C or D.
+
+17. True/False answers are True or False.
+
+18. Fill in the Blanks contain "______".
+
+19. Assertion-Reason contains separate assertion and reason fields.
+
+20. Match the Following contains non-empty equal-length columns.
+
+21. Source-Based Questions contain source.
+
+22. Diagram-Based Questions contain diagram.
+
+23. Case Study questions contain case.
+
+24. Application-based questions genuinely require application.
+
+25. HOTS questions genuinely require higher-order reasoning.
+
+26. One Word Answer questions have concise one-word or one-term answers.
+
+27. Very Short Answer questions are appropriately concise.
+
+28. Short Answer questions are appropriate for their marks.
+
+29. Long Answer questions are appropriate for their marks.
+
+30. No duplicate questions remain.
+
+31. No unresolved validation problems remain.
+
+32. Every question has a valid answer.
+
+33. Every question has a valid solution.
+
+34. The complete paper remains academically correct.
+
+35. The complete paper remains syllabus relevant.
+
+==================================================
+FINAL OUTPUT
+==================================================
+
+Repair the paper according to the validation feedback.
+
+Preserve all valid content.
+
+Make the smallest necessary corrections.
+
+Do not reduce validation requirements.
+
+Do not fabricate a successful result.
+
+The final paper must be a COMPLETE repaired examination paper.
+
+Return ONLY valid JSON.
+
+Do not return explanations.
+
+Do not return comments.
+
+Do not return markdown.
+
+Do not return validation messages.
+
+Do not return analysis.
+
+Do not return apologies.
+
+Return ONLY the complete repaired examination paper as JSON.
 """
 
     result = call_openai_json(

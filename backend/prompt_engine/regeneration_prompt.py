@@ -2,81 +2,6 @@ from backend.prompt_engine.regeneration_rules import get_regeneration_rules
 import json
 
 
-def build_locked_blueprint(
-        teacher_data
-):
-
-    blueprint = []
-
-    for section_index, section in enumerate(
-        teacher_data.get(
-            "sections",
-            []
-        ),
-        start=1
-    ):
-
-        section_name = section.get(
-            "section_name"
-        ) or f"Section {section_index}"
-
-        section_data = {
-            "section_name": section_name,
-            "question_count": int(
-                section.get(
-                    "question_count",
-                    0
-                )
-            ),
-            "marks": int(
-                section.get(
-                    "marks",
-                    0
-                )
-            ),
-            "question_groups": []
-        }
-
-        for group in section.get(
-            "question_groups",
-            []
-        ):
-
-            section_data[
-                "question_groups"
-            ].append(
-                {
-                    "question_type": group.get(
-                        "question_type"
-                    ),
-                    "question_count": int(
-                        group.get(
-                            "question_count",
-                            0
-                        )
-                    ),
-                    "marks_per_question": int(
-                        group.get(
-                            "marks_per_question",
-                            0
-                        )
-                    ),
-                    "marks": int(
-                        group.get(
-                            "marks",
-                            0
-                        )
-                    )
-                }
-            )
-
-        blueprint.append(
-            section_data
-        )
-
-    return blueprint
-
-
 def build_regeneration_prompt(
         teacher_data,
         generated_paper,
@@ -84,24 +9,10 @@ def build_regeneration_prompt(
 ):
 
     teacher_requirements = (
-        f"Exam Type: "
-        f"{teacher_data.get('exam_type')}\n"
-        f"Subject: "
-        f"{teacher_data.get('subject')}\n"
-        f"Class: "
-        f"{teacher_data.get('class_name')}\n"
-        f"Total Marks: "
-        f"{teacher_data.get('total_marks')}"
-    )
-
-    locked_blueprint = build_locked_blueprint(
-        teacher_data
-    )
-
-    blueprint_json = json.dumps(
-        locked_blueprint,
-        indent=4,
-        ensure_ascii=False
+        f"Exam Type: {teacher_data.get('exam_type')}\n"
+        f"Subject: {teacher_data.get('subject')}\n"
+        f"Class: {teacher_data.get('class')}\n"
+        f"Total Marks: {teacher_data.get('total_marks')}"
     )
 
     paper_json = json.dumps(
@@ -118,11 +29,15 @@ def build_regeneration_prompt(
     rules = get_regeneration_rules()
 
     prompt = f"""
-You are repairing an already generated examination paper.
+You are an expert examination-paper repair engine.
 
-You MUST repair the existing paper.
+The examination paper below has already been generated.
 
-You are NOT allowed to redesign the paper.
+Your task is to REPAIR the existing paper.
+
+This is NOT a request to create a new examination paper.
+
+Make the SMALLEST possible changes required to remove the validation errors.
 
 ==================================================
 TEACHER REQUIREMENTS
@@ -131,178 +46,252 @@ TEACHER REQUIREMENTS
 {teacher_requirements}
 
 ==================================================
-LOCKED EXAM BLUEPRINT
-==================================================
-
-The following blueprint is authoritative.
-
-It comes directly from the teacher's requested paper structure.
-
-{blueprint_json}
-
-The final paper MUST match this blueprint exactly.
-
-==================================================
-EXISTING PAPER
+EXISTING EXAMINATION PAPER
 ==================================================
 
 {paper_json}
 
 ==================================================
-VALIDATION FEEDBACK
+VALIDATION ERRORS THAT MUST BE FIXED
 ==================================================
 
 {feedback_text}
 
 ==================================================
-ABSOLUTE STRUCTURE RULES
+CORE REPAIR PRINCIPLE
 ==================================================
 
-The locked blueprint has priority over the generated paper.
+Preserve everything that is already correct.
 
-The final paper MUST have:
+Only modify questions that are necessary to fix the validation errors.
 
-- Exactly the specified number of sections.
-- Exactly the specified section names.
-- Exactly the specified section order.
-- Exactly the specified number of questions in every section.
-- Exactly the specified number of questions for every question type.
-- Exactly the specified marks per question.
-- Exactly the specified section marks.
-- Exactly the specified total marks.
+Do not randomly rewrite the paper.
 
-Do NOT:
+Do not regenerate the complete paper from scratch.
 
-- Add questions.
-- Remove questions.
-- Merge questions.
-- Split questions.
-- Move questions between sections.
-- Invent new question groups.
-- Remove question groups.
-- Change question counts.
-- Change section names.
-
-If the existing paper contains an incorrect question type, replace that question with the required question type while keeping the same position.
-
-If the existing paper contains incorrect content, rewrite that question.
+Do not change valid questions unnecessarily.
 
 ==================================================
-QUESTION METADATA
+STRUCTURE LOCK
 ==================================================
 
-Every question MUST contain:
+The following are LOCKED:
 
-- question
-- question_type
-- marks
-- difficulty
-- cognitive
-- answer
-- solution
+- Number of sections
+- Section order
+- Section names
+- Number of questions
+- Question grouping
+- Question types
+- Marks per question
+- Section marks
+- Total marks
+- Subject
+- Class
+- Syllabus requirements
 
-difficulty must be one of:
+Do not change any of these unless the validation feedback explicitly reports
+a problem with that specific item.
 
-- Easy
-- Medium
-- Hard
+==================================================
+COGNITIVE DISTRIBUTION REPAIR
+==================================================
 
-cognitive must be one of:
+Cognitive levels are:
 
 - Recall
 - Understanding
 - Application
 - Analysis
 
+The validation feedback contains the EXACT expected and generated counts.
+
+Use those counts as the source of truth.
+
+For example:
+
+If the validator says:
+
+Application expected 8, got 9
+
+then the final paper must contain exactly:
+
+Application = 8
+
+Do not guess the target.
+
+If the validator says:
+
+Analysis expected 4, got 5
+
+then the final paper must contain exactly:
+
+Analysis = 4
+
+Do not guess the target.
+
+When a cognitive level is too high:
+
+- Find a suitable existing question that can genuinely belong to the required
+  lower cognitive level.
+- Prefer modifying the smallest possible number of questions.
+- Keep the question type unchanged.
+- Keep the marks unchanged.
+- Keep the section unchanged.
+- Keep the topic and syllabus relevance.
+- Rewrite the question only when necessary for the new cognitive level.
+
+When a cognitive level is too low:
+
+- Find a suitable existing question that can genuinely support the required
+  higher cognitive level.
+- Prefer modifying the smallest possible number of questions.
+- Do not simply change the "cognitive" label.
+- The actual question must support the assigned cognitive level.
+
+After repairing the cognitive distribution, count ALL questions again.
+
 ==================================================
-SPECIAL QUESTION TYPES
+DIFFICULTY DISTRIBUTION REPAIR
+==================================================
+
+Difficulty levels are:
+
+- Easy
+- Medium
+- Hard
+
+If validation reports a difficulty mismatch:
+
+- Use the exact expected counts from the validation feedback.
+- Do not guess the target.
+- Modify the smallest possible number of suitable questions.
+- Keep question type unchanged.
+- Keep marks unchanged.
+- Keep section unchanged.
+- The question must genuinely match the assigned difficulty.
+- Do not merely change the difficulty label.
+
+After repairing difficulty, count ALL questions again.
+
+==================================================
+QUESTION TYPE RULES
 ==================================================
 
 MCQ:
-- Exactly four options.
-- Answer must be A, B, C, or D.
+- Exactly 4 options.
+- Only one correct option.
+- Answer must be A, B, C or D.
 
 True/False:
-- No MCQ options.
+- One clear factual statement.
 - Answer must be True or False.
 
 Fill in the Blanks:
 - Question must contain ______.
+- Answer must be the missing word, value, term or expression.
 
 Assertion-Reason:
-- assertion must be a separate non-empty field.
-- reason must be a separate non-empty field.
+- assertion and reason must be separate fields.
+- They must be logically related.
+- The answer must correctly describe their relationship.
 
 Match the Following:
-- left_column must be a non-empty list.
-- right_column must be a non-empty list.
-- Both columns must have equal length.
+- left_column and right_column must exist.
+- Both must be non-empty.
+- Both must have equal length.
+- Answer must specify the correct matches.
 
 Source-Based Questions:
-- source must be present and meaningful.
+- source must exist.
+- The question must depend on the source.
 
 Diagram-Based Questions:
-- diagram must be present and meaningful.
+- diagram must exist.
+- The question must genuinely depend on the diagram.
 
 Case Study:
-- case must be present and meaningful.
+- case must exist.
+- The question must genuinely depend on the case.
+
+Application-based:
+- Must require application of a concept, formula, principle or method to a new
+  situation.
+- Must not be simple recall.
+
+HOTS:
+- Must require genuine higher-order reasoning, analysis, evaluation,
+  interpretation or non-routine problem solving.
+
+One Word Answer:
+- Answer must be one word or one concise term.
+
+Very Short Answer:
+- Must require a concise response.
+
+Short Answer:
+- Must require an explanation, calculation, comparison, derivation or reasoning
+  appropriate to the assigned marks.
+
+Long Answer:
+- Must require a detailed explanation, derivation, multi-step calculation,
+  analysis or structured response.
 
 ==================================================
-VALIDATION REPAIR
+PRESERVE VALID CONTENT
 ==================================================
 
-Fix every validation error.
+Do not:
 
-However, fixing an error MUST NOT violate the locked blueprint.
-
-If question-type counts are wrong:
-
-- Correct existing questions.
-- Do not add or remove questions.
-
-If marks are wrong:
-
-- Correct existing question marks.
-- Do not add or remove questions.
-
-If difficulty or cognitive values are wrong:
-
-- Correct the metadata of existing questions.
-
-If a special field is missing:
-
-- Add it to the affected existing question.
-
-If a question is duplicated or too similar:
-
-- Rewrite its content while preserving its required type, position and marks.
+- Add questions.
+- Remove questions.
+- Add sections.
+- Remove sections.
+- Move questions between sections.
+- Change valid marks.
+- Change valid question types.
+- Change valid section names.
+- Change valid section order.
+- Change the total marks.
+- Change syllabus coverage unnecessarily.
+- Introduce new duplicates.
+- Introduce new similarity problems.
+- Introduce new structural problems.
 
 ==================================================
-FINAL VERIFICATION
+FINAL SELF-CHECK
 ==================================================
 
-Before returning JSON verify:
+Before returning the repaired paper, internally verify:
 
-- Section count exactly matches the locked blueprint.
-- Section names exactly match.
-- Section order exactly matches.
-- Question count exactly matches.
-- Every question-type count exactly matches.
-- Every question has the required marks.
-- Every section has the required marks.
-- Total marks exactly match.
-- Every question has difficulty.
-- Every question has cognitive.
-- Every question has answer.
-- Every question has solution.
-- All special question-type fields are valid.
+1. Correct number of sections.
+2. Correct section order.
+3. Correct section names.
+4. Correct number of questions.
+5. Correct question types.
+6. Correct marks.
+7. Correct section totals.
+8. Correct total marks.
+9. Exact cognitive distribution.
+10. Exact difficulty distribution if required.
+11. Correct special fields for each question type.
+12. No duplicate questions.
+13. No new validation errors.
+14. Every answer is correct.
+15. Every solution matches its answer.
+16. Every question is syllabus relevant.
+17. Every question genuinely matches its question type.
+18. Every cognitive label genuinely matches the question.
+19. Every difficulty label genuinely matches the question.
 
-Return the COMPLETE repaired paper.
+If a validation error was reported, it MUST be fixed before returning.
+
+Return the COMPLETE repaired examination paper.
 
 Return ONLY valid JSON.
 
 ==================================================
-EXISTING REGENERATION RULES
+ADDITIONAL REGENERATION RULES
 ==================================================
 
 {rules}

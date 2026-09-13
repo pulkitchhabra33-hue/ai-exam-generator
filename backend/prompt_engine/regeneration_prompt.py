@@ -1,5 +1,167 @@
 from backend.prompt_engine.regeneration_rules import get_regeneration_rules
 import json
+import re
+from collections import Counter
+
+
+def get_cognitive_counts(generated_paper):
+    counts = Counter()
+
+    for section in generated_paper.get(
+        "sections",
+        []
+    ):
+        for question in section.get(
+            "questions",
+            []
+        ):
+            cognitive = question.get(
+                "cognitive"
+            )
+
+            if cognitive:
+                counts[cognitive] += 1
+
+    return counts
+
+
+def get_difficulty_counts(generated_paper):
+    counts = Counter()
+
+    for section in generated_paper.get(
+        "sections",
+        []
+    ):
+        for question in section.get(
+            "questions",
+            []
+        ):
+            difficulty = question.get(
+                "difficulty"
+            )
+
+            if difficulty:
+                counts[difficulty] += 1
+
+    return counts
+
+
+def extract_distribution_targets(
+        feedback,
+        label
+):
+    targets = {}
+
+    pattern = re.compile(
+        rf"{re.escape(label)}\s+'?([^']+?)'?\s+mismatch:\s+"
+        r"expected\s+(\d+)\s+questions?,\s+got\s+(\d+)",
+        re.IGNORECASE
+    )
+
+    for item in feedback:
+
+        match = pattern.search(
+            str(item)
+        )
+
+        if match:
+
+            level = match.group(1).strip()
+            expected = int(
+                match.group(2)
+            )
+            actual = int(
+                match.group(3)
+            )
+
+            targets[level] = {
+                "expected": expected,
+                "actual": actual
+            }
+
+    return targets
+
+
+def build_transfer_plan(
+        feedback,
+        generated_paper
+):
+
+    cognitive_targets = extract_distribution_targets(
+        feedback,
+        "Cognitive"
+    )
+
+    if not cognitive_targets:
+        return ""
+
+    current_counts = get_cognitive_counts(
+        generated_paper
+    )
+
+    deficits = []
+    surpluses = []
+
+    for level, data in cognitive_targets.items():
+
+        expected = data["expected"]
+        actual = current_counts.get(
+            level,
+            data["actual"]
+        )
+
+        difference = expected - actual
+
+        if difference > 0:
+            deficits.append(
+                (level, difference)
+            )
+
+        elif difference < 0:
+            surpluses.append(
+                (level, -difference)
+            )
+
+    transfers = []
+
+    for source_level, source_amount in surpluses:
+
+        remaining_source = source_amount
+
+        for index, (
+            target_level,
+            target_amount
+        ) in enumerate(deficits):
+
+            if remaining_source <= 0:
+                break
+
+            if target_amount <= 0:
+                continue
+
+            amount = min(
+                remaining_source,
+                target_amount
+            )
+
+            transfers.append(
+                f"- Change exactly {amount} "
+                f"question(s) from {source_level} "
+                f"to {target_level}."
+            )
+
+            remaining_source -= amount
+            deficits[index] = (
+                target_level,
+                target_amount - amount
+            )
+
+    if not transfers:
+        return ""
+
+    return "\n".join(
+        transfers
+    )
 
 
 def build_regeneration_prompt(
@@ -24,6 +186,53 @@ def build_regeneration_prompt(
     feedback_text = "\n".join(
         f"- {item}"
         for item in feedback
+    )
+
+    cognitive_counts = get_cognitive_counts(
+        generated_paper
+    )
+
+    difficulty_counts = get_difficulty_counts(
+        generated_paper
+    )
+
+    cognitive_targets = extract_distribution_targets(
+        feedback,
+        "Cognitive"
+    )
+
+    difficulty_targets = extract_distribution_targets(
+        feedback,
+        "Difficulty"
+    )
+
+    cognitive_current_text = "\n".join(
+        f"- {level}: {count}"
+        for level, count in sorted(
+            cognitive_counts.items()
+        )
+    )
+
+    difficulty_current_text = "\n".join(
+        f"- {level}: {count}"
+        for level, count in sorted(
+            difficulty_counts.items()
+        )
+    )
+
+    cognitive_target_text = "\n".join(
+        f"- {level}: exactly {data['expected']}"
+        for level, data in cognitive_targets.items()
+    )
+
+    difficulty_target_text = "\n".join(
+        f"- {level}: exactly {data['expected']}"
+        for level, data in difficulty_targets.items()
+    )
+
+    transfer_plan = build_transfer_plan(
+        feedback,
+        generated_paper
     )
 
     rules = get_regeneration_rules()
@@ -94,85 +303,65 @@ Do not change any of these unless the validation feedback explicitly reports
 a problem with that specific item.
 
 ==================================================
-COGNITIVE DISTRIBUTION REPAIR
+EXACT COGNITIVE REPAIR
 ==================================================
 
-Cognitive levels are:
+The cognitive distribution is validated across the COMPLETE examination paper.
 
-- Recall
-- Understanding
-- Application
-- Analysis
+Current cognitive counts:
 
-The validation feedback contains the EXACT expected and generated counts.
+{cognitive_current_text}
 
-Use those counts as the source of truth.
+Required cognitive counts for the levels reported by validation:
 
-For example:
+{cognitive_target_text}
 
-If the validator says:
+Use the validation targets as the absolute source of truth.
 
-Application expected 8, got 9
+DO NOT guess the target counts.
 
-then the final paper must contain exactly:
+DO NOT use different target counts.
 
-Application = 8
+DO NOT change cognitive labels merely to manipulate the numbers.
 
-Do not guess the target.
+The actual question must genuinely match its cognitive level.
 
-If the validator says:
+EXACT REPAIR PLAN:
 
-Analysis expected 4, got 5
+{transfer_plan if transfer_plan else "- Follow the exact cognitive mismatches in the validation feedback and make the smallest genuine corrections required."}
 
-then the final paper must contain exactly:
+When changing a question's cognitive level:
 
-Analysis = 4
+- Keep its section unchanged.
+- Keep its question type unchanged.
+- Keep its marks unchanged.
+- Keep its syllabus/topic relevance.
+- Preserve its answer correctness.
+- Preserve or rewrite its solution so it matches the revised question.
+- Make the question genuinely appropriate for the new cognitive level.
+- Do not change any other question's cognitive level unless required to satisfy
+  the exact reported distribution.
 
-Do not guess the target.
-
-When a cognitive level is too high:
-
-- Find a suitable existing question that can genuinely belong to the required
-  lower cognitive level.
-- Prefer modifying the smallest possible number of questions.
-- Keep the question type unchanged.
-- Keep the marks unchanged.
-- Keep the section unchanged.
-- Keep the topic and syllabus relevance.
-- Rewrite the question only when necessary for the new cognitive level.
-
-When a cognitive level is too low:
-
-- Find a suitable existing question that can genuinely support the required
-  higher cognitive level.
-- Prefer modifying the smallest possible number of questions.
-- Do not simply change the "cognitive" label.
-- The actual question must support the assigned cognitive level.
-
-After repairing the cognitive distribution, count ALL questions again.
+After making the repair, count ALL questions again.
 
 ==================================================
-DIFFICULTY DISTRIBUTION REPAIR
+EXACT DIFFICULTY REPAIR
 ==================================================
 
-Difficulty levels are:
+Current difficulty counts:
 
-- Easy
-- Medium
-- Hard
+{difficulty_current_text}
 
-If validation reports a difficulty mismatch:
+{difficulty_target_text if difficulty_target_text else "No difficulty-count repair is required unless explicitly reported in the validation feedback."}
 
-- Use the exact expected counts from the validation feedback.
-- Do not guess the target.
-- Modify the smallest possible number of suitable questions.
-- Keep question type unchanged.
-- Keep marks unchanged.
-- Keep section unchanged.
-- The question must genuinely match the assigned difficulty.
+If difficulty validation errors are reported:
+
+- Use the exact expected counts from validation.
+- Make the smallest genuine corrections.
+- Keep section, question type and marks unchanged.
 - Do not merely change the difficulty label.
-
-After repairing difficulty, count ALL questions again.
+- The question must genuinely match the assigned difficulty.
+- Recalculate the complete-paper counts before returning.
 
 ==================================================
 QUESTION TYPE RULES
@@ -182,6 +371,7 @@ MCQ:
 - Exactly 4 options.
 - Only one correct option.
 - Answer must be A, B, C or D.
+- All options must be meaningful and plausible.
 
 True/False:
 - One clear factual statement.
@@ -194,7 +384,7 @@ Fill in the Blanks:
 Assertion-Reason:
 - assertion and reason must be separate fields.
 - They must be logically related.
-- The answer must correctly describe their relationship.
+- Answer must correctly describe their relationship.
 
 Match the Following:
 - left_column and right_column must exist.
@@ -204,7 +394,7 @@ Match the Following:
 
 Source-Based Questions:
 - source must exist.
-- The question must depend on the source.
+- The question must genuinely depend on the source.
 
 Diagram-Based Questions:
 - diagram must exist.
@@ -215,8 +405,8 @@ Case Study:
 - The question must genuinely depend on the case.
 
 Application-based:
-- Must require application of a concept, formula, principle or method to a new
-  situation.
+- Must require genuine application of a concept, formula, principle or method
+  to a new situation.
 - Must not be simple recall.
 
 HOTS:
@@ -227,14 +417,14 @@ One Word Answer:
 - Answer must be one word or one concise term.
 
 Very Short Answer:
-- Must require a concise response.
+- Must require a concise response appropriate to its marks.
 
 Short Answer:
-- Must require an explanation, calculation, comparison, derivation or reasoning
-  appropriate to the assigned marks.
+- Must require explanation, calculation, comparison, derivation or reasoning
+  appropriate to its marks.
 
 Long Answer:
-- Must require a detailed explanation, derivation, multi-step calculation,
+- Must require detailed explanation, derivation, multi-step calculation,
   analysis or structured response.
 
 ==================================================
@@ -254,9 +444,27 @@ Do not:
 - Change valid section order.
 - Change the total marks.
 - Change syllabus coverage unnecessarily.
-- Introduce new duplicates.
-- Introduce new similarity problems.
-- Introduce new structural problems.
+- Introduce duplicates.
+- Introduce similarity problems.
+- Introduce structural problems.
+
+==================================================
+QUALITY REQUIREMENTS
+==================================================
+
+For every question that is modified:
+
+- It must remain factually correct.
+- It must remain grammatically correct.
+- It must remain clear and unambiguous.
+- It must remain appropriate for the subject and class.
+- It must remain syllabus relevant.
+- The answer must be correct.
+- The solution must match the answer.
+- The question type must remain genuine.
+- The difficulty must genuinely match.
+- The cognitive level must genuinely match.
+- Do not sacrifice academic quality merely to satisfy a numerical distribution.
 
 ==================================================
 FINAL SELF-CHECK
@@ -268,21 +476,23 @@ Before returning the repaired paper, internally verify:
 2. Correct section order.
 3. Correct section names.
 4. Correct number of questions.
-5. Correct question types.
-6. Correct marks.
-7. Correct section totals.
-8. Correct total marks.
-9. Exact cognitive distribution.
-10. Exact difficulty distribution if required.
-11. Correct special fields for each question type.
-12. No duplicate questions.
-13. No new validation errors.
-14. Every answer is correct.
-15. Every solution matches its answer.
-16. Every question is syllabus relevant.
-17. Every question genuinely matches its question type.
-18. Every cognitive label genuinely matches the question.
-19. Every difficulty label genuinely matches the question.
+5. Correct question grouping.
+6. Correct question types.
+7. Correct marks.
+8. Correct section totals.
+9. Correct total marks.
+10. Exact cognitive distribution.
+11. Exact difficulty distribution if required.
+12. Correct special fields for every question type.
+13. No duplicate questions.
+14. No new similarity problems.
+15. No structural problems.
+16. Every answer is correct.
+17. Every solution matches its answer.
+18. Every question is syllabus relevant.
+19. Every question genuinely matches its question type.
+20. Every cognitive level genuinely matches its question.
+21. Every difficulty level genuinely matches its question.
 
 If a validation error was reported, it MUST be fixed before returning.
 

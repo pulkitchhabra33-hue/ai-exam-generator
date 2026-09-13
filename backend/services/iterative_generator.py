@@ -5,8 +5,36 @@ from backend.services.ai_service import regenerate_paper
 from backend.utils.logger import logger
 
 MAX_REGENERATION_ATTEMPTS = 3
-
 DEBUG_PROMPT = False
+
+
+def validation_score(validation):
+    details = validation.get("details", {})
+    errors = validation.get("errors", [])
+
+    weights = {
+        "validate_structure": 1000,
+        "validate_marks": 1000,
+        "validate_question_types": 1000,
+        "validate_blueprint": 100,
+        "validate_similarity": 50,
+        "validate_duplicates": 50
+    }
+
+    score = 0
+
+    for validator_name, validator_result in details.items():
+        error_count = len(
+            validator_result.get("errors", [])
+        )
+        score += error_count * weights.get(
+            validator_name,
+            10
+        )
+
+    score += len(errors)
+
+    return score
 
 
 def iterative_generation(
@@ -16,9 +44,45 @@ def iterative_generation(
         subject
 ):
 
+    if not isinstance(generated_paper, dict):
+        logger.error(
+            "Initial generated paper is not a valid dictionary."
+        )
+        return {
+            "success": False,
+            "error": "Initial generated paper is invalid.",
+            "stage": "iterative_generation"
+        }
+
+    if "error" in generated_paper:
+        logger.error(
+            "Initial AI generation failed."
+        )
+        logger.error(
+            generated_paper.get("error")
+        )
+        return {
+            "success": False,
+            "error": generated_paper.get(
+                "error",
+                "Initial AI generation failed."
+            ),
+            "stage": "iterative_generation"
+        }
+
+    if "sections" not in generated_paper:
+        logger.error(
+            "Initial generated paper has no sections."
+        )
+        return {
+            "success": False,
+            "error": "Initial generated paper has no sections.",
+            "stage": "iterative_generation"
+        }
+
     best_paper = generated_paper
     best_validation = None
-    lowest_errors = float("inf")
+    best_score = float("inf")
     best_attempt = 0
     attempts_used = 0
 
@@ -34,7 +98,8 @@ def iterative_generation(
         )
 
         logger.info(
-            f"VALIDATION ERRORS: {validation.get('errors', [])}"
+            f"VALIDATION ERRORS: "
+            f"{validation.get('errors', [])}"
         )
 
         for validator_name, validator_result in validation.get(
@@ -51,17 +116,21 @@ def iterative_generation(
             validation.get("errors", [])
         )
 
-        if current_errors < lowest_errors:
+        current_score = validation_score(
+            validation
+        )
 
-            lowest_errors = current_errors
-            best_paper = best_paper
+        if current_score < best_score:
+
+            best_score = current_score
             best_validation = validation
             best_attempt = attempts_used
 
             logger.info(
                 f"New Best Paper: "
                 f"(Attempt {attempts_used}, "
-                f"{current_errors} errors)"
+                f"{current_errors} errors, "
+                f"score {current_score})"
             )
 
         if validation.get("valid"):
@@ -112,11 +181,9 @@ def iterative_generation(
         )
 
         if DEBUG_PROMPT:
-
             logger.info(
                 "REGENERATION PROMPT"
             )
-
             logger.info(
                 prompt
             )
@@ -170,9 +237,18 @@ def iterative_generation(
             )
         )
 
+        candidate_score = validation_score(
+            candidate_validation
+        )
+
         logger.info(
             f"Regenerated candidate validation errors: "
             f"{candidate_errors}"
+        )
+
+        logger.info(
+            f"Regenerated candidate validation score: "
+            f"{candidate_score}"
         )
 
         if candidate_validation.get("valid"):
@@ -200,24 +276,25 @@ def iterative_generation(
                 }
             }
 
-        if candidate_errors < lowest_errors:
+        if candidate_score < best_score:
 
             best_paper = candidate
             best_validation = candidate_validation
-            lowest_errors = candidate_errors
+            best_score = candidate_score
             best_attempt = attempts_used
 
             logger.info(
                 f"Candidate became new best paper: "
-                f"{candidate_errors} errors."
+                f"{candidate_errors} errors, "
+                f"score {candidate_score}."
             )
 
         else:
 
             logger.info(
-                f"Candidate rejected because it has "
-                f"{candidate_errors} errors, while the best paper "
-                f"has {lowest_errors} errors."
+                f"Candidate rejected because its validation score "
+                f"({candidate_score}) is not better than the best "
+                f"score ({best_score})."
             )
 
     logger.error(
@@ -229,8 +306,12 @@ def iterative_generation(
         f"Best attempt: {best_attempt}"
     )
 
+    remaining_errors = len(
+        best_validation.get("errors", [])
+    ) if best_validation else 0
+
     logger.error(
-        f"Remaining validation errors: {lowest_errors}"
+        f"Remaining validation errors: {remaining_errors}"
     )
 
     return {

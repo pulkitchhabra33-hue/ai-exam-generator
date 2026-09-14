@@ -147,9 +147,17 @@ def iterative_generation(
             return {
                 "paper": best_paper,
                 "report": {
+                    "valid": True,
+                    "errors": validation.get(
+                        "errors",
+                        []
+                    ),
+                    "details": validation.get(
+                        "details",
+                        {}
+                    ),
                     "attempts": attempts_used,
                     "best_attempt": best_attempt,
-                    "valid": True,
                     "remaining_errors": 0,
                     "validators": validation.get(
                         "details",
@@ -275,9 +283,17 @@ def iterative_generation(
             return {
                 "paper": candidate,
                 "report": {
+                    "valid": True,
+                    "errors": candidate_validation.get(
+                        "errors",
+                        []
+                    ),
+                    "details": candidate_validation.get(
+                        "details",
+                        {}
+                    ),
                     "attempts": attempts_used,
                     "best_attempt": attempts_used,
-                    "valid": True,
                     "remaining_errors": 0,
                     "validators": candidate_validation.get(
                         "details",

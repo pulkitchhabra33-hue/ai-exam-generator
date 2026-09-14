@@ -50,6 +50,7 @@ def extract_distribution_targets(
         feedback,
         label
 ):
+
     targets = {}
 
     pattern = re.compile(
@@ -67,9 +68,11 @@ def extract_distribution_targets(
         if match:
 
             level = match.group(1).strip()
+
             expected = int(
                 match.group(2)
             )
+
             actual = int(
                 match.group(3)
             )
@@ -105,6 +108,7 @@ def build_transfer_plan(
     for level, data in cognitive_targets.items():
 
         expected = data["expected"]
+
         actual = current_counts.get(
             level,
             data["actual"]
@@ -113,11 +117,13 @@ def build_transfer_plan(
         difference = expected - actual
 
         if difference > 0:
+
             deficits.append(
                 (level, difference)
             )
 
         elif difference < 0:
+
             surpluses.append(
                 (level, -difference)
             )
@@ -151,6 +157,7 @@ def build_transfer_plan(
             )
 
             remaining_source -= amount
+
             deficits[index] = (
                 target_level,
                 target_amount - amount
@@ -280,6 +287,12 @@ Do not regenerate the complete paper from scratch.
 
 Do not change valid questions unnecessarily.
 
+If multiple validation errors are present, repair the existing paper in place.
+
+When there are two or more validation errors, identify the smallest possible set of existing questions that can fix all reported errors and modify only those questions.
+
+Do not replace the complete examination paper when targeted repair is possible.
+
 ==================================================
 STRUCTURE LOCK
 ==================================================
@@ -308,6 +321,8 @@ EXACT COGNITIVE REPAIR
 
 The cognitive distribution is validated across the COMPLETE examination paper.
 
+The validator allows a maximum difference of one question from the calculated target.
+
 Current cognitive counts:
 
 {cognitive_current_text}
@@ -316,7 +331,9 @@ Required cognitive counts for the levels reported by validation:
 
 {cognitive_target_text}
 
-Use the validation targets as the absolute source of truth.
+Use the validation targets as the source of truth when a cognitive mismatch is explicitly reported.
+
+A difference of one question is acceptable and does not require repair.
 
 DO NOT guess the target counts.
 
@@ -344,6 +361,8 @@ When changing a question's cognitive level:
 
 After making the repair, count ALL questions again.
 
+The final cognitive counts must be within the validator's allowed one-question tolerance.
+
 ==================================================
 EXACT DIFFICULTY REPAIR
 ==================================================
@@ -368,62 +387,76 @@ QUESTION TYPE RULES
 ==================================================
 
 MCQ:
+
 - Exactly 4 options.
 - Only one correct option.
 - Answer must be A, B, C or D.
 - All options must be meaningful and plausible.
 
 True/False:
+
 - One clear factual statement.
 - Answer must be True or False.
 
 Fill in the Blanks:
+
 - Question must contain ______.
 - Answer must be the missing word, value, term or expression.
 
 Assertion-Reason:
+
 - assertion and reason must be separate fields.
 - They must be logically related.
 - Answer must correctly describe their relationship.
 
 Match the Following:
+
 - left_column and right_column must exist.
 - Both must be non-empty.
 - Both must have equal length.
 - Answer must specify the correct matches.
 
 Source-Based Questions:
+
 - source must exist.
 - The question must genuinely depend on the source.
 
 Diagram-Based Questions:
+
 - diagram must exist.
 - The question must genuinely depend on the diagram.
 
 Case Study:
+
 - case must exist.
 - The question must genuinely depend on the case.
 
 Application-based:
+
 - Must require genuine application of a concept, formula, principle or method
   to a new situation.
 - Must not be simple recall.
 
 HOTS:
+
 - Must require genuine higher-order reasoning, analysis, evaluation,
   interpretation or non-routine problem solving.
 
 One Word Answer:
+
 - Answer must be one word or one concise term.
 
 Very Short Answer:
+
 - Must require a concise response appropriate to its marks.
 
 Short Answer:
+
 - Must require explanation, calculation, comparison, derivation or reasoning
   appropriate to its marks.
 
 Long Answer:
+
 - Must require detailed explanation, derivation, multi-step calculation,
   analysis or structured response.
 
@@ -481,8 +514,8 @@ Before returning the repaired paper, internally verify:
 7. Correct marks.
 8. Correct section totals.
 9. Correct total marks.
-10. Exact cognitive distribution.
-11. Exact difficulty distribution if required.
+10. Cognitive distribution within the allowed one-question tolerance.
+11. Difficulty distribution within the allowed one-question tolerance if required.
 12. Correct special fields for every question type.
 13. No duplicate questions.
 14. No new similarity problems.
@@ -495,6 +528,10 @@ Before returning the repaired paper, internally verify:
 21. Every difficulty level genuinely matches its question.
 
 If a validation error was reported, it MUST be fixed before returning.
+
+Do not return a candidate with the same or a greater number of validation errors than the input paper.
+
+Preserve unaffected questions exactly whenever possible.
 
 Return the COMPLETE repaired examination paper.
 

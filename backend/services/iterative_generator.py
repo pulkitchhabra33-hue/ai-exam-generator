@@ -27,6 +27,7 @@ def validation_score(validation):
         error_count = len(
             validator_result.get("errors", [])
         )
+
         score += error_count * weights.get(
             validator_name,
             10
@@ -48,6 +49,7 @@ def iterative_generation(
         logger.error(
             "Initial generated paper is not a valid dictionary."
         )
+
         return {
             "success": False,
             "error": "Initial generated paper is invalid.",
@@ -58,9 +60,11 @@ def iterative_generation(
         logger.error(
             "Initial AI generation failed."
         )
+
         logger.error(
             generated_paper.get("error")
         )
+
         return {
             "success": False,
             "error": generated_paper.get(
@@ -74,6 +78,7 @@ def iterative_generation(
         logger.error(
             "Initial generated paper has no sections."
         )
+
         return {
             "success": False,
             "error": "Initial generated paper has no sections.",
@@ -162,6 +167,14 @@ def iterative_generation(
             validation
         )
 
+        if current_errors >= 2:
+            logger.info(
+                "Multiple validation errors detected. "
+                "Regeneration will repair the existing paper "
+                "with targeted changes instead of regenerating "
+                "the paper from scratch."
+            )
+
         prompt = build_regeneration_prompt(
             teacher_data,
             best_paper,
@@ -181,9 +194,11 @@ def iterative_generation(
         )
 
         if DEBUG_PROMPT:
+
             logger.info(
                 "REGENERATION PROMPT"
             )
+
             logger.info(
                 prompt
             )
@@ -276,7 +291,11 @@ def iterative_generation(
                 }
             }
 
-        if candidate_score < best_score:
+        best_errors = len(
+            best_validation.get("errors", [])
+        ) if best_validation else current_errors
+
+        if candidate_errors < best_errors:
 
             best_paper = candidate
             best_validation = candidate_validation
@@ -292,9 +311,10 @@ def iterative_generation(
         else:
 
             logger.info(
-                f"Candidate rejected because its validation score "
-                f"({candidate_score}) is not better than the best "
-                f"score ({best_score})."
+                f"Candidate rejected because it has "
+                f"{candidate_errors} validation errors, "
+                f"while the best paper has {best_errors}. "
+                f"Candidates with the same or more errors are rejected."
             )
 
     logger.error(

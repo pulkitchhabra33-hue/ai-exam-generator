@@ -4,9 +4,8 @@ from backend.validators.structure_validator import validate_structure
 from backend.validators.duplicate_validator import validate_duplicates
 from backend.validators.similarity_validator import validate_similarity
 from backend.validators.question_type_validator import validate_question_types
-# from backend.validators.grammar_validator import validate_grammar
 
-VALIDATORS= [
+VALIDATORS = [
     validate_structure,
     validate_marks,
     validate_blueprint,
@@ -15,26 +14,31 @@ VALIDATORS= [
     validate_question_types
 ]
 
+
 def validate_generated_paper(
         generated_paper,
         teacher_data,
         exam_type,
         subject
 ):
-    report= {
+
+    report = {
         "valid": True,
         "errors": [],
+        "warnings": [],
         "details": {}
     }
 
-    reports= []
+    reports = []
 
     for validator in VALIDATORS:
+
         if validator in (
             validate_structure,
             validate_marks,
             validate_question_types
         ):
+
             reports.append(
                 validator(
                     generated_paper,
@@ -46,6 +50,7 @@ def validate_generated_paper(
             validate_similarity,
             validate_blueprint
         ):
+
             reports.append(
                 validator(
                     generated_paper,
@@ -53,21 +58,41 @@ def validate_generated_paper(
                     subject
                 )
             )
-        
+
         else:
+
             reports.append(
                 validator(
                     generated_paper
                 )
             )
 
+    for validator, result in zip(
+        VALIDATORS,
+        reports
+    ):
 
-    for validator, result in zip(VALIDATORS, reports):
-        report["details"][validator.__name__] = result
+        report["details"][
+            validator.__name__
+        ] = result
+
+        if result.get("warnings"):
+            report["warnings"].extend(
+                result.get(
+                    "warnings",
+                    []
+                )
+            )
+
         if not result["valid"]:
+
             report["valid"] = False
+
             report["errors"].extend(
-                result["errors"]
+                result.get(
+                    "errors",
+                    []
+                )
             )
 
     return report

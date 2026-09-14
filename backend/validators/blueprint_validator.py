@@ -47,7 +47,8 @@ def validate_count_distribution(
         report,
         title,
         total_questions,
-        tolerance=0
+        tolerance=0,
+        soft=False
 ):
 
     expected_counts = allocate_integer_counts(
@@ -75,13 +76,21 @@ def validate_count_distribution(
 
         if abs(actual_count - expected_count) > tolerance:
 
-            report["valid"] = False
-
-            report["errors"].append(
+            message = (
                 f"{title} '{key}' mismatch: "
                 f"expected {expected_count} questions, "
                 f"got {actual_count}"
             )
+
+            if soft:
+                report["warnings"].append(
+                    message
+                )
+            else:
+                report["valid"] = False
+                report["errors"].append(
+                    message
+                )
 
 
 def validate_blueprint(
@@ -92,7 +101,8 @@ def validate_blueprint(
 
     report = {
         "valid": True,
-        "errors": []
+        "errors": [],
+        "warnings": []
     }
 
     expected = get_expected_blueprint(
@@ -163,7 +173,8 @@ def validate_blueprint(
         report,
         "Difficulty",
         total_questions,
-        tolerance=1
+        tolerance=1,
+        soft=True
     )
 
     validate_count_distribution(
@@ -175,7 +186,8 @@ def validate_blueprint(
         report,
         "Cognitive",
         total_questions,
-        tolerance=1
+        tolerance=1,
+        soft=True
     )
 
     expected_types = expected.get(

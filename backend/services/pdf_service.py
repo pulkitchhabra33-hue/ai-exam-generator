@@ -311,43 +311,40 @@ def generate_pdf(
 
         grouped_questions = {}
 
-    for question in questions:
-
-        question_type = normalize_question_type(
-            question.get(
-                "question_type",
-                ""
+        for question in questions:
+            question_type = normalize_question_type(
+                question.get(
+                    "question_type",
+                    ""
+                )
             )
-        )
 
-        if question_type not in grouped_questions:
-            grouped_questions[question_type] = []
+            if question_type not in grouped_questions:
+                grouped_questions[question_type] = []
 
-        grouped_questions[question_type].append(question)
+            grouped_questions[question_type].append(question)
 
         group_order = []
 
-    for group in section.get(
-        "question_groups",
-        []
-    ):
-
-        question_type = normalize_question_type(
-            group.get(
-                "question_type",
-                ""
-            )
-        )
-
-        if (
-            question_type
-            and
-            question_type not in group_order
+        for group in section.get(
+            "question_groups",
+            []
         ):
-            group_order.append(
-                question_type
+            question_type = normalize_question_type(
+                group.get(
+                    "question_type",
+                    ""
+                )
             )
 
+            if (
+                question_type
+                and
+                question_type not in group_order
+            ):
+                group_order.append(
+                    question_type
+                )
 
         ordered_types = (
             group_order

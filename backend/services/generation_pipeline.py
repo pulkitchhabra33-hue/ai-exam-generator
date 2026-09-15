@@ -7,7 +7,7 @@ from backend.services.confidence_estimator import calculate_confidence
 from backend.services.generation_statistics import build_generation_statistics
 from backend.services.acceptance_engine import should_accept
 from backend.services.teacher_summary import build_teacher_summary
-from backend.services.content_quality_validator import validate_and_repair_paper
+from backend.validators.content_quality_validator import validate_and_repair_paper
 from backend.services.final_result_builder import build_final_result
 from backend.utils.logger import logger
 

@@ -421,11 +421,6 @@ Source-Based Questions:
 - source must exist.
 - The question must genuinely depend on the source.
 
-Diagram-Based Questions:
-
-- diagram must exist.
-- The question must genuinely depend on the diagram.
-
 Case Study:
 
 - case must exist.

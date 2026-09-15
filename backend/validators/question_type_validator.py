@@ -32,8 +32,6 @@ def normalize_question_type(question_type):
         "one word answer": "One Word Answer",
         "source-based questions": "Source-Based Questions",
         "source based questions": "Source-Based Questions",
-        "diagram-based questions": "Diagram-Based Questions",
-        "diagram based questions": "Diagram-Based Questions"
     }
 
     return mappings.get(value, str(question_type).strip())

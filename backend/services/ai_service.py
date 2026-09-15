@@ -159,17 +159,6 @@ SOURCE-BASED QUESTION RULES
 - The answer must be directly supported by or logically derived from the source.
 """,
 
-        "Diagram-Based Questions":"""
-DIAGRAM-BASED QUESTION RULES
-- Generate a question that genuinely requires interpretation of a diagram, figure, graph, circuit, structure, labelled representation or visual relationship.
-- The diagram field must describe the required diagram clearly enough for rendering or creation.
-- The question must actually depend on the diagram.
-- Do not label a normal text-only question as Diagram-Based.
-- Labels, components or relationships required to answer the question must be represented in the diagram description.
-- The answer must be determinable from the diagram and relevant subject knowledge.
-- Do not require an unavailable image that is not represented in the output.
-""",
-
         "Case Study":"""
 CASE STUDY RULES
 - Provide a meaningful case, scenario, passage, experiment, situation or real-world context.
@@ -401,6 +390,11 @@ def build_group_prompt(
 
     question_type = group["question_type"]
 
+    if question_type == "Diagram-Based Questions":
+        return {
+            "error": "Diagram-Based Questions are no longer supported."
+        }
+
     question_count = int(
         group["question_count"]
     )
@@ -531,24 +525,6 @@ def build_group_prompt(
                     "source": "A meaningful source passage, data, statement, extract, or information related to the subject.",
                     "answer": "Answer based on the source.",
                     "solution": "Explanation using the information provided in the source."
-                }}
-            ]
-        }}
-        """
-
-    elif question_type == "Diagram-Based Questions":
-        output_example = f"""
-        {{
-            "questions": [
-                {{
-                    "question": "Study the diagram and answer the question.",
-                    "question_type": "Diagram-Based Questions",
-                    "marks": {marks_per_question},
-                    "difficulty": "Medium",
-                    "cognitive": "Application",
-                    "diagram": "Description of the required diagram or visual representation.",
-                    "answer": "Answer based on the diagram.",
-                    "solution": "Explanation based on the diagram."
                 }}
             ]
         }}
@@ -830,6 +806,22 @@ QUESTION TYPE RULES
 {question_type_rules}
 
 ==================================================
+ACADEMIC QUALITY LOCK
+==================================================
+
+- Every question must directly belong to the requested subject and syllabus.
+- Do not introduce concepts from another subject unless the teacher explicitly requests interdisciplinary content.
+- Match the question demand to the assigned marks.
+- A one-mark question must have a concise, objectively gradable response.
+- Multi-step calculations, derivations, comparisons or extended reasoning must receive enough marks to justify the work.
+- Verify the answer independently before returning the question.
+- The solution MUST support the answer and MUST NOT contradict it.
+- Recalculate every numerical answer before returning it.
+- Keep wording clear, grammatical and unambiguous.
+- Source-Based Questions must be answerable from their source material.
+- Case Study questions must genuinely depend on their case.
+
+==================================================
 EXAM REQUIREMENTS
 ==================================================
 
@@ -1015,9 +1007,6 @@ def validate_group_output(
 
         if question_type == "Source-Based Questions" and not str(question.get("source", "")).strip():
             return False, f"Question {index} Source-Based Questions is missing source."
-
-        if question_type == "Diagram-Based Questions" and not str(question.get("diagram", "")).strip():
-            return False, f"Question {index} Diagram-Based Questions is missing diagram."
 
         if question_type == "Case Study" and not str(question.get("case", "")).strip():
             return False, f"Question {index} Case Study is missing case."
@@ -1565,12 +1554,6 @@ Source-Based Questions:
 - The question must genuinely depend on the provided source.
 - The source must contain sufficient information to answer the question.
 
-Diagram-Based Questions:
-
-- Include diagram.
-- The question must genuinely depend on the diagram.
-- The diagram description must contain enough information for the question to be answered.
-
 Case Study:
 
 - Include case.
@@ -1841,33 +1824,31 @@ Before returning the paper, internally verify all of the following:
 
 21. Source-Based Questions contain source.
 
-22. Diagram-Based Questions contain diagram.
+22. Case Study questions contain case.
 
-23. Case Study questions contain case.
+23. Application-based questions genuinely require application.
 
-24. Application-based questions genuinely require application.
+24. HOTS questions genuinely require higher-order reasoning.
 
-25. HOTS questions genuinely require higher-order reasoning.
+25. One Word Answer questions have concise one-word or one-term answers.
 
-26. One Word Answer questions have concise one-word or one-term answers.
+26. Very Short Answer questions are appropriately concise.
 
-27. Very Short Answer questions are appropriately concise.
+27. Short Answer questions are appropriate for their marks.
 
-28. Short Answer questions are appropriate for their marks.
+28. Long Answer questions are appropriate for their marks.
 
-29. Long Answer questions are appropriate for their marks.
+29. No duplicate questions remain.
 
-30. No duplicate questions remain.
+30. No unresolved validation problems remain.
 
-31. No unresolved validation problems remain.
+31. Every question has a valid answer.
 
-32. Every question has a valid answer.
+32. Every question has a valid solution.
 
-33. Every question has a valid solution.
+33. The complete paper remains academically correct.
 
-34. The complete paper remains academically correct.
-
-35. The complete paper remains syllabus relevant.
+34. The complete paper remains syllabus relevant.
 
 ==================================================
 FINAL OUTPUT

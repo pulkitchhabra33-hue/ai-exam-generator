@@ -1,14 +1,11 @@
 from collections import Counter
-from backend.services.expected_blueprint import (
-    get_expected_blueprint
-)
+from backend.services.expected_blueprint import get_expected_blueprint
 
 
 def allocate_integer_counts(
         total_questions,
         distribution
 ):
-
     if total_questions <= 0 or not distribution:
         return {}
 
@@ -22,16 +19,11 @@ def allocate_integer_counts(
         for key, value in raw.items()
     }
 
-    remaining = (
-        total_questions
-        - sum(counts.values())
-    )
+    remaining = total_questions - sum(counts.values())
 
     remainders = sorted(
         distribution.keys(),
-        key=lambda key: (
-            raw[key] - counts[key]
-        ),
+        key=lambda key: raw[key] - counts[key],
         reverse=True
     )
 
@@ -50,32 +42,18 @@ def validate_count_distribution(
         tolerance=0,
         soft=False
 ):
-
     expected_counts = allocate_integer_counts(
         total_questions,
         expected_distribution
     )
 
-    all_keys = set(
-        expected_counts
-    ) | set(
-        generated_counter
-    )
+    all_keys = set(expected_counts) | set(generated_counter)
 
     for key in all_keys:
-
-        expected_count = expected_counts.get(
-            key,
-            0
-        )
-
-        actual_count = generated_counter.get(
-            key,
-            0
-        )
+        expected_count = expected_counts.get(key, 0)
+        actual_count = generated_counter.get(key, 0)
 
         if abs(actual_count - expected_count) > tolerance:
-
             message = (
                 f"{title} '{key}' mismatch: "
                 f"expected {expected_count} questions, "
@@ -83,14 +61,10 @@ def validate_count_distribution(
             )
 
             if soft:
-                report["warnings"].append(
-                    message
-                )
+                report["warnings"].append(message)
             else:
                 report["valid"] = False
-                report["errors"].append(
-                    message
-                )
+                report["errors"].append(message)
 
 
 def validate_blueprint(
@@ -98,7 +72,6 @@ def validate_blueprint(
         exam_type,
         subject
 ):
-
     report = {
         "valid": True,
         "errors": [],
@@ -116,7 +89,6 @@ def validate_blueprint(
         "sections",
         []
     ):
-
         generated_questions.extend(
             section.get(
                 "questions",
@@ -124,9 +96,7 @@ def validate_blueprint(
             )
         )
 
-    total_questions = len(
-        generated_questions
-    )
+    total_questions = len(generated_questions)
 
     if total_questions == 0:
         return report
@@ -136,40 +106,20 @@ def validate_blueprint(
     generated_types = Counter()
 
     for question in generated_questions:
-
-        difficulty = question.get(
-            "difficulty"
-        )
-
-        cognitive = question.get(
-            "cognitive"
-        )
-
-        question_type = question.get(
-            "question_type"
-        )
+        difficulty = question.get("difficulty")
+        cognitive = question.get("cognitive")
+        question_type = question.get("question_type")
 
         if difficulty:
-            generated_difficulty[
-                difficulty
-            ] += 1
-
+            generated_difficulty[difficulty] += 1
         if cognitive:
-            generated_cognitive[
-                cognitive
-            ] += 1
-
+            generated_cognitive[cognitive] += 1
         if question_type:
-            generated_types[
-                question_type
-            ] += 1
+            generated_types[question_type] += 1
 
     validate_count_distribution(
         generated_difficulty,
-        expected.get(
-            "difficulty_distribution",
-            {}
-        ),
+        expected.get("difficulty_distribution", {}),
         report,
         "Difficulty",
         total_questions,
@@ -179,10 +129,7 @@ def validate_blueprint(
 
     validate_count_distribution(
         generated_cognitive,
-        expected.get(
-            "cognitive_distribution",
-            {}
-        ),
+        expected.get("cognitive_distribution", {}),
         report,
         "Cognitive",
         total_questions,
@@ -196,13 +143,14 @@ def validate_blueprint(
     )
 
     if expected_types:
-
         validate_count_distribution(
             generated_types,
             expected_types,
             report,
             "Question Type",
-            total_questions
+            total_questions,
+            tolerance=0,
+            soft=False
         )
 
     return report

@@ -14,14 +14,12 @@ VALIDATORS = [
     validate_question_types
 ]
 
-
 def validate_generated_paper(
         generated_paper,
         teacher_data,
         exam_type,
         subject
 ):
-
     report = {
         "valid": True,
         "errors": [],
@@ -32,25 +30,21 @@ def validate_generated_paper(
     reports = []
 
     for validator in VALIDATORS:
-
         if validator in (
             validate_structure,
             validate_marks,
             validate_question_types
         ):
-
             reports.append(
                 validator(
                     generated_paper,
                     teacher_data
                 )
             )
-
         elif validator in (
             validate_similarity,
             validate_blueprint
         ):
-
             reports.append(
                 validator(
                     generated_paper,
@@ -58,9 +52,7 @@ def validate_generated_paper(
                     subject
                 )
             )
-
         else:
-
             reports.append(
                 validator(
                     generated_paper
@@ -71,28 +63,19 @@ def validate_generated_paper(
         VALIDATORS,
         reports
     ):
-
         report["details"][
             validator.__name__
         ] = result
 
         if result.get("warnings"):
             report["warnings"].extend(
-                result.get(
-                    "warnings",
-                    []
-                )
+                result.get("warnings", [])
             )
 
-        if not result["valid"]:
-
+        if not result.get("valid", False):
             report["valid"] = False
-
             report["errors"].extend(
-                result.get(
-                    "errors",
-                    []
-                )
+                result.get("errors", [])
             )
 
     return report

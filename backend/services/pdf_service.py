@@ -64,8 +64,6 @@ def normalize_question_type(question_type):
         "source-based questions": "Source-Based Questions",
         "source based questions": "Source-Based Questions",
 
-        "diagram-based questions": "Diagram-Based Questions",
-        "diagram based questions": "Diagram-Based Questions"
     }
 
     return aliases.get(
@@ -356,178 +354,178 @@ def generate_pdf(
             ]
         )
 
-    # --------------------------------------------------
-    # RENDER QUESTIONS BY QUESTION TYPE
-    # --------------------------------------------------
-
-    question_type_style = ParagraphStyle(
-        "QuestionTypeHeading",
-        parent=section_style,
-        keepWithNext=1,
-        spaceBefore=10,
-        spaceAfter=8
-    )
-
-    for question_type in ordered_types:
-
-        type_questions = grouped_questions.get(
-            question_type,
-            []
-        )
-
-        if not type_questions:
-            continue
-
-        heading = question_type
-
-        if heading == "MCQ":
-            heading = "Multiple Choice Questions"
-
-        # Keep the question-type heading with the
-        # first question of that type.
-        elements.append(
-            Paragraph(
-                f"<b>{safe_text(heading)}</b>",
-                question_type_style
-            )
-        )
-
         # --------------------------------------------------
-        # RENDER EACH QUESTION EXACTLY ONCE
+        # RENDER QUESTIONS BY QUESTION TYPE
         # --------------------------------------------------
 
-        for question in type_questions:
+        question_type_style = ParagraphStyle(
+            "QuestionTypeHeading",
+            parent=section_style,
+            keepWithNext=1,
+            spaceBefore=10,
+            spaceAfter=8
+        )
 
-            question_text = safe_text(
-                question.get(
-                    "question",
-                    ""
-                )
-            )
+        for question_type in ordered_types:
 
-            marks = question.get(
-                "marks",
-                ""
-            )
-
-            question_type = normalize_question_type(
-                question.get(
-                    "question_type",
-                    ""
-                )
-            )
-
-            # --------------------------------------------------
-            # QUESTION NUMBER + MARKS
-            # --------------------------------------------------
-
-            question_number = (
-                f"<b>{question_counter}.</b>"
-            )
-
-            question_paragraph = Paragraph(
-                f"{question_number} {question_text}",
-                question_style
-            )
-
-            marks_paragraph = Paragraph(
-                f"<b>[{safe_text(marks)}]</b>",
-                marks_style
-            )
-
-            question_table = Table(
-                [
-                    [
-                        question_paragraph,
-                        marks_paragraph
-                    ]
-                ],
-                colWidths=[
-                    430,
-                    50
-                ],
-                hAlign="LEFT"
-            )
-
-            question_table.setStyle(
-                TableStyle(
-                    [
-                        (
-                            "VALIGN",
-                            (0, 0),
-                            (-1, -1),
-                            "TOP"
-                        ),
-                        (
-                            "LEFTPADDING",
-                            (0, 0),
-                            (-1, -1),
-                            0
-                        ),
-                        (
-                            "RIGHTPADDING",
-                            (0, 0),
-                            (-1, -1),
-                            0
-                        ),
-                        (
-                            "TOPPADDING",
-                            (0, 0),
-                            (-1, -1),
-                            0
-                        ),
-                        (
-                            "BOTTOMPADDING",
-                            (0, 0),
-                            (-1, -1),
-                            0
-                        )
-                    ]
-                )
-            )
-
-            # --------------------------------------------------
-            # TYPE-SPECIFIC CONTENT
-            # --------------------------------------------------
-
-            render_styles = {
-                "Normal": styles["Normal"],
-                "OptionStyle": option_style
-            }
-
-            type_elements = render_question_content(
-                question,
+            type_questions = grouped_questions.get(
                 question_type,
-                render_styles
+                []
+            )
+
+            if not type_questions:
+                continue
+
+            heading = question_type
+
+            if heading == "MCQ":
+                heading = "Multiple Choice Questions"
+
+            # Keep the question-type heading with the
+            # first question of that type.
+            elements.append(
+                Paragraph(
+                    f"<b>{safe_text(heading)}</b>",
+                    question_type_style
+                )
             )
 
             # --------------------------------------------------
-            # KEEP COMPLETE QUESTION TOGETHER
+            # RENDER EACH QUESTION EXACTLY ONCE
             # --------------------------------------------------
 
-            question_block = [
-                question_table,
-                Spacer(
-                    1,
-                    4
-                ),
-                *type_elements
-            ]
+            for question in type_questions:
+
+                question_text = safe_text(
+                    question.get(
+                        "question",
+                        ""
+                    )
+                )
+
+                marks = question.get(
+                    "marks",
+                    ""
+                )
+
+                question_type = normalize_question_type(
+                    question.get(
+                        "question_type",
+                        ""
+                    )
+                )
+
+                # --------------------------------------------------
+                # QUESTION NUMBER + MARKS
+                # --------------------------------------------------
+
+                question_number = (
+                    f"<b>{question_counter}.</b>"
+                )
+
+                question_paragraph = Paragraph(
+                    f"{question_number} {question_text}",
+                    question_style
+                )
+
+                marks_paragraph = Paragraph(
+                    f"<b>[{safe_text(marks)}]</b>",
+                    marks_style
+                )
+
+                question_table = Table(
+                    [
+                        [
+                            question_paragraph,
+                            marks_paragraph
+                        ]
+                    ],
+                    colWidths=[
+                        430,
+                        50
+                    ],
+                    hAlign="LEFT"
+                )
+
+                question_table.setStyle(
+                    TableStyle(
+                        [
+                            (
+                                "VALIGN",
+                                (0, 0),
+                                (-1, -1),
+                                "TOP"
+                            ),
+                            (
+                                "LEFTPADDING",
+                                (0, 0),
+                                (-1, -1),
+                                0
+                            ),
+                            (
+                                "RIGHTPADDING",
+                                (0, 0),
+                                (-1, -1),
+                                0
+                            ),
+                            (
+                                "TOPPADDING",
+                                (0, 0),
+                                (-1, -1),
+                                0
+                            ),
+                            (
+                                "BOTTOMPADDING",
+                                (0, 0),
+                                (-1, -1),
+                                0
+                            )
+                        ]
+                    )
+                )
+
+                # --------------------------------------------------
+                # TYPE-SPECIFIC CONTENT
+                # --------------------------------------------------
+
+                render_styles = {
+                    "Normal": styles["Normal"],
+                    "OptionStyle": option_style
+                }
+
+                type_elements = render_question_content(
+                    question,
+                    question_type,
+                    render_styles
+                )
+
+                # --------------------------------------------------
+                # KEEP COMPLETE QUESTION TOGETHER
+                # --------------------------------------------------
+
+                question_block = [
+                    question_table,
+                    Spacer(
+                        1,
+                        4
+                    ),
+                    *type_elements
+                ]
+
+                elements.append(
+                    KeepTogether(
+                        question_block
+                    )
+                )
+
+                question_counter += 1
 
             elements.append(
-                KeepTogether(
-                    question_block
+                Spacer(
+                    1,
+                    10
                 )
             )
-
-            question_counter += 1
-
-        elements.append(
-            Spacer(
-                1,
-                10
-            )
-        )
 
 
     # --------------------------------------------------
@@ -925,34 +923,6 @@ def render_question_content(
             )
 
         return elements
-
-    # DIAGRAM-BASED QUESTIONS
-
-    if question_type == "Diagram-Based Questions":
-        diagram= safe_text(
-            question.get(
-                "diagram",
-                ""
-            )
-        )
-
-        if diagram:
-            elements.append(
-                Paragraph(
-                    f"<b>Diagram:</b> {diagram}",
-                    styles["OptionStyle"]
-                )
-            )
-
-        elements.append(
-            Spacer(
-                1,
-                5
-            )
-        )
-
-        return elements
-
 
     # CASE-STUDY
 

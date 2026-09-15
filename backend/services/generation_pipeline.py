@@ -7,6 +7,7 @@ from backend.services.confidence_estimator import calculate_confidence
 from backend.services.generation_statistics import build_generation_statistics
 from backend.services.acceptance_engine import should_accept
 from backend.services.teacher_summary import build_teacher_summary
+from backend.services.content_quality_validator import validate_and_repair_paper
 from backend.services.final_result_builder import build_final_result
 from backend.utils.logger import logger
 
@@ -51,23 +52,6 @@ def generate_exam_paper(teacher_data):
             teacher_data["subject"]
         )
 
-        if not result.get("success", True):
-            logger.error(
-                result.get(
-                    "error",
-                    "Unable to generate a valid exam paper."
-                )
-            )
-
-            return {
-                "success": False,
-                "error": (
-                    "We couldn't generate the exam paper "
-                    "correctly right now. Please try again."
-                ),
-                "stage": "iterative_generation"
-            }
-
         check_pipeline_timeout(pipeline_start)
 
         validation_time= (
@@ -88,6 +72,40 @@ def generate_exam_paper(teacher_data):
 
         validation_report= result["report"]
         generation_statistics= result["statistics"]
+
+        # ---------------------------------------------
+        # CONTENT QUALITY
+        # ---------------------------------------------
+
+        paper, content_quality_report = validate_and_repair_paper(
+            paper,
+            teacher_data
+        )
+
+        validation_report["details"][
+            "validate_content_quality"
+        ] = content_quality_report
+
+        validation_report.setdefault("warnings", [])
+
+        if content_quality_report.get("warnings"):
+            validation_report["warnings"].extend(
+                content_quality_report.get(
+                    "warnings",
+                    []
+                )
+            )
+
+        if not content_quality_report.get("valid", False):
+            logger.error(
+                "Content quality validation failed: "
+                f"{content_quality_report.get('errors', [])}"
+            )
+            return {
+                "success": False,
+                "error": "The generated paper failed final academic quality validation.",
+                "stage": "content_quality_validation"
+            }
 
         # ---------------------------------------------
         # QUALITY
@@ -138,7 +156,7 @@ def generate_exam_paper(teacher_data):
             "success": False,
             "error": (
                 "Exam generation took too long. "
-                "Please try again."
+                "PLease try again."
             ),
             "stage": "generation_pipeline",
             "timeout": True

@@ -593,13 +593,7 @@ def generate(
             print("[GEN] After PDF generation", flush=True)
 
         except Exception as error:
-            import traceback
-            print(
-                "[PDF ERROR]",
-                repr(error),
-                flush=True
-            )
-            traceback.print_exc()
+
             raise HTTPException(
                 status_code=500,
                 detail=(

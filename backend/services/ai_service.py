@@ -476,7 +476,13 @@ def build_group_prompt(
                     "cognitive": "Analysis",
                     "assertion": "A separate assertion statement.",
                     "reason": "A separate reason statement.",
-                    "answer": "Both Assertion and Reason are true, and Reason correctly explains Assertion.",
+                    "options": [
+                        "Both Assertion and Reason are true, and Reason correctly explains Assertion.",
+                        "Both Assertion and Reason are true, but Reason does not correctly explain Assertion.",
+                        "Assertion is true, but Reason is false.",
+                        "Assertion is false, but Reason is true."
+                    ],
+                    "answer": "A",
                     "solution": "Explanation of the relationship between the assertion and reason."
                 }}
             ]

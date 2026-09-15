@@ -732,6 +732,29 @@ def render_question_content(
 
     if question_type == "Assertion-Reason":
 
+        options = question.get(
+        "options",
+        []
+    )
+
+    option_labels = [
+        "A",
+        "B",
+        "C",
+        "D"
+    ]
+
+    for index, option in enumerate(options[:4]):
+
+        option_text = safe_text(option)
+
+        elements.append(
+            Paragraph(
+                f"<b>{option_labels[index]})</b> {option_text}",
+                styles["OptionStyle"]
+            )
+        )
+
         assertion = safe_text(
             question.get(
                 "assertion",

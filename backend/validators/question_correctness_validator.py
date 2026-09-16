@@ -455,6 +455,12 @@ def validate_question_correctness(
     errors = []
 
     for index, question in enumerate(questions, start=1):
+        if index in (21, 22):
+            print(
+                f"[CORRECTNESS DEBUG] Question {index}: "
+                f"{json.dumps(question, ensure_ascii=False)}",
+                flush=True
+            )
         errors.extend(
             _deterministic_validation(question, index)
         )

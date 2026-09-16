@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+import traceback
 
 from typing import List, Optional
 
@@ -593,6 +594,13 @@ def generate(
             print("[GEN] After PDF generation", flush=True)
 
         except Exception as error:
+
+            print(
+                "[PDF ERROR] PDF generation failed:",
+                flush=True
+            )
+
+            traceback.print_exc()
 
             raise HTTPException(
                 status_code=500,

@@ -313,6 +313,10 @@ def generate(
         default=True
     ),
 
+    include_solutions: bool = Form(
+        default=False
+    ),
+
     authorization: Optional[str] = Header(
         default=None
     ),
@@ -321,6 +325,9 @@ def generate(
         default=None
     )
 ):
+
+    if include_solutions:
+        include_solutions=True
 
     # ========================================================
     # PARSE TEACHER DATA
@@ -586,9 +593,8 @@ def generate(
             file_path = generate_pdf(
                 paper,
                 filename=filename,
-                include_answers=(
-                    include_answers
-                )
+                include_answers=include_answers,
+                inlcude_solutions=include_solutions
             )
 
             print("[GEN] After PDF generation", flush=True)

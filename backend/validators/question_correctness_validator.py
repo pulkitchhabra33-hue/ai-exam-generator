@@ -547,25 +547,36 @@ Questions:
 
     for result in results:
         index = result.get("index")
+        reason = _clean(result.get("reason"))
 
-        if not result.get("correct", True):
+        correct = result.get("correct", True)
+        ambiguous = result.get("ambiguous", False)
+        answer_correct = result.get("answer_correct", True)
+        solution_consistent = result.get("solution_consistent", True)
+
+        if not correct:
             errors.append(
-                f"Question {index}: {result.get('reason', 'Question is not correct.')}"
+                f"Question {index}: {reason or 'Question is not correct.'}"
             )
+            continue
 
-        if result.get("ambiguous", False):
+        if ambiguous:
             errors.append(
-                f"Question {index}: {result.get('reason', 'Question is ambiguous.')}"
+                f"Question {index}: {reason or 'Question is ambiguous.'}"
             )
+            continue
 
-        if not result.get("answer_correct", True):
+        if not answer_correct:
             errors.append(
-                f"Question {index}: supplied answer is incorrect. {result.get('reason', '')}".strip()
+                f"Question {index}: supplied answer is incorrect. "
+                f"{reason or 'The supplied answer does not match the correct answer.'}"
             )
+            continue
 
-        if not result.get("solution_consistent", True):
+        if not solution_consistent:
             errors.append(
-                f"Question {index}: solution/explanation is inconsistent with the answer. {result.get('reason', '')}".strip()
+                f"Question {index}: solution/explanation is inconsistent with the answer. "
+                f"{reason or 'The explanation does not support the supplied answer.'}"
             )
 
     return errors

@@ -474,6 +474,19 @@ async function generatePDF() {
                 ? includeAnswersElement.checked
                 : true;
 
+        const includeSolutionsElement =
+            document.getElementById("includeSolutions");
+
+        let includeSolutions =
+            includeSolutionsElement
+                ? includeSolutionsElement.checked
+                : false;
+
+        if (includeSolutions && !includeAnswers) {
+            includeSolutions = false;
+            includeSolutionsElement.checked = false;
+        }
+
         const data = {
             exam_type:
                 document.getElementById("exam_type").value,
@@ -951,5 +964,42 @@ document.addEventListener(
         } else {
             loadGuestCredits();
         }
+    }
+);
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+        const includeAnswers =
+            document.getElementById(
+                "includeAnswers"
+            );
+
+        const includeSolutions =
+            document.getElementById(
+                "includeSolutions"
+            );
+
+        if (
+            !includeAnswers ||
+            !includeSolutions
+        ) {
+            return;
+        }
+
+        includeAnswers.addEventListener(
+            "change",
+            () => {
+                if (!includeAnswers.checked) {
+                    includeSolutions.checked = false;
+                    includeSolutions.disabled = true;
+                } else {
+                    includeSolutions.disabled = false;
+                }
+            }
+        );
+
+        includeSolutions.disabled =
+            !includeAnswers.checked;
     }
 );

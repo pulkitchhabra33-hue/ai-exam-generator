@@ -82,7 +82,8 @@ def safe_text(value):
 def generate_pdf(
     data,
     filename="paper.pdf",
-    include_answers=True
+    include_answers=True,
+    include_solutions=True
 ):
 
     # --------------------------------------------------
@@ -586,7 +587,7 @@ def generate_pdf(
     # SOLUTIONS
     # --------------------------------------------------
 
-    if include_answers:
+    if include_solutions:
 
         elements.append(
             Paragraph(

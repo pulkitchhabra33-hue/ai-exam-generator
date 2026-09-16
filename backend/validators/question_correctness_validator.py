@@ -309,6 +309,150 @@ def _build_ai_question(question: dict, index: int) -> dict:
     }
 
 
+def _ai_validate_questions(questions: list[dict], exam_type: str, subject: str) -> list[str]:
+    if not questions:
+        return []
+
+    payload = {
+        "exam_type": exam_type,
+        "subject": subject,
+        "questions": [
+            _build_ai_question(question, index)
+            for index, question in enumerate(questions, start=1)
+        ]
+    }
+
+    prompt = f"""
+You are a strict exam-question correctness verifier.
+
+Verify every question independently and mathematically/logically.
+
+For each question check:
+
+1. Whether the question itself is factually correct.
+2. Whether the supplied answer is objectively correct.
+3. For MCQs, whether the answer letter maps to the correct option.
+4. Whether distractor options are valid and not accidentally correct.
+5. Whether the question is ambiguous or has multiple genuinely plausible answers.
+6. Whether the solution/explanation agrees with the supplied answer.
+7. Whether all numerical calculations are correct.
+8. Whether True/False answers are correct.
+9. Whether Fill-in-the-Blank answers correctly answer the blank.
+10. Whether Assertion-Reason answers correctly represent the relationship.
+11. Whether Match-the-Following answers are internally consistent.
+12. Whether the question contains a serious factual, logical, or mathematical error.
+
+IMPORTANT ANSWER-CONSISTENCY RULES:
+
+- You MUST independently determine the correct answer before deciding whether the supplied answer is correct.
+- If the supplied answer and your calculated/correct answer are the same, answer_correct MUST be true.
+- Never mark an answer incorrect when your own stated correct answer is identical to the supplied answer.
+- Never describe an answer as incorrect using wording such as "not X" when the supplied answer is also X.
+- If your reasoning contradicts your answer_correct flag, resolve the contradiction before returning the result.
+- Do not invent a difference between two numerically or factually identical answers.
+- For numerical questions, perform the calculation explicitly before judging the answer.
+- For MCQs, identify the actual option text corresponding to the supplied answer letter before judging it.
+- If the answer is correct but the explanation contains a minor wording issue, do not mark answer_correct as false.
+- Only mark ambiguous=true when there are genuinely multiple plausible correct answers.
+- Do not reject a question merely because its wording could be stylistically improved.
+
+Return ONLY valid JSON in this exact format:
+
+{{
+  "results": [
+    {{
+      "index": 1,
+      "correct": true,
+      "ambiguous": false,
+      "answer_correct": true,
+      "solution_consistent": true,
+      "reason": ""
+    }}
+  ]
+}}
+
+For every question:
+- "correct" means the question and its content are objectively valid.
+- "answer_correct" means the supplied answer is actually correct.
+- "solution_consistent" means the supplied solution/explanation agrees with the supplied answer.
+- "reason" must contain a concrete explanation ONLY when one of these checks fails.
+- If all checks pass, use an empty string for "reason".
+
+Exam type:
+{exam_type}
+
+Subject:
+{subject}
+
+Questions:
+{json.dumps(payload, ensure_ascii=False)}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a strict exam correctness verifier. Perform calculations carefully and return JSON only."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        response_format={"type": "json_object"},
+        temperature=0,
+        timeout=60
+    )
+
+    content = response.choices[0].message.content
+    data = json.loads(content)
+    results = data.get("results", [])
+
+    errors = []
+
+    for result in results:
+        index = result.get("index")
+        reason = _clean(result.get("reason"))
+
+        if not result.get("correct", True):
+            if reason:
+                errors.append(
+                    f"Question {index}: {reason}"
+                )
+
+        if result.get("ambiguous", False):
+            if reason:
+                errors.append(
+                    f"Question {index}: {reason}"
+                )
+            else:
+                errors.append(
+                    f"Question {index}: question is ambiguous."
+                )
+
+        if not result.get("answer_correct", True):
+            if reason:
+                errors.append(
+                    f"Question {index}: supplied answer is incorrect. {reason}"
+                )
+            else:
+                errors.append(
+                    f"Question {index}: supplied answer is incorrect."
+                )
+
+        if not result.get("solution_consistent", True):
+            if reason:
+                errors.append(
+                    f"Question {index}: solution/explanation is inconsistent with the answer. {reason}"
+                )
+            else:
+                errors.append(
+                    f"Question {index}: solution/explanation is inconsistent with the answer."
+                )
+
+    return errors
+
 def _ai_validate_questions(
     questions: list[dict],
     exam_type: str,

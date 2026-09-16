@@ -653,17 +653,17 @@ def render_question_content(
         question_type,
         styles
 ):
-    elements= []
+    elements = []
 
     # MCQ
 
     if question_type == "MCQ":
-        options= question.get(
+        options = question.get(
             "options",
             []
         )
 
-        option_labels= [
+        option_labels = [
             "A",
             "B",
             "C",
@@ -672,20 +672,8 @@ def render_question_content(
 
         for index, option in enumerate(options[:4]):
             option_text = safe_text(option)
-            # Remove AI-provided A), B), C), D)
-            # if already present.
 
-            # if (
-            #     len(option_text) >= 2
-            #     and option_text[:2].upper()
-            #     in ["A", "B", "C", "D"]
-            # ):
-            #     option_text= (
-            #         option_text[2:]
-            #         .strip()
-            #     )
-
-            label= option_labels[index]
+            label = option_labels[index]
 
             elements.append(
                 Paragraph(
@@ -716,9 +704,6 @@ def render_question_content(
     # Fill in the Blanks
 
     if question_type == "Fill in the Blanks":
-        # The blank should already exist in
-        # the generated question text.
-
         elements.append(
             Spacer(
                 1,
@@ -728,33 +713,9 @@ def render_question_content(
 
         return elements
 
-        # Assertion-Reason
+    # Assertion-Reason
 
     if question_type == "Assertion-Reason":
-
-        options = question.get(
-        "options",
-        []
-    )
-
-    option_labels = [
-        "A",
-        "B",
-        "C",
-        "D"
-    ]
-
-    for index, option in enumerate(options[:4]):
-
-        option_text = safe_text(option)
-
-        elements.append(
-            Paragraph(
-                f"<b>{option_labels[index]})</b> {option_text}",
-                styles["OptionStyle"]
-            )
-        )
-
         assertion = safe_text(
             question.get(
                 "assertion",
@@ -769,9 +730,7 @@ def render_question_content(
             )
         )
 
-
         if assertion:
-
             elements.append(
                 Paragraph(
                     f"<b>Assertion:</b> {assertion}",
@@ -779,16 +738,13 @@ def render_question_content(
                 )
             )
 
-
         if reason:
-
             elements.append(
                 Paragraph(
                     f"<b>Reason:</b> {reason}",
                     styles["OptionStyle"]
                 )
             )
-
 
         elements.append(
             Spacer(

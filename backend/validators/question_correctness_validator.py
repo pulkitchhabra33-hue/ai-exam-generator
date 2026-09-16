@@ -186,37 +186,29 @@ def _validate_assertion_reason(question: dict, index: int) -> list[str]:
 
 def _validate_match_following(question: dict, index: int) -> list[str]:
     errors = []
+    left_column = question.get("left_column")
+    right_column = question.get("right_column")
 
-    column_a = question.get("column_a")
-    column_b = question.get("column_b")
+    if not isinstance(left_column, list):
+        errors.append(f"Question {index}: Match-the-Following left_column must be a list.")
 
-    if not isinstance(column_a, list):
-        errors.append(
-            f"Question {index}: Match-the-Following column_a must be a list."
-        )
+    if not isinstance(right_column, list):
+        errors.append(f"Question {index}: Match-the-Following right_column must be a list.")
 
-    if not isinstance(column_b, list):
-        errors.append(
-            f"Question {index}: Match-the-Following column_b must be a list."
-        )
+    if isinstance(left_column, list) and isinstance(right_column, list):
+        if not left_column:
+            errors.append(f"Question {index}: Match-the-Following left column is empty.")
+        if not right_column:
+            errors.append(f"Question {index}: Match-the-Following right column is empty.")
 
-    if isinstance(column_a, list) and isinstance(column_b, list):
-        if not column_a:
+        if len(left_column) != len(right_column):
             errors.append(
-                f"Question {index}: Match-the-Following column A is empty."
-            )
-
-        if not column_b:
-            errors.append(
-                f"Question {index}: Match-the-Following column B is empty."
+                f"Question {index}: Match-the-Following left and right columns must have the same number of items."
             )
 
     answer = question.get("answer")
-
     if not _clean(answer):
-        errors.append(
-            f"Question {index}: Match-the-Following answer is missing."
-        )
+        errors.append(f"Question {index}: Match-the-Following answer is missing.")
 
     return errors
 
@@ -309,8 +301,8 @@ def _build_ai_question(question: dict, index: int) -> dict:
         "options": question.get("options"),
         "assertion": question.get("assertion"),
         "reason": question.get("reason"),
-        "column_a": question.get("column_a"),
-        "column_b": question.get("column_b"),
+        "left_column": question.get("left_column"),
+        "right_column": question.get("right_column"),
         "answer": question.get("answer"),
         "solution": question.get("solution"),
         "explanation": question.get("explanation")

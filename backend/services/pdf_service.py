@@ -715,7 +715,10 @@ def render_question_content(
 
     # Assertion-Reason
 
+    # Assertion-Reason
+
     if question_type == "Assertion-Reason":
+
         assertion = safe_text(
             question.get(
                 "assertion",
@@ -733,7 +736,7 @@ def render_question_content(
         if assertion:
             elements.append(
                 Paragraph(
-                    f"<b>Assertion:</b> {assertion}",
+                    f"<b>Assertion (A):</b> {assertion}",
                     styles["OptionStyle"]
                 )
             )
@@ -741,7 +744,32 @@ def render_question_content(
         if reason:
             elements.append(
                 Paragraph(
-                    f"<b>Reason:</b> {reason}",
+                    f"<b>Reason (R):</b> {reason}",
+                    styles["OptionStyle"]
+                )
+            )
+
+        assertion_reason_options = [
+            "Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).",
+            "Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).",
+            "Assertion (A) is true, but Reason (R) is false.",
+            "Assertion (A) is false, but Reason (R) is true."
+        ]
+
+        option_labels = [
+            "A",
+            "B",
+            "C",
+            "D"
+        ]
+
+        for index, option in enumerate(
+            assertion_reason_options
+        ):
+
+            elements.append(
+                Paragraph(
+                    f"<b>{option_labels[index]})</b> {option}",
                     styles["OptionStyle"]
                 )
             )

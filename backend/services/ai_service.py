@@ -126,13 +126,19 @@ FILL IN THE BLANKS RULES
         "Assertion-Reason":"""
 ASSERTION-REASON RULES
 - Generate one Assertion and one Reason.
-- The assertion and reason must be written as separate fields.
+- The assertion and reason MUST be written as separate fields.
 - Both must be clear, academically meaningful and related to the same concept.
-- The question must allow evaluation of both the truth of the Assertion and the truth of the Reason, as well as their logical relationship.
-- Do not combine Assertion and Reason into a single question string.
-- Avoid trivial or obviously unrelated assertion-reason pairs.
-- The answer must identify the correct assertion-reason relationship according to the provided answer convention.
-- The reason should explain or logically relate to the assertion rather than merely repeat it.
+- The question must allow evaluation of whether the Assertion is true, whether the Reason is true, and whether the Reason correctly explains the Assertion.
+- The options field MUST contain exactly these four strings in this exact order:
+  1. Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).
+  2. Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).
+  3. Assertion (A) is true, but Reason (R) is false.
+  4. Assertion (A) is false, but Reason (R) is true.
+- Do NOT rewrite, shorten, modify, reorder or replace these options.
+- The answer field MUST contain only A, B, C or D.
+- Determine the answer from the actual truth and logical relationship of the Assertion and Reason.
+- Do not guess the answer.
+- Verify the Assertion, Reason and their relationship independently before returning the question.
 """,
 
         "Match the Following":"""
@@ -469,7 +475,7 @@ def build_group_prompt(
         {{
             "questions": [
                 {{
-                    "question": "Select the correct relationship between the Assertion and Reason.",
+                    "question": "Select the correct relationship between Assertion (A) and Reason (R).",
                     "question_type": "Assertion-Reason",
                     "marks": {marks_per_question},
                     "difficulty": "Medium",
@@ -477,13 +483,13 @@ def build_group_prompt(
                     "assertion": "A separate assertion statement.",
                     "reason": "A separate reason statement.",
                     "options": [
-                        "Both Assertion and Reason are true, and Reason correctly explains Assertion.",
-                        "Both Assertion and Reason are true, but Reason does not correctly explain Assertion.",
-                        "Assertion is true, but Reason is false.",
-                        "Assertion is false, but Reason is true."
+                        "Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).",
+                        "Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).",
+                        "Assertion (A) is true, but Reason (R) is false.",
+                        "Assertion (A) is false, but Reason (R) is true."
                     ],
                     "answer": "A",
-                    "solution": "Explanation of the relationship between the assertion and reason."
+                    "solution": "Explanation of why the selected assertion-reason relationship is correct."
                 }}
             ]
         }}
@@ -996,8 +1002,20 @@ def validate_group_output(
             return False, f"Question {index} Fill in the Blanks is missing ______."
 
         if question_type == "Assertion-Reason":
-            if not str(question.get("assertion", "")).strip() or not str(question.get("reason", "")).strip():
-                return False, f"Question {index} Assertion-Reason is missing assertion or reason."
+            if not str(question.get("assertion", "")).strip():
+                return False, f"Question {index} Assertion-Reason is missing assertion."
+            if not str(question.get("reason", "")).strip():
+                return False, f"Question {index} Assertion-Reason is missing reason."
+            expected_options = [
+                "Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).",
+                "Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).",
+                "Assertion (A) is true, but Reason (R) is false.",
+                "Assertion (A) is false, but Reason (R) is true."
+            ]
+            if question.get("options") != expected_options:
+                return False, f"Question {index} Assertion-Reason options are invalid."
+            if question.get("answer") not in ("A", "B", "C", "D"):
+                return False, f"Question {index} Assertion-Reason answer must be A/B/C/D."
 
         if question_type == "Match the Following":
             left = question.get("left_column")
@@ -1544,7 +1562,13 @@ Assertion-Reason:
 - Include reason.
 - Keep assertion and reason as separate fields.
 - The assertion and reason must be logically related.
-- The answer must correctly represent their relationship.
+- Include exactly these four options in this exact order:
+  A. Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).
+  B. Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).
+  C. Assertion (A) is true, but Reason (R) is false.
+  D. Assertion (A) is false, but Reason (R) is true.
+- Do not rewrite, shorten, modify or reorder these options.
+- The answer must be exactly A, B, C or D and must correctly represent their relationship.
 
 Match the Following:
 

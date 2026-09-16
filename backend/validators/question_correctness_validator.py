@@ -439,12 +439,18 @@ def validate_question_correctness(
     generated_paper: dict,
     exam_type: str = "",
     subject: str = ""
-) -> list[str]:
+) -> dict:
 
     questions = _get_questions(generated_paper)
 
     if not questions:
-        return ["Question correctness validator: no questions found."]
+        return {
+            "valid": False,
+            "error": [
+                "Question correctness validator: no questions found."
+            ],
+            "warnings": []
+        }
 
     errors = []
 
@@ -452,13 +458,25 @@ def validate_question_correctness(
         errors.extend(
             _deterministic_validation(question, index)
         )
+    try:
+        ai_errors = _ai_validate_questions(
+            questions,
+            exam_type,
+            subject
+        )
+        errors.extend(ai_errors)
 
-    ai_errors = _ai_validate_questions(
-        questions,
-        exam_type,
-        subject
-    )
-
-    errors.extend(ai_errors)
-
-    return errors
+    except Exception as error:
+        return {
+            "valid": False,
+            "errors": [
+                f"Question correctness AI validation failed: {error}"
+            ],
+            "warnings": []
+        }
+    
+    return {
+        "valid": len(errors) == 0,
+        "errors": errors,
+        "warnings": []
+    }

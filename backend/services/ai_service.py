@@ -126,19 +126,13 @@ FILL IN THE BLANKS RULES
         "Assertion-Reason":"""
 ASSERTION-REASON RULES
 - Generate one Assertion and one Reason.
-- The assertion and reason MUST be written as separate fields.
+- The assertion and reason must be written as separate fields.
 - Both must be clear, academically meaningful and related to the same concept.
-- The question must allow evaluation of whether the Assertion is true, whether the Reason is true, and whether the Reason correctly explains the Assertion.
-- The options field MUST contain exactly these four strings in this exact order:
-  1. Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).
-  2. Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).
-  3. Assertion (A) is true, but Reason (R) is false.
-  4. Assertion (A) is false, but Reason (R) is true.
-- Do NOT rewrite, shorten, modify, reorder or replace these options.
-- The answer field MUST contain only A, B, C or D.
-- Determine the answer from the actual truth and logical relationship of the Assertion and Reason.
-- Do not guess the answer.
-- Verify the Assertion, Reason and their relationship independently before returning the question.
+- The question must allow evaluation of both the truth of the Assertion and the truth of the Reason, as well as their logical relationship.
+- Do not combine Assertion and Reason into a single question string.
+- Avoid trivial or obviously unrelated assertion-reason pairs.
+- The answer must identify the correct assertion-reason relationship according to the provided answer convention.
+- The reason should explain or logically relate to the assertion rather than merely repeat it.
 """,
 
         "Match the Following":"""
@@ -475,21 +469,15 @@ def build_group_prompt(
         {{
             "questions": [
                 {{
-                    "question": "Select the correct relationship between Assertion (A) and Reason (R).",
+                    "question": "Select the correct relationship between the Assertion and Reason.",
                     "question_type": "Assertion-Reason",
                     "marks": {marks_per_question},
                     "difficulty": "Medium",
                     "cognitive": "Analysis",
                     "assertion": "A separate assertion statement.",
                     "reason": "A separate reason statement.",
-                    "options": [
-                        "Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).",
-                        "Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).",
-                        "Assertion (A) is true, but Reason (R) is false.",
-                        "Assertion (A) is false, but Reason (R) is true."
-                    ],
-                    "answer": "A",
-                    "solution": "Explanation of why the selected assertion-reason relationship is correct."
+                    "answer": "Both Assertion and Reason are true, and Reason correctly explains Assertion.",
+                    "solution": "Explanation of the relationship between the assertion and reason."
                 }}
             ]
         }}
@@ -757,10 +745,17 @@ Hard: {difficulty_allocation.get("Hard", 0)}
 Use these values as strong guidance while generating the group.
 
 IMPORTANT:
-- Easy questions should test straightforward knowledge or simple application.
-- Medium questions should require understanding or moderate application.
-- Hard questions should require deeper reasoning, multi-step work, or analysis.
+- Easy questions should test straightforward but meaningful syllabus knowledge or application.
+- Medium questions should require genuine understanding, interpretation, application or moderate reasoning.
+- Hard questions should require deeper reasoning, multi-step work, interpretation or analysis.
 - Do not artificially label a question Easy/Medium/Hard merely to satisfy a number.
+- Apply a strict academic quality floor based on the requested class.
+- For Class 10 and above, do NOT generate elementary or toy questions such as 7 + 5, direct counting, single-step arithmetic with no syllabus concept, or equivalent tasks that a student would normally master far below the requested class.
+- An Easy question for Class 10+ must still test a meaningful class-level syllabus concept. Easy does not mean childish.
+- For Medium and Hard questions, require real conceptual understanding, application, reasoning, interpretation, multi-step work or meaningful decision-making as appropriate to the subject.
+- Prefer board-exam/coaching-exam style questions that are representative of the requested class and subject.
+- Do not inflate difficulty by making wording unnecessarily complicated; increase the quality through the concept, data, conditions, reasoning or application required.
+- Avoid trivial questions even when the blueprint requests Recall or Easy unless the requested question type inherently requires concise factual recall, such as One Word Answer or True/False.
 
 ==================================================
 REQUIRED METADATA
@@ -824,6 +819,9 @@ ACADEMIC QUALITY LOCK
 - Every question must directly belong to the requested subject and syllabus.
 - Do not introduce concepts from another subject unless the teacher explicitly requests interdisciplinary content.
 - Match the question demand to the assigned marks.
+- Treat the requested class as a hard academic constraint, not just metadata.
+- Before returning each question, mentally compare it with the type of question normally expected from a formal school/board examination at that class level.
+- Reject your own draft if it feels like an elementary warm-up, toy arithmetic exercise, or memorization task below the requested class level when a meaningful syllabus-based question can be written instead.
 - A one-mark question must have a concise, objectively gradable response.
 - Multi-step calculations, derivations, comparisons or extended reasoning must receive enough marks to justify the work.
 - Verify the answer independently before returning the question.
@@ -1002,20 +1000,8 @@ def validate_group_output(
             return False, f"Question {index} Fill in the Blanks is missing ______."
 
         if question_type == "Assertion-Reason":
-            if not str(question.get("assertion", "")).strip():
-                return False, f"Question {index} Assertion-Reason is missing assertion."
-            if not str(question.get("reason", "")).strip():
-                return False, f"Question {index} Assertion-Reason is missing reason."
-            expected_options = [
-                "Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).",
-                "Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).",
-                "Assertion (A) is true, but Reason (R) is false.",
-                "Assertion (A) is false, but Reason (R) is true."
-            ]
-            if question.get("options") != expected_options:
-                return False, f"Question {index} Assertion-Reason options are invalid."
-            if question.get("answer") not in ("A", "B", "C", "D"):
-                return False, f"Question {index} Assertion-Reason answer must be A/B/C/D."
+            if not str(question.get("assertion", "")).strip() or not str(question.get("reason", "")).strip():
+                return False, f"Question {index} Assertion-Reason is missing assertion or reason."
 
         if question_type == "Match the Following":
             left = question.get("left_column")
@@ -1562,13 +1548,7 @@ Assertion-Reason:
 - Include reason.
 - Keep assertion and reason as separate fields.
 - The assertion and reason must be logically related.
-- Include exactly these four options in this exact order:
-  A. Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).
-  B. Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).
-  C. Assertion (A) is true, but Reason (R) is false.
-  D. Assertion (A) is false, but Reason (R) is true.
-- Do not rewrite, shorten, modify or reorder these options.
-- The answer must be exactly A, B, C or D and must correctly represent their relationship.
+- The answer must correctly represent their relationship.
 
 Match the Following:
 

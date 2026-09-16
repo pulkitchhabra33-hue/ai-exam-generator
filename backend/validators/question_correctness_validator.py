@@ -309,13 +309,14 @@ def _build_ai_question(question: dict, index: int) -> dict:
     }
 
 
-def _ai_validate_questions(questions: list[dict], exam_type: str, subject: str) -> list[str]:
+def _ai_validate_questions(questions: list[dict], exam_type: str, subject: str, class_name: str = "") -> list[str]:
     if not questions:
         return []
 
     payload = {
         "exam_type": exam_type,
         "subject": subject,
+        "class_name": class_name,
         "questions": [
             _build_ai_question(question, index)
             for index, question in enumerate(questions, start=1)
@@ -341,6 +342,21 @@ For each question check:
 10. Whether Assertion-Reason answers correctly represent the relationship.
 11. Whether Match-the-Following answers are internally consistent.
 12. Whether the question contains a serious factual, logical, or mathematical error.
+13. Whether the question meets the academic quality expected for the requested class.
+14. Whether the question is too trivial for the requested class, subject, difficulty and marks.
+
+ACADEMIC QUALITY FLOOR:
+
+- Generate and verify questions at the level expected for the requested class, not at elementary-school level.
+- For Class 10 and above, reject toy questions such as single-step arithmetic like 7 + 5, counting, direct substitution with no meaningful concept, or similarly trivial tasks when they do not test a syllabus concept.
+- A question may be Easy, but Easy does NOT mean childish or content-free.
+- Easy questions should still test a meaningful syllabus concept appropriate to the class.
+- Medium questions should require genuine understanding or application.
+- Hard questions should require substantial reasoning, interpretation, multi-step work, or analysis where appropriate.
+- Do not judge quality by wording length alone. Judge the cognitive demand and syllabus relevance.
+- Do not reject a legitimate foundational syllabus question merely because it is easy.
+- For One Word Answer and True/False, concise recall may be appropriate, but it must still be syllabus-relevant and class-appropriate.
+- Flag a question only when it clearly falls below the expected academic level, is trivial relative to the requested class/difficulty/marks, or is essentially a toy exercise.
 
 IMPORTANT ANSWER-CONSISTENCY RULES:
 
@@ -366,6 +382,8 @@ Return ONLY valid JSON in this exact format:
       "ambiguous": false,
       "answer_correct": true,
       "solution_consistent": true,
+      "quality_ok": true,
+      "correct_answer": "",
       "reason": ""
     }}
   ]
@@ -375,7 +393,10 @@ For every question:
 - "correct" means the question and its content are objectively valid.
 - "answer_correct" means the supplied answer is actually correct.
 - "solution_consistent" means the supplied solution/explanation agrees with the supplied answer.
+- "quality_ok" means the question meets the academic quality floor for the requested class, subject, difficulty and marks.
+- "correct_answer" must contain the answer you independently determined to be correct. For MCQ use A/B/C/D. For Assertion-Reason use A/B/C/D. For Match-the-Following use the complete mapping such as "1-A, 2-B, 3-D, 4-C". For other questions use the actual correct answer/value.
 - "reason" must contain a concrete explanation ONLY when one of these checks fails.
+- If all checks pass, use an empty string for "reason".
 - If all checks pass, use an empty string for "reason".
 
 Exam type:
@@ -383,6 +404,9 @@ Exam type:
 
 Subject:
 {subject}
+
+Class:
+{class_name}
 
 Questions:
 {json.dumps(payload, ensure_ascii=False)}
@@ -411,189 +435,93 @@ Questions:
 
     errors = []
 
-    for result in results:
-        index = result.get("index")
-        reason = _clean(result.get("reason"))
-
-        if not result.get("correct", True):
-            if reason:
-                errors.append(
-                    f"Question {index}: {reason}"
-                )
-
-        if result.get("ambiguous", False):
-            if reason:
-                errors.append(
-                    f"Question {index}: {reason}"
-                )
-            else:
-                errors.append(
-                    f"Question {index}: question is ambiguous."
-                )
-
-        if not result.get("answer_correct", True):
-            if reason:
-                errors.append(
-                    f"Question {index}: supplied answer is incorrect. {reason}"
-                )
-            else:
-                errors.append(
-                    f"Question {index}: supplied answer is incorrect."
-                )
-
-        if not result.get("solution_consistent", True):
-            if reason:
-                errors.append(
-                    f"Question {index}: solution/explanation is inconsistent with the answer. {reason}"
-                )
-            else:
-                errors.append(
-                    f"Question {index}: solution/explanation is inconsistent with the answer."
-                )
-
-    return errors
-
-def _ai_validate_questions(
-    questions: list[dict],
-    exam_type: str,
-    subject: str
-) -> list[str]:
-
-    if not questions:
-        return []
-
-    payload = {
-        "exam_type": exam_type,
-        "subject": subject,
-        "questions": [
-            _build_ai_question(question, index)
-            for index, question in enumerate(questions, start=1)
-        ]
+    question_map = {
+        index: question
+        for index, question in enumerate(questions, start=1)
     }
 
-    prompt = f"""
-You are a strict exam-question correctness verifier.
-
-Verify each question independently.
-
-Check:
-
-1. Whether the question is factually correct.
-2. Whether the supplied answer is actually correct.
-3. For MCQs, whether the selected answer letter maps to the correct option.
-4. Whether distractor options are logically valid and not accidentally correct.
-5. Whether the question is ambiguous or has multiple plausible answers.
-6. Whether the solution/explanation agrees with the answer.
-7. Whether numerical calculations are correct.
-8. Whether True/False answers are correct.
-9. Whether Fill-in-the-Blank answers correctly answer the blank.
-10. Whether Assertion-Reason answers correctly represent the relationship.
-11. Whether Match-the-Following answers are internally consistent.
-12. Whether the question contains a serious factual, logical or mathematical error.
-
-Do not reject a question merely because its wording could be stylistically improved.
-
-Return ONLY valid JSON in this exact format:
-
-{{
-  "results": [
-    {{
-      "index": 1,
-      "correct": true,
-      "ambiguous": false,
-      "answer_correct": true,
-      "solution_consistent": true,
-      "reason": ""
-    }}
-  ]
-}}
-
-If a question has a correctness problem, explain the concrete problem in "reason".
-
-Exam type:
-{exam_type}
-
-Subject:
-{subject}
-
-Questions:
-{json.dumps(payload, ensure_ascii=False)}
-"""
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a strict exam correctness verifier. Return JSON only."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        response_format={"type": "json_object"},
-        temperature=0,
-        timeout=60
-    )
-
-    content = response.choices[0].message.content
-
-    data = json.loads(content)
-
-    results = data.get("results", [])
-
-    errors = []
+    returned_indexes = set()
 
     for result in results:
         index = result.get("index")
+        if not isinstance(index, int) or index not in question_map:
+            continue
+
+        returned_indexes.add(index)
+        question = question_map[index]
+        supplied_answer = _clean(question.get("answer"))
+        question_type = _clean(question.get("question_type")).lower()
+        correct_answer = _clean(result.get("correct_answer"))
         reason = _clean(result.get("reason"))
 
-        correct = result.get("correct", True)
-        ambiguous = result.get("ambiguous", False)
         answer_correct = result.get("answer_correct", True)
-        solution_consistent = result.get("solution_consistent", True)
+        if isinstance(answer_correct, str):
+            answer_correct = answer_correct.strip().lower() == "true"
 
-        if not correct:
+        if correct_answer and question_type in {"mcq", "assertion-reason", "assertion & reason", "assertion and reason"}:
+            if correct_answer.upper() == supplied_answer.upper():
+                answer_correct = True
+
+        if correct_answer and question_type in {"match the following", "match-the-following", "match_the_following"}:
+            supplied_map = _normalize(supplied_answer).replace(" ", "")
+            correct_map = _normalize(correct_answer).replace(" ", "")
+            if supplied_map == correct_map:
+                answer_correct = True
+
+        if not result.get("correct", True):
             errors.append(
                 f"Question {index}: {reason or 'Question is not correct.'}"
             )
-            continue
 
-        if ambiguous:
+        if result.get("ambiguous", False):
             errors.append(
                 f"Question {index}: {reason or 'Question is ambiguous.'}"
             )
-            continue
 
         if not answer_correct:
             errors.append(
                 f"Question {index}: supplied answer is incorrect. "
-                f"{reason or 'The supplied answer does not match the correct answer.'}"
+                f"{reason or 'The supplied answer does not match the independently determined correct answer.'}"
             )
-            continue
 
-        if not solution_consistent:
+        if not result.get("solution_consistent", True):
             errors.append(
                 f"Question {index}: solution/explanation is inconsistent with the answer. "
                 f"{reason or 'The explanation does not support the supplied answer.'}"
             )
 
-    return errors
+        if not result.get("quality_ok", True):
+            errors.append(
+                f"Question {index}: question quality is below the expected academic level. "
+                f"{reason or 'The question is too trivial for the requested class, difficulty or marks.'}"
+            )
 
+    missing_indexes = set(question_map) - returned_indexes
+    for index in sorted(missing_indexes):
+        errors.append(
+            f"Question {index}: correctness verifier did not return a result."
+        )
+
+    return errors
 
 def validate_question_correctness(
     generated_paper: dict,
     exam_type: str = "",
-    subject: str = ""
+    subject: str = "",
+    teacher_data: Any = None
 ) -> dict:
 
     questions = _get_questions(generated_paper)
 
+    if isinstance(teacher_data, dict):
+        class_name = _clean(teacher_data.get("class_name") or teacher_data.get("class"))
+    else:
+        class_name = _clean(getattr(teacher_data, "class_name", "") or getattr(teacher_data, "class", ""))
+
     if not questions:
         return {
             "valid": False,
-            "error": [
+            "errors": [
                 "Question correctness validator: no questions found."
             ],
             "warnings": []
@@ -615,7 +543,8 @@ def validate_question_correctness(
         ai_errors = _ai_validate_questions(
             questions,
             exam_type,
-            subject
+            subject,
+            class_name
         )
         errors.extend(ai_errors)
 

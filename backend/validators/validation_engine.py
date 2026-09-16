@@ -16,64 +16,48 @@ VALIDATORS = [
     validate_question_correctness
 ]
 
+
 def validate_generated_paper(
-        generated_paper,
-        teacher_data,
-        exam_type,
-        subject
+    generated_paper,
+    teacher_data,
+    exam_type,
+    subject
 ):
     report = {
         "valid": True,
         "errors": [],
-        "warnings": [],
         "details": {}
     }
-
-    reports = []
 
     for validator in VALIDATORS:
         if validator in (
             validate_structure,
             validate_marks,
-            validate_question_types
+            validate_question_types,
+            validate_question_correctness
         ):
-            reports.append(
-                validator(
-                    generated_paper,
-                    teacher_data
-                )
+            result = validator(
+                generated_paper,
+                teacher_data
+            ) if validator is not validate_question_correctness else validator(
+                generated_paper,
+                exam_type,
+                subject,
+                teacher_data
             )
         elif validator in (
             validate_similarity,
-            validate_blueprint,
-            validate_question_correctness
+            validate_blueprint
         ):
-            reports.append(
-                validator(
-                    generated_paper,
-                    exam_type,
-                    subject
-                )
+            result = validator(
+                generated_paper,
+                exam_type,
+                subject
             )
         else:
-            reports.append(
-                validator(
-                    generated_paper
-                )
-            )
+            result = validator(generated_paper)
 
-    for validator, result in zip(
-        VALIDATORS,
-        reports
-    ):
-        report["details"][
-            validator.__name__
-        ] = result
-
-        if result.get("warnings"):
-            report["warnings"].extend(
-                result.get("warnings", [])
-            )
+        report["details"][validator.__name__] = result
 
         if not result.get("valid", False):
             report["valid"] = False

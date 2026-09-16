@@ -311,7 +311,7 @@ def iterative_generation(
             best_validation.get("errors", [])
         ) if best_validation else current_errors
 
-        if candidate_errors < best_errors:
+        if candidate_score < best_score:
 
             best_paper = candidate
             best_validation = candidate_validation
@@ -327,10 +327,9 @@ def iterative_generation(
         else:
 
             logger.info(
-                f"Candidate rejected because it has "
-                f"{candidate_errors} validation errors, "
-                f"while the best paper has {best_errors}. "
-                f"Candidates with the same or more errors are rejected."
+                f"Candidate rejected because its validation score "
+                f"({candidate_score}) is not better than the best score "
+                f"({best_score})."
             )
 
     logger.error(

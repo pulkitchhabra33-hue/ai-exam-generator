@@ -594,7 +594,7 @@ def generate(
                 paper,
                 filename=filename,
                 include_answers=include_answers,
-                inlcude_solutions=include_solutions
+                include_solutions=include_solutions
             )
 
             print("[GEN] After PDF generation", flush=True)

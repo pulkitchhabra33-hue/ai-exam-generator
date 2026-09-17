@@ -1021,11 +1021,11 @@ def validate_group_output(
                 "Assertion (A) is false, but Reason (R) is true."
             ]
 
-    if options != expected_options:
-        return False, f"Question {index} Assertion-Reason options are invalid."
+            if options != expected_options:
+                return False, f"Question {index} Assertion-Reason options are invalid."
 
-    if question.get("answer") not in ("A", "B", "C", "D"):
-        return False, f"Question {index} Assertion-Reason answer must be A/B/C/D."
+            if question.get("answer") not in ("A", "B", "C", "D"):
+                return False, f"Question {index} Assertion-Reason answer must be A/B/C/D."
 
         if question_type == "Match the Following":
             left = question.get("left_column")

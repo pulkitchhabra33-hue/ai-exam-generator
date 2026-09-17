@@ -469,15 +469,21 @@ def build_group_prompt(
         {{
             "questions": [
                 {{
-                    "question": "Select the correct relationship between the Assertion and Reason.",
+                    "question": "Select the correct relationship between Assertion (A) and Reason (R).",
                     "question_type": "Assertion-Reason",
                     "marks": {marks_per_question},
                     "difficulty": "Medium",
                     "cognitive": "Analysis",
                     "assertion": "A separate assertion statement.",
                     "reason": "A separate reason statement.",
-                    "answer": "Both Assertion and Reason are true, and Reason correctly explains Assertion.",
-                    "solution": "Explanation of the relationship between the assertion and reason."
+                    "options": [
+                        "Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).",
+                        "Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).",
+                        "Assertion (A) is true, but Reason (R) is false.",
+                        "Assertion (A) is false, but Reason (R) is true."
+                    ],
+                    "answer": "A",
+                    "solution": "Explanation of why the selected assertion-reason relationship is correct."
                 }}
             ]
         }}
@@ -1002,6 +1008,24 @@ def validate_group_output(
         if question_type == "Assertion-Reason":
             if not str(question.get("assertion", "")).strip() or not str(question.get("reason", "")).strip():
                 return False, f"Question {index} Assertion-Reason is missing assertion or reason."
+
+            options = question.get("options")
+
+            if not isinstance(options, list):
+                return False, f"Question {index} Assertion-Reason options must be a list."
+
+            expected_options = [
+                "Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of the Assertion (A).",
+                "Both Assertion (A) and Reason (R) are true, but Reason (R) is not the correct explanation of the Assertion (A).",
+                "Assertion (A) is true, but Reason (R) is false.",
+                "Assertion (A) is false, but Reason (R) is true."
+            ]
+
+    if options != expected_options:
+        return False, f"Question {index} Assertion-Reason options are invalid."
+
+    if question.get("answer") not in ("A", "B", "C", "D"):
+        return False, f"Question {index} Assertion-Reason answer must be A/B/C/D."
 
         if question_type == "Match the Following":
             left = question.get("left_column")

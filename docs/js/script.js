@@ -127,8 +127,7 @@ function setGenerationUI(active) {
         generateButtons.forEach(
             button => {
                 button.disabled = false;
-                button.innerText =
-                    "🚀 Generate Exam Paper";
+                updateGenerationCost();
             }
         );
 
@@ -1059,6 +1058,13 @@ document.addEventListener(
         } else {
             loadGuestCredits();
         }
+
+        updateGenerationCost();
+
+        document.getElementById("exam_type").addEventListener(
+            "change",
+            updateGenerationCost
+        );
     }
 );
 
@@ -1098,3 +1104,13 @@ document.addEventListener(
             !includeAnswers.checked;
     }
 );
+
+function updateGenerationCost() {
+    const examType = document.getElementById("exam_type");
+    const generateButton = document.querySelector('button[onclick="generatePDF()"]');
+
+    if (!generateButton || !examType) return;
+
+    const cost = examType.value ? 10 : 8;
+    generateButton.textContent = `Generate Exam Paper (${cost} Credits)`;
+}

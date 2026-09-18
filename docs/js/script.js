@@ -1,21 +1,49 @@
-const API_BASE_URL = "https://ai-exam-generator-backend.onrender.com";
+const API_BASE_URL =
+    "https://ai-exam-generator-backend.onrender.com";
 
 let isGenerating = false;
-let generationTimer = null;
-let generationStartedAt = null;
+let sectionCount = 0;
+let generationTimer= null;
+let generationStartedAt= null;
+
+const QUESTION_TYPES = [
+    "MCQ",
+    "Very Short Answer",
+    "Short Answer",
+    "Long Answer",
+    "Case Study",
+    "Assertion-Reason",
+    "Application-based",
+    "HOTS",
+    "True/False",
+    "Fill in the Blanks",
+    "Match the Following",
+    "One Word Answer",
+    "Source-Based Questions"
+];
+
+function handleCustom(selectId, inputId) {
+    const select = document.getElementById(selectId);
+    const input = document.getElementById(inputId);
+
+    if (!select || !input) {
+        return;
+    }
+
+    if (select.value === "custom") {
+        input.style.display = "block";
+    } else {
+        input.style.display = "none";
+        input.value = "";
+    }
+}
 
 function getGuestId() {
     let guestId = localStorage.getItem("guest_id");
 
     if (!guestId) {
-        guestId =
-            "guest_" +
-            crypto.randomUUID();
-
-        localStorage.setItem(
-            "guest_id",
-            guestId
-        );
+        guestId = crypto.randomUUID();
+        localStorage.setItem("guest_id", guestId);
     }
 
     return guestId;
@@ -25,37 +53,40 @@ function setGenerationUI(active) {
     const loading =
         document.getElementById("loading");
 
-    const generateBtn =
-        document.getElementById("generateBtn");
+    const generateButtons =
+        document.querySelectorAll(
+            'button[onclick="generatePDF()"]'
+        );
 
-    const myPapersBtn =
-        document.getElementById("myPapersBtn");
+    const myPapersButton =
+        document.querySelector(
+            'button[onclick="openMyPapers()"]'
+        );
 
-    const generationElapsed =
-        document.getElementById("generationElapsed");
+    const elapsed =
+        document.getElementById(
+            "generationElapsed"
+        );
 
     if (active) {
         if (loading) {
             loading.style.display = "flex";
         }
 
-        if (generateBtn) {
-            generateBtn.disabled = true;
-            generateBtn.innerText =
-                "⏳ Generating...";
-        }
+        generateButtons.forEach(
+            button => {
+                button.disabled = true;
+                button.innerText =
+                    "⏳ Generating...";
+            }
+        );
 
-        if (myPapersBtn) {
-            myPapersBtn.disabled = true;
+        if (myPapersButton) {
+            myPapersButton.disabled = true;
         }
 
         generationStartedAt =
             Date.now();
-
-        if (generationElapsed) {
-            generationElapsed.innerText =
-                "Elapsed: 0s";
-        }
 
         if (generationTimer) {
             clearInterval(
@@ -65,11 +96,7 @@ function setGenerationUI(active) {
 
         generationTimer =
             setInterval(() => {
-                if (!generationStartedAt) {
-                    return;
-                }
-
-                const elapsed =
+                const seconds =
                     Math.floor(
                         (
                             Date.now() -
@@ -77,9 +104,9 @@ function setGenerationUI(active) {
                         ) / 1000
                     );
 
-                if (generationElapsed) {
-                    generationElapsed.innerText =
-                        `Elapsed: ${elapsed}s`;
+                if (elapsed) {
+                    elapsed.innerText =
+                        `Elapsed: ${seconds}s`;
                 }
             }, 1000);
     } else {
@@ -97,467 +124,311 @@ function setGenerationUI(active) {
             loading.style.display = "none";
         }
 
-        if (generateBtn) {
-            generateBtn.disabled = false;
-            generateBtn.innerText =
-                "Generate Exam Paper";
-        }
+        generateButtons.forEach(
+            button => {
+                button.disabled = false;
+                button.innerText =
+                    "🚀 Generate Exam Paper";
+            }
+        );
 
-        if (myPapersBtn) {
-            myPapersBtn.disabled = false;
+        if (myPapersButton) {
+            myPapersButton.disabled = false;
         }
     }
 }
 
-function showGenerationResult(
-    message,
-    success = true
-) {
-    const result =
-        document.getElementById("result");
+function getQuestionTypeOptions() {
+    return QUESTION_TYPES.map(
+        type => `<option value="${type}">${type}</option>`
+    ).join("");
+}
 
-    if (!result) {
+function addSection() {
+    sectionCount++;
+
+    const container = document.getElementById("sectionsContainer");
+
+    if (!container) {
         return;
     }
 
-    result.innerHTML = `
-        <div class="${success ? "success-message" : "error-message"}">
-            ${message}
-        </div>
-    `;
-}
+    const currentSections =
+        document.querySelectorAll(".section").length;
 
-function addQuestionGroup() {
-    const container =
-        document.getElementById(
-            "sectionsContainer"
-        );
+    const letter = String.fromCharCode(65 + currentSections);
 
-    const sectionCount =
-        container.children.length + 1;
+    const newSection = document.createElement("div");
+    newSection.className = "section";
+    newSection.id = `section-${sectionCount}`;
 
-    const section =
-        document.createElement("div");
-
-    section.className =
-        "section-block";
-
-    section.innerHTML = `
+    newSection.innerHTML = `
         <div class="section-header">
-            <h3>Section ${String.fromCharCode(64 + sectionCount)}</h3>
-            <button
-                type="button"
-                class="remove-section-btn"
-                onclick="removeSection(this)"
-            >
-                Remove
-            </button>
-        </div>
-
-        <div class="row">
-            <div>
-                <label>Section Name</label>
-                <input
-                    type="text"
-                    class="section-name"
-                    value="Section ${String.fromCharCode(64 + sectionCount)}"
-                >
-            </div>
-
-            <div>
-                <label>Total Questions</label>
-                <input
-                    type="number"
-                    class="section-total-questions"
-                    min="1"
-                    value="3"
-                >
-            </div>
-        </div>
-
-        <div class="question-groups">
-            <div class="question-group">
-                <div class="row">
-                    <div>
-                        <label>Question Type</label>
-                        <select class="question-type">
-                            <option value="MCQ">MCQ</option>
-                            <option value="Short Answer">Short Answer</option>
-                            <option value="Long Answer">Long Answer</option>
-                            <option value="Case Study">Case Study</option>
-                            <option value="Assertion-Reason">Assertion-Reason</option>
-                            <option value="Application-based">Application-based</option>
-                            <option value="HOTS">HOTS</option>
-                            <option value="True/False">True/False</option>
-                            <option value="Fill in Blanks">Fill in Blanks</option>
-                            <option value="Match Following">Match Following</option>
-                            <option value="One Word Answer">One Word Answer</option>
-                            <option value="Source-Based">Source-Based</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label>Number of Questions</label>
-                        <input
-                            type="number"
-                            class="question-count"
-                            min="1"
-                            value="3"
+            <h4 class="sectionTitle">Section ${letter}</h4>
+            ${
+                currentSections === 0
+                    ? ""
+                    : `
+                        <button
+                            type="button"
+                            class="remove-section-btn"
+                            onclick="removeSection(${sectionCount})"
                         >
-                    </div>
-
-                    <div>
-                        <label>Marks Each</label>
-                        <input
-                            type="number"
-                            class="marks-each"
-                            min="1"
-                            value="1"
-                        >
-                    </div>
-                </div>
-            </div>
+                            ❌ Remove Section
+                        </button>
+                    `
+            }
         </div>
+
+        <div class="question-groups"></div>
 
         <button
             type="button"
-            class="add-question-group-btn"
-            onclick="addQuestionGroup(this)"
+            class="add-question-type-btn"
+            onclick="addQuestionType(${sectionCount})"
         >
-            + Add Question Type
+            ➕ Add Question Type
         </button>
     `;
 
-    container.appendChild(section);
+    container.appendChild(newSection);
+    addQuestionType(sectionCount);
 }
 
-function removeSection(button) {
+function addQuestionType(sectionId) {
+    const section = document.getElementById(`section-${sectionId}`);
+
+    if (!section) {
+        return;
+    }
+
+    const groupsContainer =
+        section.querySelector(".question-groups");
+
+    if (!groupsContainer) {
+        return;
+    }
+
+    const group = document.createElement("div");
+    group.className = "question-group";
+
+    group.innerHTML = `
+        <div class="question-group-header">
+            <strong>Question Type</strong>
+
+            <button
+                type="button"
+                class="remove-question-type-btn"
+                onclick="removeQuestionType(this)"
+            >
+                ✖
+            </button>
+        </div>
+
+        <div class="question-group-fields">
+            <div class="input-group">
+                <label>Question Type</label>
+
+                <select class="questionType">
+                    ${getQuestionTypeOptions()}
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Number of Questions</label>
+
+                <input
+                    type="number"
+                    class="questions"
+                    min="1"
+                    step="1"
+                    placeholder="e.g. 5"
+                >
+            </div>
+
+            <div class="input-group">
+                <label>Marks / Question</label>
+
+                <input
+                    type="number"
+                    class="marksPerQuestion"
+                    min="1"
+                    step="1"
+                    placeholder="e.g. 1"
+                >
+            </div>
+        </div>
+
+        <div class="group-total">
+            Total Marks:
+            <strong class="groupTotalMarks">0</strong>
+        </div>
+    `;
+
+    groupsContainer.appendChild(group);
+
+    const questionsInput =
+        group.querySelector(".questions");
+
+    const marksInput =
+        group.querySelector(".marksPerQuestion");
+
+    function updateGroupMarks() {
+        const questions =
+            parseInt(questionsInput.value, 10) || 0;
+
+        const marksPerQuestion =
+            parseInt(marksInput.value, 10) || 0;
+
+        group.querySelector(".groupTotalMarks").innerText =
+            questions * marksPerQuestion;
+    }
+
+    questionsInput.addEventListener(
+        "input",
+        updateGroupMarks
+    );
+
+    marksInput.addEventListener(
+        "input",
+        updateGroupMarks
+    );
+}
+
+function removeQuestionType(button) {
+    const group =
+        button.closest(".question-group");
+
+    if (!group) {
+        return;
+    }
+
     const section =
-        button.closest(".section-block");
+        group.closest(".section");
+
+    if (!section) {
+        return;
+    }
+
+    const groups =
+        section.querySelectorAll(".question-group");
+
+    if (groups.length <= 1) {
+        alert(
+            "Each section must contain at least one question type."
+        );
+        return;
+    }
+
+    group.remove();
+}
+
+function removeSection(id) {
+    const section =
+        document.getElementById(`section-${id}`);
 
     if (!section) {
         return;
     }
 
     section.remove();
-
-    updateSectionNames();
+    refreshSectionNames();
 }
 
-function updateSectionNames() {
+function refreshSectionNames() {
     const sections =
-        document.querySelectorAll(
-            ".section-block"
-        );
+        document.querySelectorAll(".section");
 
-    sections.forEach(
-        (section, index) => {
-            const letter =
-                String.fromCharCode(
-                    65 + index
-                );
+    sections.forEach((section, index) => {
+        const title =
+            section.querySelector(".sectionTitle");
 
-            const heading =
-                section.querySelector(
-                    ".section-header h3"
-                );
-
-            const nameInput =
-                section.querySelector(
-                    ".section-name"
-                );
-
-            if (heading) {
-                heading.innerText =
-                    `Section ${letter}`;
-            }
-
-            if (nameInput) {
-                nameInput.value =
-                    `Section ${letter}`;
-            }
+        if (title) {
+            title.innerText =
+                `Section ${String.fromCharCode(65 + index)}`;
         }
-    );
+    });
 }
 
-function addQuestionGroup(button) {
-    const section =
-        button.closest(
-            ".section-block"
-        );
-
-    if (!section) {
-        return;
-    }
-
-    const container =
-        section.querySelector(
-            ".question-groups"
-        );
-
-    if (!container) {
-        return;
-    }
-
-    const group =
-        document.createElement("div");
-
-    group.className =
-        "question-group";
-
-    group.innerHTML = `
-        <div class="row">
-            <div>
-                <label>Question Type</label>
-                <select class="question-type">
-                    <option value="MCQ">MCQ</option>
-                    <option value="Short Answer">Short Answer</option>
-                    <option value="Long Answer">Long Answer</option>
-                    <option value="Case Study">Case Study</option>
-                    <option value="Assertion-Reason">Assertion-Reason</option>
-                    <option value="Application-based">Application-based</option>
-                    <option value="HOTS">HOTS</option>
-                    <option value="True/False">True/False</option>
-                    <option value="Fill in Blanks">Fill in Blanks</option>
-                    <option value="Match Following">Match Following</option>
-                    <option value="One Word Answer">One Word Answer</option>
-                    <option value="Source-Based">Source-Based</option>
-                </select>
-            </div>
-
-            <div>
-                <label>Number of Questions</label>
-                <input
-                    type="number"
-                    class="question-count"
-                    min="1"
-                    value="3"
-                >
-            </div>
-
-            <div>
-                <label>Marks Each</label>
-                <input
-                    type="number"
-                    class="marks-each"
-                    min="1"
-                    value="1"
-                >
-            </div>
-        </div>
-
-        <button
-            type="button"
-            class="remove-question-group-btn"
-            onclick="removeQuestionGroup(this)"
-        >
-            Remove
-        </button>
-    `;
-
-    container.appendChild(group);
-}
-
-function removeQuestionGroup(button) {
-    const group =
-        button.closest(
-            ".question-group"
-        );
-
-    if (group) {
-        group.remove();
-    }
-}
-
-function validateForm() {
-    const schoolName =
-        document.getElementById(
-            "schoolName"
-        )?.value.trim();
-
-    const examName =
-        document.getElementById(
-            "examName"
-        )?.value.trim();
-
-    const className =
-        document.getElementById(
-            "className"
-        )?.value.trim();
-
-    const subject =
-        document.getElementById(
-            "subject"
-        )?.value.trim();
-
-    const totalMarks =
-        Number(
-            document.getElementById(
-                "totalMarks"
-            )?.value
-        );
-
-    if (!schoolName) {
-        alert(
-            "Please enter school name."
-        );
+function validateSections(sections, totalMarks) {
+    if (!sections.length) {
+        alert("Please add at least one section.");
         return false;
     }
 
-    if (!examName) {
-        alert(
-            "Please enter exam name."
-        );
-        return false;
-    }
+    let calculatedTotal = 0;
 
-    if (!className) {
-        alert(
-            "Please enter class."
-        );
-        return false;
-    }
+    for (const section of sections) {
+        if (!section.question_groups.length) {
+            alert(
+                `${section.section_name} must contain at least one question type.`
+            );
+            return false;
+        }
 
-    if (!subject) {
-        alert(
-            "Please enter subject."
-        );
-        return false;
+        let sectionMarks = 0;
+        let sectionQuestions = 0;
+        const types = new Set();
+
+        for (const group of section.question_groups) {
+            if (types.has(group.question_type)) {
+                alert(
+                    `${section.section_name} contains the question type "${group.question_type}" more than once.`
+                );
+                return false;
+            }
+
+            types.add(group.question_type);
+
+            if (
+                !Number.isInteger(group.question_count) ||
+                group.question_count <= 0
+            ) {
+                alert(
+                    `Enter a valid number of questions for ${group.question_type} in ${section.section_name}.`
+                );
+                return false;
+            }
+
+            if (
+                !Number.isInteger(group.marks_per_question) ||
+                group.marks_per_question <= 0
+            ) {
+                alert(
+                    `Enter valid marks per question for ${group.question_type} in ${section.section_name}.`
+                );
+                return false;
+            }
+
+            group.marks =
+                group.question_count *
+                group.marks_per_question;
+
+            sectionMarks += group.marks;
+            sectionQuestions += group.question_count;
+        }
+
+        section.marks = sectionMarks;
+        section.question_count = sectionQuestions;
+        calculatedTotal += sectionMarks;
     }
 
     if (
-        !totalMarks ||
+        !Number.isInteger(totalMarks) ||
         totalMarks <= 0
     ) {
-        alert(
-            "Please enter valid total marks."
-        );
+        alert("Please enter valid total marks.");
         return false;
     }
 
-    const groups =
-        document.querySelectorAll(
-            ".question-group"
-        );
-
-    if (!groups.length) {
+    if (calculatedTotal !== totalMarks) {
         alert(
-            "Please add at least one question group."
+            `Total marks are ${totalMarks}, but your sections add up to ${calculatedTotal}.`
         );
         return false;
-    }
-
-    for (
-        const group of groups
-    ) {
-        const count =
-            Number(
-                group.querySelector(
-                    ".question-count"
-                )?.value
-            );
-
-        const marks =
-            Number(
-                group.querySelector(
-                    ".marks-each"
-                )?.value
-            );
-
-        if (
-            !count ||
-            count <= 0
-        ) {
-            alert(
-                "Question count must be greater than 0."
-            );
-            return false;
-        }
-
-        if (
-            !marks ||
-            marks <= 0
-        ) {
-            alert(
-                "Marks per question must be greater than 0."
-            );
-            return false;
-        }
     }
 
     return true;
-}
-
-function collectSections() {
-    const sectionBlocks =
-        document.querySelectorAll(
-            ".section-block"
-        );
-
-    const sections = [];
-
-    sectionBlocks.forEach(
-        section => {
-            const sectionName =
-                section.querySelector(
-                    ".section-name"
-                )?.value.trim();
-
-            const totalQuestions =
-                Number(
-                    section.querySelector(
-                        ".section-total-questions"
-                    )?.value
-                );
-
-            const groups =
-                section.querySelectorAll(
-                    ".question-group"
-                );
-
-            const questionTypes = [];
-
-            groups.forEach(
-                group => {
-                    const type =
-                        group.querySelector(
-                            ".question-type"
-                        )?.value;
-
-                    const count =
-                        Number(
-                            group.querySelector(
-                                ".question-count"
-                            )?.value
-                        );
-
-                    const marks =
-                        Number(
-                            group.querySelector(
-                                ".marks-each"
-                            )?.value
-                        );
-
-                    questionTypes.push({
-                        question_type: type,
-                        count: count,
-                        marks_each: marks
-                    });
-                }
-            );
-
-            sections.push({
-                section_name:
-                    sectionName,
-                total_questions:
-                    totalQuestions,
-                question_types:
-                    questionTypes
-            });
-        }
-    );
-
-    return sections;
 }
 
 async function generatePDF() {
@@ -565,483 +436,389 @@ async function generatePDF() {
         return;
     }
 
-    if (!validateForm()) {
-        return;
-    }
-
     isGenerating = true;
-
     setGenerationUI(true);
 
-    showGenerationResult(
-        "Generating your exam paper. This may take a few minutes...",
-        true
-    );
+    const loading =
+        document.getElementById("loading");
+
+    const downloadLink =
+        document.getElementById("downloadLink");
+
+    if (loading) {
+        loading.style.display = "block";
+    }
+
+    if (downloadLink) {
+        downloadLink.innerText = "";
+        downloadLink.removeAttribute("href");
+    }
 
     try {
-        const form =
-            document.getElementById(
-                "examForm"
-            );
+        const sections = [];
 
-        if (!form) {
-            throw new Error(
-                "Exam form not found."
-            );
-        }
+        document
+            .querySelectorAll(".section")
+            .forEach((section, sectionIndex) => {
+                const sectionNameElement =
+                    section.querySelector(".sectionTitle");
 
-        const formData =
-            new FormData();
+                const sectionName =
+                    sectionNameElement
+                        ? sectionNameElement.innerText.trim()
+                        : `Section ${String.fromCharCode(65 + sectionIndex)}`;
 
-        const schoolName =
-            document.getElementById(
-                "schoolName"
-            )?.value.trim();
+                const questionGroups = [];
 
-        const examName =
-            document.getElementById(
-                "examName"
-            )?.value.trim();
+                section
+                    .querySelectorAll(".question-group")
+                    .forEach(group => {
+                        const type =
+                            group.querySelector(".questionType").value;
 
-        const className =
-            document.getElementById(
-                "className"
-            )?.value.trim();
+                        const questions =
+                            parseInt(
+                                group.querySelector(".questions").value,
+                                10
+                            ) || 0;
 
-        const subject =
-            document.getElementById(
-                "subject"
-            )?.value.trim();
+                        const marksPerQuestion =
+                            parseInt(
+                                group.querySelector(".marksPerQuestion").value,
+                                10
+                            ) || 0;
 
-        const topics =
-            document.getElementById(
-                "topics"
-            )?.value.trim();
+                        if (
+                            questions <= 0 ||
+                            marksPerQuestion <= 0
+                        ) {
+                            return;
+                        }
 
-        const difficulty =
-            document.getElementById(
-                "difficulty"
-            )?.value;
+                        questionGroups.push({
+                            question_type: type,
+                            question_count: questions,
+                            marks_per_question: marksPerQuestion,
+                            marks: questions * marksPerQuestion
+                        });
+                    });
 
-        const examType =
-            document.getElementById(
-                "examType"
-            )?.value;
+                if (!questionGroups.length) {
+                    return;
+                }
 
-        const timeLimit =
-            document.getElementById(
-                "timeLimit"
-            )?.value;
+                const sectionMarks =
+                    questionGroups.reduce(
+                        (total, group) =>
+                            total + group.marks,
+                        0
+                    );
 
-        const customTime =
-            document.getElementById(
-                "customTime"
-            )?.value;
+                const sectionQuestions =
+                    questionGroups.reduce(
+                        (total, group) =>
+                            total + group.question_count,
+                        0
+                    );
+
+                sections.push({
+                    section_name: sectionName,
+                    marks: sectionMarks,
+                    question_count: sectionQuestions,
+                    question_groups: questionGroups
+                });
+            });
 
         const totalMarks =
-            document.getElementById(
-                "totalMarks"
-            )?.value;
+            parseInt(
+                document.getElementById("total").value,
+                10
+            ) || 0;
 
-        const instructions =
-            document.getElementById(
-                "instructions"
-            )?.value.trim();
+        if (!validateSections(sections, totalMarks)) {
+            return;
+        }
+
+        const selectedTime =
+            document.getElementById("time_limit").value;
+
+        const customTime =
+            document.getElementById("custom_time");
+
+        if (
+            selectedTime === "custom" &&
+            (!customTime || !customTime.value.trim())
+        ) {
+            alert("Please enter a custom time limit.");
+            return;
+        }
+
+        const timeLimit =
+            selectedTime === "custom" && customTime
+                ? customTime.value.trim()
+                : selectedTime;
+
+        const includeAnswersElement =
+            document.getElementById("includeAnswers");
 
         const includeAnswers =
-            document.getElementById(
-                "includeAnswers"
-            )?.checked ?? true;
+            includeAnswersElement
+                ? includeAnswersElement.checked
+                : true;
 
-        const includeSolutions =
-            document.getElementById(
-                "includeSolutions"
-            )?.checked ?? false;
+        const includeSolutionsElement =
+            document.getElementById("includeSolutions");
 
-        const sections =
-            collectSections();
+        let includeSolutions =
+            includeSolutionsElement
+                ? includeSolutionsElement.checked
+                : false;
 
-        formData.append(
-            "school_name",
-            schoolName
-        );
+        if (includeSolutions && !includeAnswers) {
+            includeSolutions = false;
+            includeSolutionsElement.checked = false;
+        }
 
-        formData.append(
-            "exam_name",
-            examName
-        );
+        const data = {
+            exam_type:
+                document.getElementById("exam_type").value,
 
-        formData.append(
-            "class_name",
-            className
-        );
+            school_name:
+                document.getElementById("school_name").value,
 
-        formData.append(
-            "subject",
-            subject
-        );
+            exam_name:
+                document.getElementById("exam_name").value,
 
-        formData.append(
-            "topics",
-            topics || ""
-        );
+            time_limit:
+                timeLimit,
 
-        formData.append(
-            "difficulty",
-            difficulty || ""
-        );
+            class_name:
+                document.getElementById("class").value,
 
-        formData.append(
-            "exam_type",
-            examType || ""
-        );
+            subject:
+                document.getElementById("subject").value,
 
-        formData.append(
-            "time_limit",
-            timeLimit || ""
-        );
+            topics:
+                document.getElementById("topics").value,
 
-        formData.append(
-            "custom_time",
-            customTime || ""
-        );
+            difficulty:
+                document.getElementById("difficulty").value,
+
+            total_marks:
+                totalMarks,
+
+            sections:
+                sections,
+
+            instructions:
+                document.getElementById("instructions").value
+        };
+
+        const formData = new FormData();
 
         formData.append(
-            "total_marks",
-            totalMarks
-        );
-
-        formData.append(
-            "instructions",
-            instructions || ""
-        );
-
-        formData.append(
-            "sections",
-            JSON.stringify(
-                sections
-            )
+            "data",
+            JSON.stringify(data)
         );
 
         formData.append(
             "include_answers",
             includeAnswers
-                ? "true"
-                : "false"
         );
 
         formData.append(
             "include_solutions",
             includeSolutions
-                ? "true"
-                : "false"
         );
 
-        const fileInput =
-            document.getElementById(
-                "referenceFiles"
-            );
+        const files =
+            document.getElementById("pyq_files").files;
 
-        if (
-            fileInput &&
-            fileInput.files
-        ) {
-            for (
-                const file
-                of fileInput.files
-            ) {
-                formData.append(
-                    "reference_files",
-                    file
-                );
-            }
+        for (let i = 0; i < files.length; i++) {
+            formData.append(
+                "files",
+                files[i]
+            );
         }
 
-        const guestId =
-            getGuestId();
-
         const token =
-            localStorage.getItem(
-                "token"
-            );
-
-        const controller =
-            new AbortController();
-
-        const timeout =
-            setTimeout(
-                () => {
-                    controller.abort();
-                },
-                600000
-            );
+            localStorage.getItem("access_token");
 
         const headers = {};
 
         if (token) {
-            headers[
-                "Authorization"
-            ] = `Bearer ${token}`;
+            headers.Authorization =
+                `Bearer ${token}`;
+        } else {
+            headers["X-Guest-ID"] =
+                getGuestId();
         }
 
-        if (guestId) {
-            headers[
-                "X-Guest-ID"
-            ] = guestId;
-        }
+        const controller =
+            new AbortController();
 
-        const response =
-            await fetch(
+        const timeoutId =
+            setTimeout(() => {
+                controller.abort();
+            }, 600000);
+
+        let res;
+
+        try {
+            res = await fetch(
                 `${API_BASE_URL}/generate-paper`,
                 {
                     method: "POST",
-                    headers:
-                        headers,
-                    body:
-                        formData,
-                    signal:
-                        controller.signal
+                    headers: headers,
+                    body: formData,
+                    signal: controller.signal
                 }
             );
+        } finally {
+            clearTimeout(timeoutId);
+        }
 
-        clearTimeout(
-            timeout
-        );
-
-        let data = null;
+        let result;
 
         try {
-            data =
-                await response.json();
+            result = await res.json();
         } catch {
-            data = null;
+            result = {};
         }
 
         if (
-            response.status === 401
+            res.status === 401 &&
+            result.detail === "AUTHENTICATION_REQUIRED"
         ) {
-            localStorage.removeItem(
-                "token"
-            );
+            localStorage.removeItem("access_token");
 
             alert(
-                "Your session has expired. Please login again."
+                "Your session has expired. Please log in again to continue."
             );
 
-            window.location.href =
-                "login.html";
-
+            window.location.href = "login.html";
             return;
         }
 
         if (
-            response.status === 402
+            res.status === 403 &&
+            result.detail === "NO_CREDITS"
         ) {
-            showNoCredits();
-
+            showNoCreditsMessage();
             return;
         }
 
-        if (!response.ok) {
-            const errorMessage =
-                data?.detail ||
-                data?.message ||
-                "Failed to generate the exam paper.";
+        if (!res.ok) {
+            const message =
+                result.detail ||
+                result.message ||
+                result.error ||
+                "Paper generation failed. Please try again.";
 
-            showGenerationResult(
-                escapeHTML(
-                    String(
-                        errorMessage
-                    )
-                ),
-                false
-            );
-
+            alert(message);
             return;
         }
 
-        if (
-            data?.download_url
-        ) {
-            const downloadLink =
+        if (result.download_url) {
+            const link =
                 document.getElementById(
                     "downloadLink"
                 );
 
-            if (downloadLink) {
-                let downloadURL =
-                    data.download_url;
+            if (link) {
+                link.href =
+                    API_BASE_URL +
+                    result.download_url;
 
-                if (
-                    downloadURL.startsWith(
-                        "/"
-                    )
-                ) {
-                    downloadURL =
-                        `${API_BASE_URL}${downloadURL}`;
-                }
+                link.innerText =
+                    "📥 Download PDF";
 
-                downloadLink.href =
-                    downloadURL;
-
-                downloadLink.style.display =
-                    "inline-block";
-
-                downloadLink.innerText =
-                    "Download Exam Paper";
+                link.target = "_blank";
             }
-        }
 
-        showGenerationResult(
-            "Your exam paper is ready. Download it below.",
-            true
+            if (
+                result.credits_remaining !==
+                undefined
+            ) {
+                const userCredits =
+                    document.getElementById(
+                        "userCredits"
+                    );
+
+                if (userCredits) {
+                    userCredits.textContent =
+                        result.credits_remaining;
+                }
+            }
+
+            if (token) {
+                loadUserInfo();
+            } else {
+                loadGuestCredits();
+            }
+        } else {
+            alert(
+                "Paper generation failed. Please try again."
+            );
+        }
+    } catch (error) {
+        console.error(
+            "Generation Error:",
+            error
         );
 
-        await loadGuestCredits();
-        await loadUserInfo();
-    } catch (error) {
-        if (
-            error.name ===
-            "AbortError"
-        ) {
-            showGenerationResult(
-                "Generation is taking longer than expected. Please try again.",
-                false
+        if (error.name === "AbortError") {
+            alert(
+                "Exam generation took too long. Please try again."
             );
         } else {
-            console.error(
-                "Generation error:",
-                error
-            );
-
-            showGenerationResult(
-                "Something went wrong while generating the exam paper. Please try again.",
-                false
+            alert(
+                "Server error. Check the browser console and backend logs."
             );
         }
     } finally {
-        isGenerating = false;
-
         setGenerationUI(false);
+
+        isGenerating = false;
     }
 }
 
-function escapeHTML(value) {
-    return value
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-}
-
 async function loadUserInfo() {
-    const token =
-        localStorage.getItem(
-            "token"
-        );
-
-    const guestCard =
-        document.getElementById(
-            "guestCreditsCard"
-        );
-
-    const planCard =
-        document.getElementById(
-            "planCard"
-        );
+    const token = localStorage.getItem(
+        "access_token"
+    );
 
     if (!token) {
-        if (guestCard) {
-            guestCard.style.display =
-                "block";
-        }
-
-        if (planCard) {
-            planCard.style.display =
-                "none";
-        }
-
         return;
     }
 
     try {
-        const response =
-            await fetch(
-                `${API_BASE_URL}/current-user`,
-                {
-                    headers: {
-                        Authorization:
-                            `Bearer ${token}`
-                    }
-                }
-            );
-
-        if (
-            response.status === 401
-        ) {
-            localStorage.removeItem(
-                "token"
-            );
-
-            if (guestCard) {
-                guestCard.style.display =
-                    "block";
+        const response = await apiRequest(
+            "/current-user",
+            {
+                method: "GET"
             }
-
-            if (planCard) {
-                planCard.style.display =
-                    "none";
-            }
-
-            return;
-        }
+        );
 
         if (!response.ok) {
             return;
         }
 
-        const data =
-            await response.json();
+        const user = await response.json();
 
-        if (guestCard) {
-            guestCard.style.display =
-                "none";
-        }
-
-        if (planCard) {
-            planCard.style.display =
-                "block";
-        }
-
-        const planName =
+        const guestCreditsCard =
             document.getElementById(
-                "currentPlan"
+                "guestCreditsCard"
             );
 
-        const userName =
+        const planCard =
             document.getElementById(
-                "userName"
+                "planCard"
             );
 
-        const userEmail =
+        const userPlan =
             document.getElementById(
-                "userEmail"
+                "userPlan"
             );
 
         const userCredits =
@@ -1049,67 +826,72 @@ async function loadUserInfo() {
                 "userCredits"
             );
 
-        if (planName) {
-            planName.innerText =
-                data.plan ||
+        const userStatus =
+            document.getElementById(
+                "userStatus"
+            );
+
+        const userExpiry =
+            document.getElementById(
+                "userExpiry"
+            );
+
+        if (guestCreditsCard) {
+            guestCreditsCard.style.display =
+                "none";
+        }
+
+        if (planCard) {
+            planCard.style.display =
+                "block";
+        }
+
+        if (userPlan) {
+            userPlan.textContent =
+                user.plan ||
+                user.plan_name ||
                 "Free";
         }
 
-        if (userName) {
-            userName.innerText =
-                data.name ||
-                data.full_name ||
-                "";
-        }
-
-        if (userEmail) {
-            userEmail.innerText =
-                data.email ||
-                "";
-        }
-
         if (userCredits) {
-            userCredits.innerText =
-                data.credits ??
-                data.credits_remaining ??
-                0;
+            userCredits.textContent =
+                user.credits_remaining ?? 0;
+        }
+
+        if (userStatus) {
+            userStatus.textContent =
+                user.status ||
+                "Active";
+        }
+
+        if (userExpiry) {
+            userExpiry.textContent =
+                user.expiry ||
+                user.expiry_date ||
+                "N/A";
         }
     } catch (error) {
         console.error(
-            "Failed to load user info:",
+            "Failed to load user information:",
             error
         );
     }
 }
 
 async function loadGuestCredits() {
-    const token =
-        localStorage.getItem(
-            "token"
-        );
-
-    if (token) {
-        return;
-    }
-
-    const guestCredits =
-        document.getElementById(
-            "guestCredits"
-        );
-
-    if (!guestCredits) {
-        return;
-    }
-
     const guestId =
-        localStorage.getItem(
-            "guest_id"
-        );
+        localStorage.getItem("guest_id");
+
+    const creditsElement =
+        document.getElementById("guestCredits");
+
+    if (!creditsElement) {
+        return;
+    }
 
     if (!guestId) {
-        guestCredits.innerText =
-            "2";
-
+        creditsElement.innerText =
+            "Free Credits: 2";
         return;
     }
 
@@ -1125,275 +907,194 @@ async function loadGuestCredits() {
                 }
             );
 
-        if (!response.ok) {
-            return;
-        }
-
         const data =
             await response.json();
 
-        guestCredits.innerText =
-            data.credits ??
-            data.credits_remaining ??
-            0;
-
-        if (
-            Number(
-                data.credits ??
-                data.credits_remaining ??
-                0
-            ) <= 0
-        ) {
-            showNoCredits();
-        }
+        creditsElement.innerText =
+            `Free Credits: ${data.credits}`;
     } catch (error) {
         console.error(
             "Failed to load guest credits:",
             error
         );
+
+        creditsElement.innerText =
+            "Unable to load credits.";
     }
 }
 
-function showNoCredits() {
-    const noCredits =
-        document.getElementById(
-            "noCreditsBox"
-        );
+function showNoCreditsMessage() {
+    const existing =
+        document.getElementById("noCreditsBox");
 
-    if (noCredits) {
-        noCredits.style.display =
-            "block";
+    if (existing) {
+        existing.style.display = "block";
+        return;
     }
 
-    const generateBtn =
-        document.getElementById(
-            "generateBtn"
-        );
+    const box =
+        document.createElement("div");
 
-    if (
-        generateBtn &&
-        !isGenerating
-    ) {
-        generateBtn.disabled =
-            true;
+    box.id = "noCreditsBox";
+
+    box.innerHTML = `
+        <div class="no-credits-content">
+            <h2>
+                You've used all your free credits
+            </h2>
+
+            <p>
+                You have 0 credits remaining.
+            </p>
+
+            <p>
+                Choose a plan below to continue
+                generating exam papers.
+            </p>
+
+            <div class="plan-options">
+                <div class="plan-option">
+                    <h3>PRO</h3>
+
+                    <p>
+                        ₹99 / month
+                    </p>
+
+                    <p>
+                        75 credits
+                    </p>
+
+                    <button
+                        type="button"
+                        onclick="buyPlan('PRO')"
+                    >
+                        Buy PRO
+                    </button>
+                </div>
+
+                <div class="plan-option">
+                    <h3>PREMIUM</h3>
+
+                    <p>
+                        ₹399 / 6 months
+                    </p>
+
+                    <p>
+                        500 credits
+                    </p>
+
+                    <button
+                        type="button"
+                        onclick="buyPlan('PREMIUM')"
+                    >
+                        Buy PREMIUM
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const formCard =
+        document.querySelector(".form-card");
+
+    if (formCard) {
+        formCard.appendChild(box);
     }
 }
 
-function hideNoCredits() {
-    const noCredits =
-        document.getElementById(
-            "noCreditsBox"
-        );
+function buyPlan(plan) {
+    localStorage.setItem(
+        "selected_plan",
+        plan
+    );
 
-    if (noCredits) {
-        noCredits.style.display =
-            "none";
+    const token =
+        localStorage.getItem("access_token");
+
+    if (token) {
+        window.location.href =
+            "pricing.html";
+        return;
     }
 
-    const generateBtn =
-        document.getElementById(
-            "generateBtn"
-        );
+    alert(
+        `Please login or create an account to purchase the ${plan} plan.`
+    );
 
-    if (
-        generateBtn &&
-        !isGenerating
-    ) {
-        generateBtn.disabled =
-            false;
-    }
+    localStorage.setItem(
+        "auth_redirect",
+        "pricing.html"
+    );
+
+    window.location.href =
+        "login.html";
 }
 
 function openMyPapers() {
-    if (isGenerating) {
-        return;
-    }
-
     window.location.href =
         "mypapers.html";
-}
-
-function logout() {
-    localStorage.removeItem(
-        "token"
-    );
-
-    window.location.href =
-        "index.html";
-}
-
-function toggleSolutions() {
-    const answerKey =
-        document.getElementById(
-            "includeAnswers"
-        );
-
-    const solutions =
-        document.getElementById(
-            "includeSolutions"
-        );
-
-    if (
-        !answerKey ||
-        !solutions
-    ) {
-        return;
-    }
-
-    if (!answerKey.checked) {
-        solutions.checked =
-            false;
-
-        solutions.disabled =
-            true;
-    } else {
-        solutions.disabled =
-            false;
-    }
-}
-
-function handleTimeLimit() {
-    const timeLimit =
-        document.getElementById(
-            "timeLimit"
-        );
-
-    const customTimeContainer =
-        document.getElementById(
-            "customTimeContainer"
-        );
-
-    if (
-        !timeLimit ||
-        !customTimeContainer
-    ) {
-        return;
-    }
-
-    if (
-        timeLimit.value ===
-        "custom"
-    ) {
-        customTimeContainer.style.display =
-            "block";
-    } else {
-        customTimeContainer.style.display =
-            "none";
-    }
-}
-
-function setupFileValidation() {
-    const input =
-        document.getElementById(
-            "referenceFiles"
-        );
-
-    if (!input) {
-        return;
-    }
-
-    input.addEventListener(
-        "change",
-        () => {
-            const files =
-                Array.from(
-                    input.files
-                );
-
-            if (
-                files.length > 5
-            ) {
-                alert(
-                    "You can upload a maximum of 5 files."
-                );
-
-                input.value =
-                    "";
-
-                return;
-            }
-
-            const allowedTypes = [
-                "application/pdf",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "image/png",
-                "image/jpeg"
-            ];
-
-            for (
-                const file
-                of files
-            ) {
-                if (
-                    !allowedTypes.includes(
-                        file.type
-                    )
-                ) {
-                    alert(
-                        "Only PDF, DOCX, PNG and JPG/JPEG files are allowed."
-                    );
-
-                    input.value =
-                        "";
-
-                    return;
-                }
-            }
-        }
-    );
 }
 
 document.addEventListener(
     "DOMContentLoaded",
     () => {
-        const form =
+        if (
             document.getElementById(
-                "examForm"
-            );
-
-        if (form) {
-            form.addEventListener(
-                "submit",
-                event => {
-                    event.preventDefault();
-
-                    generatePDF();
-                }
-            );
+                "sectionsContainer"
+            ) &&
+            document.querySelectorAll(
+                ".section"
+            ).length === 0
+        ) {
+            addSection();
         }
 
-        const answerKey =
+        const token =
+            localStorage.getItem(
+                "access_token"
+            );
+
+        if (token) {
+            loadUserInfo();
+        } else {
+            loadGuestCredits();
+        }
+    }
+);
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+        const includeAnswers =
             document.getElementById(
                 "includeAnswers"
             );
 
-        if (answerKey) {
-            answerKey.addEventListener(
-                "change",
-                toggleSolutions
-            );
-        }
-
-        const timeLimit =
+        const includeSolutions =
             document.getElementById(
-                "timeLimit"
+                "includeSolutions"
             );
 
-        if (timeLimit) {
-            timeLimit.addEventListener(
-                "change",
-                handleTimeLimit
-            );
+        if (
+            !includeAnswers ||
+            !includeSolutions
+        ) {
+            return;
         }
 
-        setupFileValidation();
+        includeAnswers.addEventListener(
+            "change",
+            () => {
+                if (!includeAnswers.checked) {
+                    includeSolutions.checked = false;
+                    includeSolutions.disabled = true;
+                } else {
+                    includeSolutions.disabled = false;
+                }
+            }
+        );
 
-        toggleSolutions();
-
-        handleTimeLimit();
-
-        loadUserInfo();
-
-        loadGuestCredits();
+        includeSolutions.disabled =
+            !includeAnswers.checked;
     }
 );

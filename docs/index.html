@@ -309,10 +309,18 @@
         class="loading"
         aria-live="polite"
       >
-        <span class="spinner"></span>
+        <div class="loading-spinner"></div>
+
         <div>
-          <strong id="generationStatus">Generating your exam paper...</strong>
-          <small id="generationElapsed">Please keep this tab open. This may take a few minutes.</small>
+          <strong>Generating your exam paper...</strong>
+
+          <div id="generationStatus">
+            This may take a few minutes for larger papers.
+          </div>
+
+          <div id="generationElapsed">
+            Elapsed: 0s
+          </div>
         </div>
       </div>
 
@@ -364,7 +372,6 @@
       </div>
 
       <button
-        id="myPapersBtn"
         onclick="openMyPapers()"
         class="btn"
       >
@@ -372,7 +379,6 @@
       </button>
 
       <button
-        id="generateBtn"
         onclick="generatePDF()"
         class="btn"
       >

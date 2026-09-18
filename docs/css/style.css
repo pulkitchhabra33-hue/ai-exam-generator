@@ -7,7 +7,6 @@ body {
   background: linear-gradient(135deg, #4facfe, #00f2fe);
   margin: 0;
   padding: 0;
-  min-height: 100vh;
 }
 
 .container {
@@ -56,12 +55,11 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   border-color: #4facfe;
-  box-shadow: 0 0 0 2px rgba(79,172,254,0.12);
 }
 
 textarea {
-  resize: vertical;
-  min-height: 80px;
+  resize: none;
+  height: 80px;
 }
 
 .row {
@@ -101,44 +99,9 @@ textarea {
 
 .loading {
   display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 18px;
-  padding: 14px;
-  background: #f0f8ff;
-  border: 1px solid #cfeaff;
-  border-radius: 8px;
-  color: #2563eb;
-  text-align: left;
-}
-
-.loading strong,
-.loading small {
-  display: block;
-}
-
-.loading small {
-  margin-top: 3px;
-  color: #64748b;
-  font-size: 12px;
-  font-weight: normal;
-}
-
-.spinner {
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
-  border: 3px solid #cfeaff;
-  border-top-color: #4facfe;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  margin-top: 10px;
+  color: #4facfe;
+  font-weight: bold;
 }
 
 .btn {
@@ -159,20 +122,8 @@ textarea {
   transform: scale(1.02);
 }
 
-.btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn:disabled:hover {
-  background: #4facfe;
-  transform: none;
-}
-
 .result {
   margin-top: 15px;
-  min-height: 24px;
 }
 
 #downloadLink {
@@ -319,118 +270,64 @@ textarea {
     color: #dc2626;
 }
 
-#planCard,
-#guestCreditsCard {
-  margin-top: 18px;
-  padding: 14px;
+
+@media (max-width: 650px) {
+
+    .question-group-fields {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+.loading {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  margin-top: 15px;
+  padding: 15px;
   background: #f7f9fc;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #dfe3e8;
   border-radius: 8px;
+  color: #333;
   text-align: left;
 }
 
-#planCard h3,
-#guestCreditsCard h3 {
-  margin: 0 0 8px;
+.loading-spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid #dfe3e8;
+  border-top: 3px solid #4facfe;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
 }
 
-#planCard p,
-#guestCreditsCard p {
-  margin: 5px 0;
+#generationStatus {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #666;
+  font-weight: normal;
 }
 
-#noCreditsBox {
-  margin-top: 18px;
-  padding: 18px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 10px;
-  text-align: center;
-}
-
-#noCreditsBox h2 {
-  margin-top: 0;
-}
-
-.plan-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-top: 15px;
-}
-
-.plan-option {
-  padding: 12px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-}
-
-.plan-option h3 {
-  margin: 0 0 8px;
-}
-
-.plan-option p {
-  margin: 5px 0;
-}
-
-.plan-option button {
-  width: 100%;
-  margin-top: 8px;
-  padding: 9px;
-  border: none;
-  border-radius: 7px;
-  background: #4facfe;
-  color: white;
-  cursor: pointer;
+#generationElapsed {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #4facfe;
   font-weight: bold;
 }
 
-@media (max-width: 650px) {
-  .container {
-    width: calc(100% - 24px);
-    margin: 25px auto;
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
   }
 
-  .form-card {
-    padding: 18px;
-  }
-
-  .row {
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .navbar {
-    padding: 14px 16px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .logo {
-    font-size: 20px;
-  }
-
-  .nav-links {
-    order: 3;
-    width: 100%;
-    justify-content: center;
-    gap: 18px;
-  }
-
-  .auth-buttons {
-    margin-left: auto;
-  }
-
-  .auth-buttons button {
-    padding: 8px 12px;
-  }
-
-  .plan-options {
-    grid-template-columns: 1fr;
-  }
-
-  .section-header {
-    align-items: flex-start;
+  to {
+    transform: rotate(360deg);
   }
 }

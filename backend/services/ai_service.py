@@ -6,6 +6,7 @@ from backend.prompt_engine.prompt_builder import build_prompt
 from backend.core.ai_client import client
 from backend.utils.logger import logger
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import tiktoken
 
 
@@ -1290,7 +1291,7 @@ Generate completely original questions.
 
     generated_by_section = {}
 
-    for index, item in enumerate(all_groups):
+    def generate_group_task(index, item):
 
         section = item["section"]
 
@@ -1301,13 +1302,12 @@ Generate completely original questions.
             or "Section A"
         )
 
-        if section_name not in generated_by_section:
-
-            generated_by_section[section_name] = []
-
-        generated_questions = generated_by_section[
-            section_name
-        ]
+        existing_questions = list(
+            generated_by_section.get(
+                section_name,
+                []
+            )
+        )
 
         questions = generate_question_group(
             data=data,
@@ -1318,7 +1318,7 @@ Generate completely original questions.
             cognitive_blueprint=cognitive_blueprint,
             instructions=instructions,
             reference_paper=reference_paper,
-            existing_questions=generated_questions,
+            existing_questions=existing_questions,
             cognitive_allocation=(
                 group_cognitive_allocations[index]
             ),
@@ -1327,14 +1327,55 @@ Generate completely original questions.
             )
         )
 
-        if (
-            isinstance(questions, dict)
-            and "error" in questions
-        ):
+        return index, section_name, questions
 
-            return questions
+    with ThreadPoolExecutor(
+        max_workers=4
+    ) as executor:
 
-        generated_questions.extend(
+        futures = [
+            executor.submit(
+                generate_group_task,
+                index,
+                item
+            )
+            for index, item in enumerate(all_groups)
+        ]
+
+        completed_groups = {}
+
+        for future in as_completed(futures):
+
+            index, section_name, questions = (
+                future.result()
+            )
+
+            if (
+                isinstance(questions, dict)
+                and "error" in questions
+            ):
+                return questions
+
+            completed_groups[index] = (
+                section_name,
+                questions
+            )
+
+    for index in range(
+        len(all_groups)
+    ):
+
+        section_name, questions = (
+            completed_groups[index]
+        )
+
+        if section_name not in generated_by_section:
+
+            generated_by_section[section_name] = []
+
+        generated_by_section[
+            section_name
+        ].extend(
             questions
         )
 

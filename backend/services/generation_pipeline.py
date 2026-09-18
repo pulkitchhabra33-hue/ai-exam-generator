@@ -11,7 +11,7 @@ from backend.validators.content_quality_validator import validate_and_repair_pap
 from backend.services.final_result_builder import build_final_result
 from backend.utils.logger import logger
 
-MAX_PIPELINE_TIME = 150
+MAX_PIPELINE_TIME = 600
 
 def check_pipeline_timeout(
         pipeline_start

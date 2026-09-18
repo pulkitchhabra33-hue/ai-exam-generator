@@ -923,7 +923,7 @@ def call_openai_json(prompt):
     try:
         response = client.chat.completions.create(
             model="gpt-5-mini",
-            timeout=60.0,
+            timeout=180.0,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}]
         )

@@ -425,7 +425,7 @@ Questions:
             }
         ],
         response_format={"type": "json_object"},
-        temperature=0,
+        temperature=1,
         timeout=60
     )
 

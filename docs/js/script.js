@@ -891,7 +891,7 @@ async function loadGuestCredits() {
 
     if (!guestId) {
         creditsElement.innerText =
-            "Free Credits: 2";
+            "Free Credits: 10";
         return;
     }
 
@@ -961,7 +961,7 @@ function showNoCreditsMessage() {
                     </p>
 
                     <p>
-                        75 credits
+                        80 credits
                     </p>
 
                     <button
@@ -976,11 +976,11 @@ function showNoCreditsMessage() {
                     <h3>PREMIUM</h3>
 
                     <p>
-                        ₹399 / 6 months
+                        ₹399 / 4 months
                     </p>
 
                     <p>
-                        500 credits
+                        400 credits
                     </p>
 
                     <button

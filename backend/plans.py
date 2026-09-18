@@ -4,12 +4,12 @@ PLANS= {
     },
 
     "PRO": {
-        "credits": 75,
+        "credits": 80,
         "price": 99
     },
 
     "PREMIUM": {
-        "credits": 600,
+        "credits": 400,
         "price": 399
     }
 }

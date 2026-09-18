@@ -108,7 +108,7 @@ def signup(user: SignupRequest):
             email= user.email,
             password= hashed_password,
             plan= "FREE",
-            credits_remaining= 2
+            credits_remaining= 10
         )
 
         db.add(new_user)
@@ -182,7 +182,7 @@ def create_guest_session():
     db: Session= SessionLocal()
     guest_id= str(uuid.uuid4())
 
-    guest= GuestSession(guest_id= guest_id, credits_remaining= 2)
+    guest= GuestSession(guest_id= guest_id, credits_remaining= 10)
     db.add(guest)
     db.commit()
 
@@ -217,7 +217,7 @@ def upgrade_plan(data: UpgradeRequest, current_user= Depends(get_current_user)):
 
     if data.plan == "PRO":
         user.plan= "PRO"
-        user.credits_remaining= 75
+        user.credits_remaining= 80
 
         user.subscription_end= (
             datetime.utcnow() +
@@ -226,10 +226,10 @@ def upgrade_plan(data: UpgradeRequest, current_user= Depends(get_current_user)):
 
     elif data.plan == "PREMIUM":
         user.plan= "PREMIUM"
-        user.credits_remaining= 600
+        user.credits_remaining= 400
         user.subscription_end= (
             datetime.utcnow() +
-            timedelta(days= 365)
+            timedelta(days= 120)
         )
 
     else:

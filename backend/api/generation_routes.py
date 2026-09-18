@@ -385,7 +385,7 @@ def generate(
         # CREDIT COST
         # ====================================================
 
-        credit_cost= 2 if teacher_data.exam_type else 1
+        credit_cost= 10 if teacher_data.exam_type else 8
 
         # ====================================================
         # AUTHENTICATED USER

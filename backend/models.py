@@ -15,7 +15,7 @@ class User(Base):
     password= Column(String(255))
 
     plan= Column(String(20), default= "FREE")
-    credits_remaining= Column(Integer, default=2)
+    credits_remaining= Column(Integer, default=10)
     subscription_end= Column(DateTime, nullable= True)
 
     created_at= Column(DateTime, default= datetime.utcnow)
@@ -36,5 +36,5 @@ class GuestSession(Base):
 
     id= Column(Integer, primary_key= True, index= True)
     guest_id= Column(String(100), unique= True, index= True)
-    credits_remaining= Column(Integer, default=2)
+    credits_remaining= Column(Integer, default=10)
     created_at= Column(DateTime, default= datetime.utcnow)

@@ -440,7 +440,7 @@ def generate(
 
                 guest = GuestSession(
                     guest_id=guest_id,
-                    credits_remaining=2
+                    credits_remaining=10
                 )
 
                 db.add(
@@ -539,33 +539,16 @@ def generate(
         # ADD TEACHER INFORMATION
         # ====================================================
 
-        paper[
-            "class_name"
-        ] = (
-            teacher_data.class_name
-            or ""
-        )
 
-        paper[
-            "subject"
-        ] = (
-            teacher_data.subject
-            or ""
-        )
+        paper["class_name"] = teacher_data.class_name or ""
+        paper["subject"] = teacher_data.subject or ""
+        paper["total_marks"] = teacher_data.total_marks or ""
+        paper["exam_type"] = teacher_data.exam_type or ""
 
-        paper[
-            "total_marks"
-        ] = (
-            teacher_data.total_marks
-            or 0
-        )
-
-        paper[
-            "exam_type"
-        ] = (
-            teacher_data.exam_type
-            or ""
-        )
+        paper["school_name"] = teacher_data.school_name or ""
+        paper["exam_name"] = teacher_data.exam_name or ""
+        paper["time_limit"] = teacher_data.time_limit or ""
+        paper["instructions"] = teacher_data.instructions or ""
 
 
         # ====================================================

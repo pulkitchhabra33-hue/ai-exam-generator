@@ -4,7 +4,8 @@ from reportlab.platypus import (
     Spacer,
     Table,
     TableStyle,
-    KeepTogether
+    KeepTogether,
+    HRFlowable
 )
 
 from reportlab.lib.styles import (
@@ -18,6 +19,7 @@ import os
 import datetime
 import html
 import uuid
+import re
 
 def normalize_question_type(question_type):
     if not question_type:
@@ -78,6 +80,67 @@ def safe_text(value):
     return html.escape(
         str(value).strip()
     )
+
+def draw_page_frame(canvas, doc):
+    canvas.saveState()
+
+    width, height = doc.pagesize
+
+    canvas.setStrokeColor(colors.black)
+    canvas.setLineWidth(0.7)
+
+    canvas.rect(
+        25,
+        25,
+        width - 50,
+        height - 50
+    )
+
+    canvas.setFont(
+        "Helvetica",
+        9
+    )
+
+    canvas.drawCentredString(
+        width / 2,
+        14,
+        f"Page {canvas.getPageNumber()}"
+    )
+
+    canvas.restoreState()
+
+
+def has_attempt_all_instruction(instructions):
+    patterns = [
+        r"\battempt\s+(all|every)\s+(the\s+)?(questions?|qns?)\b",
+        r"\battempt\s+(all|every)\b",
+        r"\ball\s+(the\s+)?(questions?|qns?)\s+(must|should|are to be)\s+attempted\b",
+        r"\banswer\s+(all|every)\s+(the\s+)?(questions?|qns?)\b",
+        r"\b(all|every)\s+(the\s+)?(questions?|qns?)\s+(must|should)\s+be\s+answered\b"
+    ]
+
+    combined = " ".join(
+        str(instruction).lower().strip()
+        for instruction in instructions
+    )
+
+    combined = re.sub(
+        r"[^\w\s]",
+        " ",
+        combined
+    )
+
+    combined = re.sub(
+        r"\s+",
+        " ",
+        combined
+    ).strip()
+
+    return any(
+        re.search(pattern, combined)
+        for pattern in patterns
+    )
+
 
 def generate_pdf(
     data,
@@ -196,23 +259,163 @@ def generate_pdf(
     # TITLE
     # --------------------------------------------------
 
-    elements.append(
-        Paragraph(
-            data.get(
-                "title",
-                "Exam Paper"
-            ),
-            title_style
+    school_name = safe_text(
+        data.get(
+            "school_name",
+            ""
         )
     )
 
+    exam_name = safe_text(
+        data.get(
+            "exam_name",
+            ""
+        )
+    )
+
+    subject = safe_text(
+        data.get(
+            "subject",
+            ""
+        )
+    )
+
+    class_name = safe_text(
+        data.get(
+            "class_name",
+            ""
+        )
+    )
+
+    time_limit = safe_text(
+        data.get(
+            "time_limit",
+            ""
+        )
+    )
+
+    total_marks = safe_text(
+        data.get(
+            "total_marks",
+            ""
+        )
+    )
+
+    header_title_style = ParagraphStyle(
+        "HeaderTitle",
+        parent=styles["Title"],
+        alignment=TA_CENTER,
+        spaceAfter=5
+    )
+
+    header_exam_style = ParagraphStyle(
+        "HeaderExam",
+        parent=styles["Heading2"],
+        alignment=TA_CENTER,
+        spaceAfter=10
+    )
+
+    header_info_style = ParagraphStyle(
+        "HeaderInfo",
+        parent=styles["Normal"],
+        leading=14
+    )
+
+    if school_name:
+        elements.append(
+            Paragraph(
+                f"<b>{school_name}</b>",
+                header_title_style
+            )
+        )
+
+    if exam_name:
+        elements.append(
+            Paragraph(
+                f"<b>{exam_name}</b>",
+                header_exam_style
+            )
+        )
+
+    if (
+        class_name
+        or subject
+        or time_limit
+        or total_marks
+    ):
+        header_table = Table(
+            [
+                [
+                    Paragraph(
+                        f"<b>Subject:</b> {subject}",
+                        header_info_style
+                    ),
+                    Paragraph(
+                        f"<b>Class:</b> {class_name}",
+                        header_info_style
+                    )
+                ],
+                [
+                    Paragraph(
+                        f"<b>Time:</b> {time_limit}",
+                        header_info_style
+                    ),
+                    Paragraph(
+                        f"<b>Maximum Marks:</b> {total_marks}",
+                        header_info_style
+                    )
+                ]
+            ],
+            colWidths=[240, 240]
+        )
+
+        header_table.setStyle(
+            TableStyle(
+                [
+                    (
+                        "VALIGN",
+                        (0, 0),
+                        (-1, -1),
+                        "MIDDLE"
+                    ),
+                    (
+                        "LEFTPADDING",
+                        (0, 0),
+                        (-1, -1),
+                        4
+                    ),
+                    (
+                        "RIGHTPADDING",
+                        (0, 0),
+                        (-1, -1),
+                        4
+                    ),
+                    (
+                        "TOPPADDING",
+                        (0, 0),
+                        (-1, -1),
+                        4
+                    ),
+                    (
+                        "BOTTOMPADDING",
+                        (0, 0),
+                        (-1, -1),
+                        4
+                    )
+                ]
+            )
+        )
+
+        elements.append(
+            header_table
+        )
 
     elements.append(
         Spacer(
             1,
-            8
+            10
         )
-    )
+    )    
 
 
     # --------------------------------------------------
@@ -224,33 +427,107 @@ def generate_pdf(
         []
     )
 
+    if isinstance(
+        instructions,
+        str
+    ):
+        instructions = [
+            line.strip()
+            for line in instructions.splitlines()
+            if line.strip()
+        ]
 
-    if instructions:
+    elif not isinstance(
+        instructions,
+        list
+    ):
+        instructions = []
 
-        elements.append(
+
+    if not has_attempt_all_instruction(instructions):
+        instructions.insert(
+            0,
+            "Attempt all questions."
+        )
+
+    instruction_elements = [
+        Paragraph(
+            "<b>Instructions:</b>",
+            styles["Heading2"]
+        )
+    ]
+
+    for instruction in instructions:
+        instruction_elements.append(
             Paragraph(
-                "Instructions:",
-                styles["Heading2"]
+                f"• {safe_text(instruction)}",
+                styles["Normal"]
             )
         )
 
+    instruction_box = Table(
+        [
+            [
+                instruction_elements
+            ]
+        ],
+        colWidths=[480]
+    )
 
-        for instruction in instructions:
-
-            elements.append(
-                Paragraph(
-                    f"• {instruction}",
-                    styles["Normal"]
+    instruction_box.setStyle(
+        TableStyle(
+            [
+                (
+                    "BOX",
+                    (0, 0),
+                    (-1, -1),
+                    0.8,
+                    colors.black
+                ),
+                (
+                    "LEFTPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    10
+                ),
+                (
+                    "RIGHTPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    10
+                ),
+                (
+                    "TOPPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    8
+                ),
+                (
+                    "BOTTOMPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    8
+                ),
+                (
+                    "VALIGN",
+                    (0, 0),
+                    (-1, -1),
+                    "TOP"
                 )
-            )
-
-
-        elements.append(
-            Spacer(
-                1,
-                12
-            )
+            ]
         )
+    )
+
+    elements.append(
+        instruction_box
+    )
+
+    elements.append(
+        Spacer(
+            1,
+            12
+        )
+    )
 
 
     # --------------------------------------------------
@@ -277,31 +554,31 @@ def generate_pdf(
         if section_name:
 
             elements.append(
+                HRFlowable(
+                    width="100%",
+                    thickness=0.8,
+                    color=colors.black,
+                    spaceBefore=6,
+                    spaceAfter=6
+                )
+            )
+
+            elements.append(
                 Paragraph(
                     f"<b>{safe_text(section_name)}</b>",
                     section_style
                 )
             )
 
-
-        elements.append(
-            Table(
-                [[""]],
-                colWidths=[480],
-                rowHeights=[1],
-                style= TableStyle(
-                    [
-                        (
-                            "LINEBELOW",
-                            (0, 0),
-                            (-1, -1),
-                            0.8,
-                            colors.black
-                        )
-                    ]
+            elements.append(
+                HRFlowable(
+                    width="100%",
+                    thickness=0.8,
+                    color=colors.black,
+                    spaceBefore=2,
+                    spaceAfter=8
                 )
             )
-        )
 
         questions = section.get(
             "questions",
@@ -635,7 +912,9 @@ def generate_pdf(
 
     try:
         doc.build(
-            elements
+            elements,
+            onFirstPage=draw_page_frame,
+            onLaterPages=draw_page_frame
         )
 
     except Exception as e:

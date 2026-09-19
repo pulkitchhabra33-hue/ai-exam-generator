@@ -14,9 +14,18 @@ class SectionRequest(BaseModel):
     question_groups: List[QuestionGroupRequest]
 
 class TeacherRequest(BaseModel):
-    exam_type: str
+
+    exam_type: str = "none"
     subject: str
     class_name: str
-    total_marks: int= Field(gt=0)
+    total_marks: int = Field(gt=0)
+
+    school_name: Optional[str] = ""
+    exam_name: Optional[str] = ""
+    time_limit: Optional[str] = ""
+    instructions: Optional[str] = ""
+
     sections: List[SectionRequest]
-    instructions: Optional[str]= ""
+
+    include_answers: bool = False
+    include_solutions: bool = False

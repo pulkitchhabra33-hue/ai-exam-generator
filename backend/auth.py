@@ -199,7 +199,11 @@ def create_guest_session(
 
         guest = None
 
-        # Recover existing guest using persistent cookie
+        print(
+            "[GUEST DEBUG] Cookie received:",
+            bool(identity_token)
+        )
+
         if identity_token:
             identity_token_hash = hashlib.sha256(
                 identity_token.encode()
@@ -213,6 +217,17 @@ def create_guest_session(
                 )
                 .first()
             )
+
+            print(
+                "[GUEST DEBUG] Matching guest found:",
+                bool(guest)
+            )
+
+            if guest:
+                print(
+                    "[GUEST DEBUG] Recovered credits:",
+                    guest.credits_remaining
+                )
 
         # Create a new guest only if no existing identity is found
         if guest is None:

@@ -36,5 +36,6 @@ class GuestSession(Base):
 
     id= Column(Integer, primary_key= True, index= True)
     guest_id= Column(String(100), unique= True, index= True)
+    identity_token_hash= Column(String(64), unique=True, index= True, nullable= True)
     credits_remaining= Column(Integer, default=10)
     created_at= Column(DateTime, default= datetime.utcnow)

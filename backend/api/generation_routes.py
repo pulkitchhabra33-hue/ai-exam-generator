@@ -431,26 +431,9 @@ def generate(
             # ------------------------------------------------
 
             if not guest:
-
-                guest_id = (
-                    x_guest_id
-                    if x_guest_id
-                    else str(uuid.uuid4())
-                )
-
-                guest = GuestSession(
-                    guest_id=guest_id,
-                    credits_remaining=10
-                )
-
-                db.add(
-                    guest
-                )
-
-                db.commit()
-
-                db.refresh(
-                    guest
+                raise HTTPException(
+                    status_code= 401,
+                    detail="INVALID_GUEST_SESSION"
                 )
 
 

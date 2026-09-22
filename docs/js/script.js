@@ -38,15 +38,28 @@ function handleCustom(selectId, inputId) {
     }
 }
 
-function getGuestId() {
-    let guestId = localStorage.getItem("guest_id");
+async function getGuestId() {
+    const response = await fetch(
+        `${API_BASE_URL}/guest-session`,
+        {
+            method: "POST",
+            credentials: "include"
+        }
+    );
 
-    if (!guestId) {
-        guestId = crypto.randomUUID();
-        localStorage.setItem("guest_id", guestId);
+    if (!response.ok) {
+        throw new Error("Failed to recover guest session.");
     }
 
-    return guestId;
+    const data = await response.json();
+
+    if (!data.guest_id) {
+        throw new Error("Guest ID missing from server response.");
+    }
+
+    localStorage.setItem("guest_id", data.guest_id);
+
+    return data.guest_id;
 }
 
 function setGenerationUI(active) {
@@ -650,7 +663,7 @@ async function generatePDF() {
                 `Bearer ${token}`;
         } else {
             headers["X-Guest-ID"] =
-                getGuestId();
+                await getGuestId();
         }
 
         const controller =
@@ -670,6 +683,7 @@ async function generatePDF() {
                     method: "POST",
                     headers: headers,
                     body: formData,
+                    credentials: "include",
                     signal: controller.signal
                 }
             );
@@ -878,8 +892,23 @@ async function loadUserInfo() {
 }
 
 async function loadGuestCredits() {
-    const guestId =
-        localStorage.getItem("guest_id");
+    let guestId;
+
+    try {
+        guestId = await getGuestId();
+    } catch (error) {
+        console.error("Failed to initialize guest session:", error);
+
+        const creditsElement =
+            document.getElementById("guestCredits");
+
+        if (creditsElement) {
+            creditsElement.innerText =
+                "Unable to load credits.";
+        }
+
+        return;
+    }
 
     const creditsElement =
         document.getElementById("guestCredits");
@@ -888,17 +917,12 @@ async function loadGuestCredits() {
         return;
     }
 
-    if (!guestId) {
-        creditsElement.innerText =
-            "Free Credits: 10";
-        return;
-    }
-
     try {
         const response =
             await fetch(
                 `${API_BASE_URL}/guest-credits`,
                 {
+                    credentials:"include",
                     headers: {
                         "X-Guest-ID":
                             guestId

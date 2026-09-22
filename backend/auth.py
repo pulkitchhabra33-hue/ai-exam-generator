@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from fastapi.security import OAuth2PasswordBearer
 
 from pydantic import BaseModel
@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
 import uuid
+import hashlib
+import secrets
 
 class SignupRequest(BaseModel):
     name: str
@@ -27,7 +29,13 @@ class LoginRequest(BaseModel):
 router= APIRouter()
 
 load_dotenv()
+
 secret_key= os.getenv("SECRET_KEY")
+
+if not secret_key:
+    raise RuntimeError(
+        "SECRET_KEY environment variable is not configured."
+    )
 
 oauth2_scheme= OAuth2PasswordBearer(tokenUrl= "login")
 
@@ -176,23 +184,72 @@ def login(user: LoginRequest):
         db.close()
 
 
-#Guest-ID
+# Guest-ID
 @router.post("/guest-session")
-def create_guest_session():
-    db: Session= SessionLocal()
-    guest_id= str(uuid.uuid4())
+def create_guest_session(
+    request: Request,
+    response: Response
+):
+    db: Session = SessionLocal()
 
-    guest= GuestSession(guest_id= guest_id, credits_remaining= 10)
-    db.add(guest)
-    db.commit()
+    try:
+        identity_token = request.cookies.get(
+            "guest_identity"
+        )
 
-    db.refresh(guest)
-    db.close()
+        guest = None
 
-    return {
-        "guest_id": guest_id,
-        "credits_remaining": guest.credits_remaining
-    }
+        # Recover existing guest using persistent cookie
+        if identity_token:
+            identity_token_hash = hashlib.sha256(
+                identity_token.encode()
+            ).hexdigest()
+
+            guest = (
+                db.query(GuestSession)
+                .filter(
+                    GuestSession.identity_token_hash
+                    == identity_token_hash
+                )
+                .first()
+            )
+
+        # Create a new guest only if no existing identity is found
+        if guest is None:
+            identity_token = secrets.token_urlsafe(32)
+
+            identity_token_hash = hashlib.sha256(
+                identity_token.encode()
+            ).hexdigest()
+
+            guest = GuestSession(
+                guest_id=str(uuid.uuid4()),
+                identity_token_hash=identity_token_hash,
+                credits_remaining=10
+            )
+
+            db.add(guest)
+            db.commit()
+            db.refresh(guest)
+
+            # Persistent, HTTP-only identity cookie
+            response.set_cookie(
+                key="guest_identity",
+                value=identity_token,
+                max_age=60 * 60 * 24 * 365,
+                httponly=True,
+                secure=True,
+                samesite="none",
+                path="/"
+            )
+
+        return {
+            "guest_id": guest.guest_id,
+            "credits_remaining": guest.credits_remaining
+        }
+
+    finally:
+        db.close()
 
 def get_guest_session(guest_id, db):
     if not guest_id:

@@ -21,14 +21,11 @@ app = FastAPI()
 #     database_file.unlink()
 Base.metadata.create_all(bind=engine)
 
-# print("DATABASE URL:", engine.url)
-# print("DATABASE FILE:", engine.url.database)
-
 app.include_router(auth_router)
 
 app.add_middleware(     
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://pulkitchhabra33-hue.github.io"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -204,6 +204,16 @@ def create_guest_session(
             bool(identity_token)
         )
 
+        print(
+            "[GUEST DEBUG] Request origin:",
+            request.headers.get("origin")
+        )
+
+        print(
+            "[GUEST DEBUG] Existing guest cookie:",
+            bool(request.cookies.get("guest_identity"))
+        )
+
         if identity_token:
             identity_token_hash = hashlib.sha256(
                 identity_token.encode()

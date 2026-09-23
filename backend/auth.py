@@ -258,6 +258,11 @@ def create_guest_session(
             path="/"
         )
 
+        return {
+            "guest_id": guest.guest_id,
+            "credits_remaining": guest.credits_remaining
+        }
+
     finally:
         db.close()
 

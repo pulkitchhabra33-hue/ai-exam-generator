@@ -56,7 +56,8 @@ async function getGuestId() {
 
     const data = await response.json();
 
-    if (!data.guest_id) {
+    if (!data || !data.guest_id) {
+        console.error("Invalid guest-session response:", data);
         throw new Error("Guest ID missing from server response.");
     }
 

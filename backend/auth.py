@@ -193,27 +193,11 @@ def create_guest_session(
     db: Session = SessionLocal()
 
     try:
-        identity_token = request.cookies.get(
-            "guest_identity"
-        )
+        identity_token = request.cookies.get("guest_identity")
 
         guest = None
 
-        print(
-            "[GUEST DEBUG] Cookie received:",
-            bool(identity_token)
-        )
-
-        print(
-            "[GUEST DEBUG] Request origin:",
-            request.headers.get("origin")
-        )
-
-        print(
-            "[GUEST DEBUG] Existing guest cookie:",
-            bool(request.cookies.get("guest_identity"))
-        )
-
+        # 1. Recover guest using persistent identity cookie
         if identity_token:
             identity_token_hash = hashlib.sha256(
                 identity_token.encode()
@@ -222,56 +206,57 @@ def create_guest_session(
             guest = (
                 db.query(GuestSession)
                 .filter(
-                    GuestSession.identity_token_hash
-                    == identity_token_hash
+                    GuestSession.identity_token_hash == identity_token_hash
                 )
                 .first()
             )
 
-            print(
-                "[GUEST DEBUG] Matching guest found:",
-                bool(guest)
-            )
+        # 2. Fallback: recover using existing guest ID
+        if guest is None:
+            guest_id = request.headers.get("X-Guest-ID")
 
-            if guest:
-                print(
-                    "[GUEST DEBUG] Recovered credits:",
-                    guest.credits_remaining
+            if guest_id:
+                guest = (
+                    db.query(GuestSession)
+                    .filter(
+                        GuestSession.guest_id == guest_id
+                    )
+                    .first()
                 )
 
-        # Create a new guest only if no existing identity is found
+        # 3. Create a guest only when no existing session can be recovered
         if guest is None:
+            guest = GuestSession(
+                guest_id=str(uuid.uuid4()),
+                credits_remaining=10
+            )
+
+            db.add(guest)
+            db.flush()
+
+        # 4. Rotate identity cookie when missing or invalid
+        if not identity_token or guest.identity_token_hash is None:
             identity_token = secrets.token_urlsafe(32)
 
             identity_token_hash = hashlib.sha256(
                 identity_token.encode()
             ).hexdigest()
 
-            guest = GuestSession(
-                guest_id=str(uuid.uuid4()),
-                identity_token_hash=identity_token_hash,
-                credits_remaining=10
-            )
+            guest.identity_token_hash = identity_token_hash
 
-            db.add(guest)
-            db.commit()
-            db.refresh(guest)
+        db.commit()
+        db.refresh(guest)
 
-            # Persistent, HTTP-only identity cookie
-            response.set_cookie(
-                key="guest_identity",
-                value=identity_token,
-                max_age=60 * 60 * 24 * 365,
-                httponly=True,
-                secure=True,
-                samesite="none",
-                path="/"
-            )
-
-        return {
-            "guest_id": guest.guest_id,
-            "credits_remaining": guest.credits_remaining
-        }
+        # 5. Set persistent identity cookie
+        response.set_cookie(
+            key="guest_identity",
+            value=identity_token,
+            max_age=60 * 60 * 24 * 365,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            path="/"
+        )
 
     finally:
         db.close()

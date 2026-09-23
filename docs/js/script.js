@@ -43,6 +43,9 @@ async function getGuestId() {
         `${API_BASE_URL}/guest-session`,
         {
             method: "POST",
+            headers: {
+                "X-Guest-ID": localStorage.getItem("guest_id") || ""
+            },
             credentials: "include"
         }
     );

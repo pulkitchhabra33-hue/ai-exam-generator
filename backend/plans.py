@@ -1,6 +1,6 @@
 PLANS= {
     "FREE": {
-        "credits": 2
+        "credits": 10
     },
 
     "PRO": {

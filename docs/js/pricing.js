@@ -148,83 +148,194 @@ async function loadPricingUser() {
 // SELECT PLAN
 // --------------------------------------------------
 
-function selectPlan(plan) {
+async function selectPlan(plan) {
 
-  /*
-   * FREE PLAN
-   */
+    // FREE PLAN
+    if (plan === "FREE") {
 
-  if (plan === "FREE") {
+        localStorage.removeItem("selected_plan");
 
-    localStorage.removeItem(
-      "selected_plan"
-    );
+        window.location.href = "index.html";
 
-    window.location.href =
-      "index.html";
+        return;
+    }
 
-    return;
-  }
+    // Only allow paid plans
+    if (!["PRO", "PREMIUM"].includes(plan)) {
+        alert("Invalid plan selected.");
+        return;
+    }
+
+    // Remember selected plan
+    localStorage.setItem("selected_plan", plan);
+
+    // Check login
+    const token = localStorage.getItem("access_token");
+
+    // Redirect guest to login
+    if (!token) {
+
+        localStorage.setItem(
+            "auth_redirect",
+            "pricing.html"
+        );
+
+        alert(
+            `Please login or create an account to purchase the ${plan} plan.`
+        );
+
+        window.location.href = "login.html";
+
+        return;
+    }
+
+    try {
+
+        // Create Razorpay order through backend
+        const response = await fetch(
+            `${API_BASE_URL}/create-order`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+
+                body: JSON.stringify({
+                    plan: plan
+                })
+            }
+        );
+
+        const orderData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                orderData.detail ||
+                "Failed to create payment order."
+            );
+        }
+
+        // Initialize Razorpay Checkout
+        const options = {
+
+            key: orderData.key_id,
+
+            amount: orderData.amount,
+
+            currency: orderData.currency,
+
+            name: "AI Exam Generator",
+
+            description: `${plan} Plan Subscription`,
+
+            order_id: orderData.order_id,
+
+            handler: async function (paymentResponse) {
+
+                try {
+
+                    // Verify payment through backend
+                    const verifyResponse = await fetch(
+                        `${API_BASE_URL}/verify-payment`,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Authorization": `Bearer ${token}`
+                            },
+
+                            body: JSON.stringify({
+                                razorpay_payment_id:
+                                    paymentResponse.razorpay_payment_id,
+
+                                razorpay_order_id:
+                                    paymentResponse.razorpay_order_id,
+
+                                razorpay_signature:
+                                    paymentResponse.razorpay_signature
+                            })
+                        }
+                    );
+
+                    const verifyData = await verifyResponse.json();
+
+                    if (!verifyResponse.ok) {
+                        throw new Error(
+                            verifyData.detail ||
+                            "Payment verification failed."
+                        );
+                    }
+
+                    alert(
+                        verifyData.already_processed
+                            ? "This payment was already processed."
+                            : "Payment successful! Your plan has been activated."
+                    );
+
+                    window.location.reload();
+
+                } catch (error) {
+
+                    console.error(
+                        "Payment verification error:",
+                        error
+                    );
+
+                    alert(
+                        error.message ||
+                        "Payment was received, but verification could not be completed. Please contact support before trying to pay again."
+                    );
+                }
+            },
+
+            modal: {
+                ondismiss: function () {
+                    console.log(
+                        "Razorpay Checkout closed by user."
+                    );
+                }
+            }
+        };
 
 
-  /*
-   * Remember the selected plan.
-   */
+        // --------------------------------------------------
+        // RAZORPAY CHECKOUT INITIALIZATION
+        // --------------------------------------------------
 
-  localStorage.setItem(
-    "selected_plan",
-    plan
-  );
+        const razorpay = new Razorpay(options);
 
+        // Handle payment failure
+        razorpay.on("payment.failed", function (response) {
 
-  /*
-   * Check whether the user is logged in.
-   */
+            console.error(
+                "Razorpay payment failed:",
+                response.error
+            );
 
-  const token =
-    localStorage.getItem(
-      "access_token"
-    );
+            alert(
+                response.error.description ||
+                "Payment failed. Please try again."
+            );
+        });
 
+        // Open Razorpay Checkout modal
+        razorpay.open();
 
-  /*
-   * Logged-in user
-   *
-   * Payment integration will be
-   * connected here later.
-   */
+    } catch (error) {
 
-  if (token) {
+        console.error(
+            "Plan selection error:",
+            error
+        );
 
-    alert(
-      `${plan} selected. Payment integration will be available here.`
-    );
-
-    return;
-  }
-
-
-  /*
-   * Guest user
-   *
-   * After authentication, return
-   * to the pricing page.
-   */
-
-  localStorage.setItem(
-    "auth_redirect",
-    "pricing.html"
-  );
-
-
-  alert(
-    `Please login or create an account to purchase the ${plan} plan.`
-  );
-
-
-  window.location.href =
-    "login.html";
-
+        alert(
+            error.message ||
+            "Unable to initiate payment. Please try again."
+        );
+    }
 }
 
 

@@ -4,6 +4,7 @@ from datetime import datetime
 from backend.database import Base
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy import UniqueConstraint
 
 class User(Base):
     __tablename__= "users"
@@ -39,3 +40,45 @@ class GuestSession(Base):
     identity_token_hash= Column(String(64), unique=True, index= True, nullable= True)
     credits_remaining= Column(Integer, default=10)
     created_at= Column(DateTime, default= datetime.utcnow)
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id =  Column(Integer, primary_key=True, index=True)
+
+    user_id= Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    razorpay_order_id = Column(
+        String(100),
+        unique= True,
+        nullable= False,
+        index= True
+    )
+
+    razorpay_payment_id =  Column(
+        String(100),
+        unique = True,
+        nullable= False,
+        index= True
+    )
+
+    plan = Column(String(20), nullable= False)
+
+    amount = Column(Integer, nullable= False)
+
+    credits_added = Column(Integer, nullable= False)
+
+    status= Column(
+        String(20),
+        default="SUCCESS",
+        nullable=False
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )

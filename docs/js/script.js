@@ -872,7 +872,7 @@ async function loadUserInfo() {
 
         if (userCredits) {
             userCredits.textContent =
-                user.credits_remaining ?? 0;
+                user.credits ?? 0;
         }
 
         if (userStatus) {

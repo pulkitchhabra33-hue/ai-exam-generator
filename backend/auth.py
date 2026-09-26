@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from backend.database import SessionLocal
 from backend.models import User, PaperHistory, GuestSession, Payment
 from backend import plans
@@ -505,7 +506,35 @@ def verify_payment(
             datetime.utcnow() + timedelta(days=duration_days)
         )
 
-        db.commit()
+        try:
+            db.commit()
+
+        except IntegrityError:
+            db.rollback()
+
+            existing_payment = db.query(Payment).filter(
+                (Payment.razorpay_order_id == data.razorpay_order_id) |
+                (Payment.razorpay_payment_id == data.razorpay_payment_id)
+            ).first()
+
+            if (
+                existing_payment
+                and existing_payment.razorpay_order_id == data.razorpay_order_id
+                and existing_payment.razorpay_payment_id == data.razorpay_payment_id
+                and existing_payment.user_id == current_user.id
+                and existing_payment.status == "SUCCESS"
+            ):
+                return {
+                    "message": "Payment has already been processed.",
+                    "plan": existing_payment.plan,
+                    "credits": existing_payment.credits_added,
+                    "already_processed": True
+                }
+
+            raise HTTPException(
+                status_code=409,
+                detail="Payment or order ID has already been used."
+            )
 
         db.refresh(user)
 

@@ -315,6 +315,10 @@ async function selectPlan(plan) {
                 response.error
             );
 
+            const message =
+              response.error?.description ||
+              "Payment failed. Please try again.";
+
             alert(
                 response.error.description ||
                 "Payment failed. Please try again."

@@ -187,51 +187,47 @@ the teacher, both per section and per question type.
 # ============================================================
 
 def get_optional_user(
-        authorization: Optional[str]
+        authorization: Optional[str],
+        db
 ):
     if not authorization:
         return None
 
     if not authorization.startswith("Bearer "):
         raise HTTPException(
-            status_code= 401,
-            detail= "AUTHENTICATION_REQUIRED"
+            status_code=401,
+            detail="AUTHENTICATION_REQUIRED"
         )
 
-    token= authorization.split(" ", 1)[1]
+    token = authorization.split(" ", 1)[1]
 
     try:
-        secret_key= os.getenv("SECRET_KEY")
-        payload= jwt.decode(
+        secret_key = os.getenv("SECRET_KEY")
+
+        payload = jwt.decode(
             token,
             secret_key,
-            algorithms= ["HS256"]
+            algorithms=["HS256"]
         )
 
-        email= payload.get("sub")
+        email = payload.get("sub")
 
         if not email:
             raise HTTPException(
-                status_code= 401,
-                detail= "AUTHENTICATION_REQUIRED"
+                status_code=401,
+                detail="AUTHENTICATION_REQUIRED"
             )
 
-        db= SessionLocal()
-
-        try:
-            user= (
-                db.query(User)
-                .filter(User.email == email)
-                .first()
-            )
-
-        finally:
-            db.close()
+        user = (
+            db.query(User)
+            .filter(User.email == email)
+            .first()
+        )
 
         if not user:
             raise HTTPException(
-                status_code= 401,
-                detail= "AUTHENTICATION_REQUIRED"
+                status_code=401,
+                detail="AUTHENTICATION_REQUIRED"
             )
 
         return user
@@ -241,8 +237,8 @@ def get_optional_user(
 
     except Exception:
         raise HTTPException(
-            status_code= 401,
-            detail= "AUTHENTICATION_REQUIRED"
+            status_code=401,
+            detail="AUTHENTICATION_REQUIRED"
         )
 
 # ============================================================
@@ -367,7 +363,8 @@ def generate(
         # ====================================================
 
         user = get_optional_user(
-            authorization
+            authorization,
+            db
         )
 
         print(

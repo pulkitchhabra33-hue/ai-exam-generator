@@ -801,27 +801,34 @@ async function generatePDF() {
 }
 
 async function loadUserInfo() {
-    const token = localStorage.getItem(
-        "access_token"
-    );
+    const token =
+        localStorage.getItem(
+            "access_token"
+        );
 
     if (!token) {
         return;
     }
 
     try {
-        const response = await apiRequest(
-            "/current-user",
-            {
-                method: "GET"
-            }
-        );
+        const response =
+            await fetch(
+                `${API_BASE_URL}/current-user`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Authorization":
+                            `Bearer ${token}`
+                    }
+                }
+            );
 
         if (!response.ok) {
             return;
         }
 
-        const user = await response.json();
+        const user =
+            await response.json();
 
         const guestCreditsCard =
             document.getElementById(
@@ -887,6 +894,7 @@ async function loadUserInfo() {
                 user.expiry_date ||
                 "N/A";
         }
+
     } catch (error) {
         console.error(
             "Failed to load user information:",

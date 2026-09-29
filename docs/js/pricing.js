@@ -30,6 +30,11 @@ async function loadPricingUser() {
       "pricingCredits"
     );
 
+  const expiryElement =
+    document.getElementById(
+      "pricingExpiry"
+    );
+
 
   if (!userElement) {
     return;
@@ -127,6 +132,19 @@ async function loadPricingUser() {
 
     }
 
+    if (expiryElement) {
+
+      if (
+        user.plan !== "FREE" &&
+        user.days_left !== undefined
+      ) {
+        expiryElement.innerText =
+          `Expiry: ${user.days_left} days left`;
+      } else {
+        expiryElement.innerText =
+          "Expiry: No active plan";
+      }
+    }
   }
 
   catch (error) {
@@ -319,10 +337,7 @@ async function selectPlan(plan) {
               response.error?.description ||
               "Payment failed. Please try again.";
 
-            alert(
-                response.error.description ||
-                "Payment failed. Please try again."
-            );
+            alert(message);
         });
 
         // Open Razorpay Checkout modal

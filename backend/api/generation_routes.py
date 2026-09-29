@@ -35,11 +35,12 @@ from backend.database import SessionLocal
 
 from backend.models import (
     User,
-    GuestSession
+    GuestSession,
+    PaperHistory
 )
 
 from backend.validators.question_type_validator import normalize_question_type
-
+from backend.auth import sync_subscription_expiry
 
 router = APIRouter()
 
@@ -390,6 +391,12 @@ def generate(
 
         if user:
 
+
+            user = sync_subscription_expiry(
+                db,
+                user
+            )
+
             if (
                 user.credits_remaining
                 < credit_cost
@@ -599,16 +606,33 @@ def generate(
                 detail="Generated PDF file not found."
             )
 
-
-        # ====================================================
-        # DEDUCT CREDITS
+        # ===========================================================
+        # SAVE PAPER HISTORY + DEDUCT CREDITS
         #
         # IMPORTANT:
         # Credits are deducted ONLY after
         # successful AI + PDF generation.
-        # ====================================================
+        # ============================================================
 
         if user:
+
+            # --------------------------------------------------------
+            # SAVE PAPER HISTORY
+            # --------------------------------------------------------
+
+            paper_history = PaperHistory(
+                user_id=user.id,
+                exam_name=teacher_data.exam_name or "Untitled Exam",
+                subject=teacher_data.subject or "",
+                exam_type=teacher_data.exam_type or "",
+                pdf_path=file_path
+            )
+
+            db.add(paper_history)
+
+            # --------------------------------------------------------
+            # DEDUCT CREDITS
+            # --------------------------------------------------------
 
             user.credits_remaining -= (
                 credit_cost

@@ -83,6 +83,68 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
     return encoded_jwt
 
+
+def sync_subscription_expiry(db, user):
+    """
+    Keep subscription status and credits synchronized
+    with the exact subscription expiry timestamp.
+    """
+
+    if user.plan not in ["PRO", "PREMIUM"]:
+        return user
+
+    duration_days = 30 if user.plan == "PRO" else 120
+
+    now = datetime.utcnow()
+
+    # Existing paid account without an expiry timestamp
+    # This safely handles older Test Mode accounts
+
+    if user.subscription_end is None:
+        user.subscription_end = (
+            now + timedelta(days=duration_days)
+        )
+
+        db.commit()
+        db.refresh(user)
+
+        return user
+
+    # Subscription has expired
+    if now >= user.subscription_end:
+        user.plan = "FREE"
+        user.credits_remaining = 0
+        user.subscription_end = None
+
+        db.commit()
+        db.refresh(user)
+
+    return user
+
+def get_subscription_days_left(user):
+    """
+    Return remaining full days based on the exact expiry timestamp.
+    """
+
+    if user.plan not in ["PRO", "PREMIUM"]:
+        return 0
+    
+    if not user.subscription_end:
+        return 0
+
+    now = datetime.utcnow()
+
+    remaining_seconds = (
+        user.subscription_end - now
+    ).total_seconds()
+
+    if remaining_seconds <= 0:
+        return 0
+
+    return int(
+        (remaining_seconds + 86399) // 86400
+    )
+
 def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload= jwt.decode(token, secret_key, algorithms= [algorithm])
@@ -574,19 +636,82 @@ def upgrade_plan(
     
 
 @router.get("/current-user")
-def current_user_info(current_user= Depends(get_current_user)):
+def current_user_info(
+    current_user=Depends(get_current_user)
+):
 
-    return{
-        "name": current_user.name,
-        "email": current_user.email,
-        "plan": current_user.plan,
-        "credits": current_user.credits_remaining,
-        "subscription_end": current_user.subscription_end,
-        "status": "Active" if current_user.plan != "FREE" else "Free Plan"
-    }
+    db: Session = SessionLocal()
+
+    try:
+        user = (
+            db.query(User)
+            .filter(User.id == current_user.id)
+            .first()
+        )
+
+        if not user:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found."
+            )
+
+        # Synchronize subscription expiry
+        user = sync_subscription_expiry(
+            db,
+            user
+        )
+
+        days_left = get_subscription_days_left(
+            user
+        )
+
+        return {
+            "name": user.name,
+            "email": user.email,
+            "plan": user.plan,
+            "credits": user.credits_remaining,
+            "subscription_end": user.subscription_end,
+            "days_left": days_left,
+            "status": (
+                "Active"
+                if user.plan != "FREE"
+                else "Free Plan"
+            )
+        }
+
+    finally:
+        db.close()
 
 @router.get("/my-papers")
-def get_my_papers(current_user= Depends(get_current_user)):
-    db: Session= SessionLocal()
-    papers= db.query(PaperHistory).filter(PaperHistory.user_id == current_user.id).all()
-    return papers
+def get_my_papers(current_user=Depends(get_current_user)):
+    db: Session = SessionLocal()
+
+    try:
+        papers = (
+            db.query(PaperHistory)
+            .filter(
+                PaperHistory.user_id == current_user.id
+            )
+            .order_by(
+                PaperHistory.created_at.desc()
+            )
+            .all()
+        )
+
+        return [
+            {
+                "id": paper.id,
+                "exam_name": paper.exam_name,
+                "subject": paper.subject,
+                "exam_type": paper.exam_type,
+                "download_url": (
+                    f"/download/"
+                    f"{os.path.basename(paper.pdf_path)}"
+                ),
+                "created_at": paper.created_at
+            }
+            for paper in papers
+        ]
+
+    finally:
+        db.close()

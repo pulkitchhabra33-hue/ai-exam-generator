@@ -889,10 +889,16 @@ async function loadUserInfo() {
         }
 
         if (userExpiry) {
-            userExpiry.textContent =
-                user.expiry ||
-                user.expiry_date ||
-                "N/A";
+            if (
+                user.plan !== "FREE" &&
+                user.days_left !== undefined
+            ) {
+                userExpiry.textContent =
+                    `${user.days_left} days left`;
+            } else {
+                userExpiry.textContent =
+                    "No active plan";
+            }
         }
 
     } catch (error) {

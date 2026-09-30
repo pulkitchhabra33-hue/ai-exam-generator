@@ -741,18 +741,53 @@ def download_file(filename: str):
         )
     )
 
-    # Prevent Path Traversal
-    if os.path.commonpath(
-        [
-            os.path.abspath(pdf_folder),
-            file_path
-        ]
-    ) != os.path.abspath(pdf_folder):
+    print(
+        "[DOWNLOAD DEBUG] cwd:",
+        os.getcwd(),
+        flush=True
+    )
 
-        raise HTTPException(
-            status_code=404,
-            detail="PDF file not found."
-        )
+    print(
+        "[DOWNLOAD DEBUG] __file__:",
+        __file__,
+        flush=True
+    )
+
+    print(
+        "[DOWNLOAD DEBUG] backend_folder:",
+        backend_folder,
+        flush=True
+    )
+
+    print(
+        "[DOWNLOAD DEBUG] pdf_folder:",
+        pdf_folder,
+        flush=True
+    )
+
+    print(
+        "[DOWNLOAD DEBUG] filename:",
+        safe_filename,
+        flush=True
+    )
+
+    print(
+        "[DOWNLOAD DEBUG] file_path:",
+        file_path,
+        flush=True
+    )
+
+    print(
+        "[DOWNLOAD DEBUG] exists:",
+        os.path.exists(file_path),
+        flush=True
+    )
+
+    print(
+        "[DOWNLOAD DEBUG] is_file:",
+        os.path.isfile(file_path),
+        flush=True
+    )
 
     if not os.path.isfile(file_path):
 

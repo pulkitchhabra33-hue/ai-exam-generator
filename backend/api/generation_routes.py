@@ -718,49 +718,51 @@ def generate(
 @router.get(
     "/download/{filename}"
 )
-
 def download_file(filename: str):
-    pdf_folder= os.path.abspath(
+
+    backend_folder = os.path.abspath(
         os.path.join(
-            "backend",
-            "pdfs"
+            os.path.dirname(__file__),
+            ".."
         )
     )
 
-    safe_filename= os.path.basename(filename)
+    pdf_folder = os.path.join(
+        backend_folder,
+        "pdfs"
+    )
 
-    file_path= os.path.abspath(
+    safe_filename = os.path.basename(filename)
+
+    file_path = os.path.abspath(
         os.path.join(
             pdf_folder,
             safe_filename
         )
     )
 
-    #Prevent Path Traversal
-    if (
-        os.path.commonpath(
-            [
-                pdf_folder,
-                file_path
-            ]
-        )
-        != pdf_folder
-    ):
+    # Prevent Path Traversal
+    if os.path.commonpath(
+        [
+            os.path.abspath(pdf_folder),
+            file_path
+        ]
+    ) != os.path.abspath(pdf_folder):
+
         raise HTTPException(
             status_code=404,
-            detail= "PDF file not found."
+            detail="PDF file not found."
         )
 
-    if not os.path.isfile(
-        file_path
-    ):
+    if not os.path.isfile(file_path):
+
         raise HTTPException(
             status_code=404,
             detail="PDF file not found."
         )
 
     return FileResponse(
-        path= file_path,
-        media_type= "application/pdf",
-        filename= safe_filename
+        path=file_path,
+        media_type="application/pdf",
+        filename=safe_filename
     )

@@ -737,46 +737,116 @@ async function generatePDF() {
         }
 
         if (result.download_url) {
+
             const link =
-                document.getElementById(
-                    "downloadLink"
-                );
+                document.getElementById("downloadLink");
 
             if (link) {
-                link.href =
-                    API_BASE_URL +
-                    result.download_url;
 
+                link.href = "#";
                 link.innerText =
                     "📥 Download PDF";
 
                 link.target = "_blank";
+                link.onclick = async function(event) {
+                    event.preventDefault();
+
+                    try {
+
+                        const response =
+                            await fetch(
+                                `${API_BASE_URL}${result.download_url}`,
+                                {
+                                    method: "GET",
+                                    headers: token
+                                        ? {
+                                            Authorization:
+                                                `Bearer ${token}`
+                                        }
+                                        : {}
+                                }
+                            );
+
+
+                        if (!response.ok) {
+
+                            throw new Error(
+                                "Failed to generate download link."
+                            );
+                        }
+
+
+                        const data =
+                            await response.json();
+
+
+                        if (!data.download_url) {
+
+                            throw new Error(
+                                "Download URL missing."
+                            );
+                        }
+
+
+                        window.open(
+                            data.download_url,
+                            "_blank"
+                        );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Download error:",
+                            error
+                        );
+
+                        alert(
+                            "Unable to download the PDF. Please try again."
+                        );
+                    }
+
+                };
+
             }
+
 
             if (
                 result.credits_remaining !==
                 undefined
             ) {
+
                 const userCredits =
                     document.getElementById(
                         "userCredits"
                     );
 
+
                 if (userCredits) {
+
                     userCredits.textContent =
                         result.credits_remaining;
+
                 }
+
             }
 
+
             if (token) {
+
                 loadUserInfo();
+
             } else {
+
                 loadGuestCredits();
+
             }
+
         } else {
+
             alert(
                 "Paper generation failed. Please try again."
             );
+
         }
     } catch (error) {
         console.error(

@@ -27,6 +27,11 @@ from backend.services.pdf_service import (
     generate_pdf
 )
 
+from backend.services.r2_service import (
+    upload_pdf,
+    generate_download_url
+)
+
 from backend.schemas.request_models import (
     TeacherRequest
 )
@@ -606,6 +611,32 @@ def generate(
                 detail="Generated PDF file not found."
             )
 
+        # ============================================================
+        # UPLOAD PDF TO CLOUDFLARE R2
+        # ============================================================
+
+        try:
+
+            object_key = f"papers/{os.path.basename(file_path)}"
+
+            upload_pdf(
+                local_file_path=file_path,
+                object_key=object_key
+            )
+
+        except Exception as error:
+
+            print(
+                "[R2 ERROR] PDF upload failed:",
+                error,
+                flush=True
+            )
+
+            raise HTTPException(
+                status_code=500,
+                detail="PDF storage failed."
+            )
+
         # ===========================================================
         # SAVE PAPER HISTORY + DEDUCT CREDITS
         #
@@ -625,7 +656,7 @@ def generate(
                 exam_name=teacher_data.exam_name or "Untitled Exam",
                 subject=teacher_data.subject or "",
                 exam_type=teacher_data.exam_type or "",
-                pdf_path=file_path
+                pdf_path=object_key
             )
 
             db.add(paper_history)
@@ -720,84 +751,31 @@ def generate(
 )
 def download_file(filename: str):
 
-    backend_folder = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            ".."
-        )
-    )
-
-    pdf_folder = os.path.join(
-        backend_folder,
-        "pdfs"
-    )
-
     safe_filename = os.path.basename(filename)
 
-    file_path = os.path.abspath(
-        os.path.join(
-            pdf_folder,
-            safe_filename
+    object_key = f"papers/{safe_filename}"
+
+    try:
+
+        download_url = generate_download_url(
+            object_key=object_key,
+            expires_in=3600
         )
-    )
 
-    print(
-        "[DOWNLOAD DEBUG] cwd:",
-        os.getcwd(),
-        flush=True
-    )
+        return {
+            "success": True,
+            "download_url": download_url
+        }
 
-    print(
-        "[DOWNLOAD DEBUG] __file__:",
-        __file__,
-        flush=True
-    )
+    except Exception as error:
 
-    print(
-        "[DOWNLOAD DEBUG] backend_folder:",
-        backend_folder,
-        flush=True
-    )
-
-    print(
-        "[DOWNLOAD DEBUG] pdf_folder:",
-        pdf_folder,
-        flush=True
-    )
-
-    print(
-        "[DOWNLOAD DEBUG] filename:",
-        safe_filename,
-        flush=True
-    )
-
-    print(
-        "[DOWNLOAD DEBUG] file_path:",
-        file_path,
-        flush=True
-    )
-
-    print(
-        "[DOWNLOAD DEBUG] exists:",
-        os.path.exists(file_path),
-        flush=True
-    )
-
-    print(
-        "[DOWNLOAD DEBUG] is_file:",
-        os.path.isfile(file_path),
-        flush=True
-    )
-
-    if not os.path.isfile(file_path):
+        print(
+            "[R2 DOWNLOAD ERROR]",
+            error,
+            flush=True
+        )
 
         raise HTTPException(
             status_code=404,
             detail="PDF file not found."
         )
-
-    return FileResponse(
-        path=file_path,
-        media_type="application/pdf",
-        filename=safe_filename
-    )

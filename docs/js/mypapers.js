@@ -106,12 +106,12 @@ async function loadPaperHistory() {
               Created: ${createdDate}
             </p>
 
-            <a
-              href="${API_BASE_URL}${paper.download_url}"
-              target="_blank"
+            <button
+              type="button"
+              onclick="downloadPaper('${paper.download_url}')"
             >
-              Download PDF
-            </a>
+              📥 Download PDF
+            </button>
 
           </div>
 
@@ -134,6 +134,69 @@ async function loadPaperHistory() {
         Please try again.
       </p>
     `;
+  }
+}
+
+async function downloadPaper(downloadPath) {
+
+  const token =
+    localStorage.getItem("access_token");
+
+  if (!token) {
+    alert("Please login to download your paper.");
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        `${API_BASE_URL}${downloadPath}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              `Bearer ${token}`
+          }
+        }
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        "Failed to generate download link."
+      );
+    }
+
+
+    const data =
+      await response.json();
+
+
+    if (!data.download_url) {
+
+      throw new Error(
+        "Download URL missing."
+      );
+    }
+
+
+    window.open(
+      data.download_url,
+      "_blank"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Download error:",
+      error
+    );
+
+    alert(
+      "Unable to download the PDF. Please try again."
+    );
   }
 }
 

@@ -226,11 +226,17 @@ function showLoggedInUser(user) {
     }
 
     authButtons.innerHTML = `
-        <span id="userName">
-            Hi, ${user.name} 👤
-        </span>
+        <button
+            type="button"
+            id="profileBtn"
+            class="profile-btn"
+            onclick="window.location.href='dashboard.html'"
+        >
+            👤 Profile
+        </button>
 
         <button
+            type="button"
             id="logoutBtn"
             onclick="logoutUser()"
         >

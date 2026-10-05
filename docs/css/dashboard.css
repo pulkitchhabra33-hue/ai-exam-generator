@@ -382,3 +382,23 @@ body {
     }
 
 }
+
+.back-home {
+    display: inline-block;
+
+    margin-bottom: 25px;
+
+    color: #2563eb;
+
+    text-decoration: none;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    padding: 8px 0;
+}
+
+.back-home:hover {
+    text-decoration: underline;
+}

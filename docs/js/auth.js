@@ -42,7 +42,7 @@ async function loginUser(event) {
         localStorage.removeItem("auth_redirect");
 
         window.location.href =
-            redirect || "dashboard.html";
+            redirect || "index.html";
 
     }
 
@@ -127,7 +127,7 @@ async function signupUser(event) {
             localStorage.removeItem("auth_redirect");
 
             window.location.href =
-                redirect || "dashboard.html";
+                redirect || "index.html";
     }
 
     catch (error) {

@@ -15,8 +15,6 @@ from fastapi import (
 )
 
 from collections import Counter
-
-from fastapi.responses import FileResponse
 from jose import jwt
 
 from backend.services.generation_pipeline import (
@@ -205,11 +203,34 @@ def get_optional_user(
             detail="AUTHENTICATION_REQUIRED"
         )
 
-    token = authorization.split(" ", 1)[1]
+    parts = authorization.split(
+        " ",
+        1
+    )
+
+    if (
+        len(parts) != 2
+        or not parts[1].strip()
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="AUTHENTICATION_REQUIRED"
+        )
+
+    token = parts[1].strip()
 
     try:
-        secret_key = os.getenv("SECRET_KEY")
 
+        secret_key = os.getenv(
+            "SECRET_KEY"
+        )
+
+        if not secret_key:
+            raise HTTPException(
+                status_code=500,
+                detail="Authentication service unavailable."
+            )
+        
         payload = jwt.decode(
             token,
             secret_key,
@@ -373,14 +394,6 @@ def generate(
             db
         )
 
-        print(
-            "[DEBUG] user:",
-            user,
-            "type:",
-            type(user),
-            flush=True
-        )
-
         guest = None
 
 
@@ -476,11 +489,15 @@ def generate(
 
         except Exception as error:
 
+            print(
+                "[AI GENERATION ERROR]",
+                error,
+                flush=True
+            )
+
             raise HTTPException(
                 status_code=500,
-                detail=(
-                    f"Paper generation failed: {error}"
-                )
+                detail="Paper generation failed."
             )
 
 
@@ -586,7 +603,7 @@ def generate(
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    f"PDF generation failed: {error}"
+                    f"PDF generation failed."
                 )
             )
 
@@ -729,11 +746,15 @@ def generate(
             f"GENERATION ROUTE ERROR: {error}"
         )
 
+        print(
+            "[PDF ERROR]",
+            error,
+            flush=True
+        )
+
         raise HTTPException(
             status_code=500,
-            detail=(
-                f"Paper generation failed: {error}"
-            )
+            detail="PDF generation failed."
         )
 
 
@@ -749,33 +770,98 @@ def generate(
 @router.get(
     "/download/{filename}"
 )
-def download_file(filename: str):
+def download_file(
+    filename: str,
+    authorization: Optional[str] = Header(
+        default=None
+    )
+):
 
-    safe_filename = os.path.basename(filename)
+    # ============================================================
+    # DATABASE
+    # ============================================================
 
-    object_key = f"papers/{safe_filename}"
+    db = SessionLocal()
 
     try:
 
-        download_url = generate_download_url(
-            object_key=object_key,
-            expires_in=3600
+        # ========================================================
+        # AUTHENTICATE USER
+        # ========================================================
+
+        user = get_optional_user(
+            authorization,
+            db
         )
+
+        # Only authenticated users can access saved papers.
+        if not user:
+            raise HTTPException(
+                status_code=401,
+                detail="AUTHENTICATION_REQUIRED"
+            )
+
+        # ========================================================
+        # SAFE FILENAME
+        # ========================================================
+
+        safe_filename = os.path.basename(
+            filename
+        )
+
+        object_key = (
+            f"papers/{safe_filename}"
+        )
+
+        # ========================================================
+        # VERIFY PAPER OWNERSHIP
+        # ========================================================
+
+        paper = (
+            db.query(PaperHistory)
+            .filter(
+                PaperHistory.user_id == user.id,
+                PaperHistory.pdf_path == object_key
+            )
+            .first()
+        )
+
+        if not paper:
+
+            raise HTTPException(
+                status_code=404,
+                detail="PDF file not found."
+            )
+
+        # ========================================================
+        # GENERATE SECURE R2 URL
+        # ========================================================
+
+        try:
+
+            download_url = generate_download_url(
+                object_key=object_key,
+                expires_in=3600
+            )
+
+        except Exception as error:
+
+            print(
+                "[R2 DOWNLOAD ERROR]",
+                error,
+                flush=True
+            )
+
+            raise HTTPException(
+                status_code=404,
+                detail="PDF file not found."
+            )
 
         return {
             "success": True,
             "download_url": download_url
         }
 
-    except Exception as error:
+    finally:
 
-        print(
-            "[R2 DOWNLOAD ERROR]",
-            error,
-            flush=True
-        )
-
-        raise HTTPException(
-            status_code=404,
-            detail="PDF file not found."
-        )
+        db.close()

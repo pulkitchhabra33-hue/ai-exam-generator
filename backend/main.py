@@ -23,12 +23,22 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(auth_router)
 
-app.add_middleware(     
+app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://pulkitchhabra33-hue.github.io"],
+    allow_origins=[
+        "https://pulkitchhabra33-hue.github.io"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=[
+        "GET",
+        "POST",
+        "OPTIONS"
+    ],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Guest-ID"
+    ],
 )
 
 app.include_router(generation_router)

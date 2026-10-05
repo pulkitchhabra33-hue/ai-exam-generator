@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Dashboard - AI Exam Generator</title>
+
+    <link
+        rel="stylesheet"
+        href="css/dashboard.css"
+    >
+
+</head>
+
+
+<body>
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <header class="dashboard-header">
+
+        <div class="header-left">
+
+            <h2>
+                AI Exam Generator
+            </h2>
+
+        </div>
+
+
+        <div class="header-right">
+
+            <span id="userName">
+                Loading...
+            </span>
+
+            <button
+                type="button"
+                onclick="logout()"
+            >
+                Logout
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         MAIN DASHBOARD
+    ====================================================== -->
+
+    <main class="dashboard-container">
+
+        <section class="welcome-section">
+
+            <h1>
+                Welcome,
+                <span id="welcomeName">
+                    User
+                </span>
+                👋
+            </h1>
+
+            <p>
+                Manage your account and exam papers from here.
+            </p>
+
+        </section>
+
+
+        <!-- =================================================
+             ACCOUNT CARDS
+        ================================================== -->
+
+        <section class="stats-grid">
+
+
+            <!-- PLAN -->
+
+            <div class="stat-card">
+
+                <h3>
+                    Plan
+                </h3>
+
+                <p
+                    id="userPlan"
+                    class="stat-value"
+                >
+                    Loading...
+                </p>
+
+            </div>
+
+
+            <!-- CREDITS -->
+
+            <div class="stat-card">
+
+                <h3>
+                    Credits
+                </h3>
+
+                <p
+                    id="userCredits"
+                    class="stat-value"
+                >
+                    Loading...
+                </p>
+
+            </div>
+
+
+            <!-- EXPIRY -->
+
+            <div class="stat-card">
+
+                <h3>
+                    Subscription
+                </h3>
+
+                <p
+                    id="userExpiry"
+                    class="stat-value"
+                >
+                    Loading...
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ACTION BUTTONS
+        ================================================== -->
+
+        <section class="dashboard-actions">
+
+            <button
+                type="button"
+                onclick="generateExam()"
+            >
+                📝 Generate Exam Paper
+            </button>
+
+
+            <button
+                type="button"
+                onclick="openMyPapers()"
+            >
+                📚 My Papers
+            </button>
+
+        </section>
+
+
+        <!-- =================================================
+             RECENT PAPERS
+        ================================================== -->
+
+        <section class="recent-papers-section">
+
+            <div class="section-header">
+
+                <h2>
+                    Recent Papers
+                </h2>
+
+                <button
+                    type="button"
+                    onclick="openMyPapers()"
+                >
+                    View All
+                </button>
+
+            </div>
+
+
+            <div id="recentPapers">
+
+                Loading your papers...
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="js/dashboard.js"></script>
+
+</body>
+
+</html>

@@ -41,6 +41,22 @@ class GuestSession(Base):
     credits_remaining= Column(Integer, default=10)
     created_at= Column(DateTime, default= datetime.utcnow)
 
+
+class GuestSessionCreation(Base):
+    __tablename__ = "guest_session_creations"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Keyed hash of the IP address; never store the raw IP here.
+    ip_hash = Column(String(64), nullable=False, index=True)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+
 class Payment(Base):
     __tablename__ = "payments"
 

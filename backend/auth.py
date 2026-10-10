@@ -4,8 +4,9 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
 from backend.database import SessionLocal
-from backend.models import User, PaperHistory, GuestSession, Payment
+from backend.models import User, PaperHistory, GuestSession, Payment, GuestSessionCreation
 from backend import plans
 
 from passlib.context import CryptContext
@@ -18,6 +19,8 @@ import uuid
 import hashlib
 import secrets
 import razorpay
+import hmac
+import ipaddress
 
 class SignupRequest(BaseModel):
     name: str
@@ -59,6 +62,9 @@ oauth2_scheme= OAuth2PasswordBearer(tokenUrl= "login")
 
 algorithm= "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES= 60
+
+GUEST_SESSION_IP_LIMIT = 3
+GUEST_SESSION_IP_WINDOW_HOURS = 24
 
 pwd_context= CryptContext(schemes= ["pbkdf2_sha256"], deprecated= "auto")
 
@@ -276,8 +282,9 @@ def create_guest_session(
         identity_token = request.cookies.get("guest_identity")
 
         guest = None
+        guest_recovered_by_cookie = False
 
-        # 1. Recover guest using persistent identity cookie
+        # 1. Recover guest using the persistent identity cookie.
         if identity_token:
             identity_token_hash = hashlib.sha256(
                 identity_token.encode()
@@ -286,12 +293,15 @@ def create_guest_session(
             guest = (
                 db.query(GuestSession)
                 .filter(
-                    GuestSession.identity_token_hash == identity_token_hash
+                    GuestSession.identity_token_hash
+                    == identity_token_hash
                 )
                 .first()
             )
 
-        # 2. Fallback: recover using existing guest ID
+            guest_recovered_by_cookie = guest is not None
+
+        # 2. Fall back to the stored guest ID.
         if guest is None:
             guest_id = request.headers.get("X-Guest-ID")
 
@@ -304,30 +314,127 @@ def create_guest_session(
                     .first()
                 )
 
-        # 3. Create a guest only when no existing session can be recovered
+        # 3. Apply IP protection only when creating a NEW guest.
         if guest is None:
+
+            # Render routes public traffic through Cloudflare.
+            # Prefer its client-IP header instead of the proxy IP.
+            raw_client_ip = request.headers.get(
+                "cf-connecting-ip"
+            )
+
+            # Allow local loopback development without Cloudflare.
+            if (
+                not raw_client_ip
+                and request.client is not None
+                and request.client.host
+                in {"127.0.0.1", "::1", "testclient"}
+            ):
+                raw_client_ip = (
+                    "127.0.0.1"
+                    if request.client.host == "testclient"
+                    else request.client.host
+                )
+
+            if not raw_client_ip:
+                raise HTTPException(
+                    status_code=503,
+                    detail=(
+                        "Unable to verify the network for a new "
+                        "guest session. Please sign up or log in."
+                    )
+                )
+
+            try:
+                client_ip = str(
+                    ipaddress.ip_address(
+                        raw_client_ip.strip()
+                    )
+                )
+            except ValueError:
+                raise HTTPException(
+                    status_code=503,
+                    detail=(
+                        "Unable to verify the network for a new "
+                        "guest session. Please sign up or log in."
+                    )
+                )
+
+            # Store a keyed IP hash, never the raw IP address.
+            ip_hash = hmac.new(
+                secret_key.encode("utf-8"),
+                f"guest-session-ip:{client_ip}".encode("utf-8"),
+                hashlib.sha256
+            ).hexdigest()
+
+            # Serialize guest creation for this IP on PostgreSQL.
+            # This prevents simultaneous requests from simply
+            # bypassing the count-and-create limit.
+            if db.get_bind().dialect.name == "postgresql":
+                db.execute(
+                    text(
+                        "SELECT pg_advisory_xact_lock(hashtext(:ip_hash))"
+                    ),
+                    {"ip_hash": ip_hash}
+                )
+
+            cutoff_time = datetime.utcnow() - timedelta(
+                hours=GUEST_SESSION_IP_WINDOW_HOURS
+            )
+
+            # Remove expired tracking records for this IP.
+            db.query(GuestSessionCreation).filter(
+                GuestSessionCreation.ip_hash == ip_hash,
+                GuestSessionCreation.created_at < cutoff_time
+            ).delete(synchronize_session=False)
+
+            recent_sessions = (
+                db.query(GuestSessionCreation)
+                .filter(
+                    GuestSessionCreation.ip_hash == ip_hash,
+                    GuestSessionCreation.created_at >= cutoff_time
+                )
+                .count()
+            )
+
+            if recent_sessions >= GUEST_SESSION_IP_LIMIT:
+                raise HTTPException(
+                    status_code=429,
+                    detail=(
+                        "The free guest-session limit for this "
+                        "network has been reached. Please sign up "
+                        "or log in to continue."
+                    )
+                )
+
             guest = GuestSession(
                 guest_id=str(uuid.uuid4()),
                 credits_remaining=10
             )
 
             db.add(guest)
+
+            db.add(
+                GuestSessionCreation(
+                    ip_hash=ip_hash
+                )
+            )
+
             db.flush()
 
-        # 4. Rotate identity cookie when missing or invalid
-        if not identity_token or guest.identity_token_hash is None:
+        # 4. Issue a fresh cookie if it was missing or invalid.
+        # Preserve the existing cookie when it recovered the guest.
+        if not guest_recovered_by_cookie:
             identity_token = secrets.token_urlsafe(32)
 
-            identity_token_hash = hashlib.sha256(
+            guest.identity_token_hash = hashlib.sha256(
                 identity_token.encode()
             ).hexdigest()
-
-            guest.identity_token_hash = identity_token_hash
 
         db.commit()
         db.refresh(guest)
 
-        # 5. Set persistent identity cookie
+        # 5. Set the persistent, HTTP-only identity cookie.
         response.set_cookie(
             key="guest_identity",
             value=identity_token,
@@ -343,8 +450,13 @@ def create_guest_session(
             "credits_remaining": guest.credits_remaining
         }
 
+    except Exception:
+        db.rollback()
+        raise
+
     finally:
         db.close()
+
 
 def get_guest_session(guest_id, db):
     if not guest_id:

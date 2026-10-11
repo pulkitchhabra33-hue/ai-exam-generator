@@ -716,48 +716,43 @@ def generate(
         # download endpoint. Guests receive a temporary,
         # signed Cloudflare R2 download URL.
 
+
         if user:
             download_url = f"/download/{filename}"
-
         else:
             try:
                 download_url = generate_download_url(
                     object_key=object_key,
                     expires_in=3600
                 )
-
             except Exception as error:
                 print(
                     "[R2 DOWNLOAD URL ERROR]",
                     error,
                     flush=True
                 )
-
                 raise HTTPException(
                     status_code=500,
                     detail="Unable to create PDF download link."
                 )
 
-            
-            response_data = {
-                "success": True,
-                "message": "Paper generated successfully.",
-                "download_url": download_url,
-                "credits_used": credit_cost,
-                "credits_remaining": credits_remaining
-            }
+        response_data = {
+            "success": True,
+            "message": "Paper generated successfully.",
+            "download_url": download_url,
+            "credits_used": credit_cost,
+            "credits_remaining": credits_remaining
+        }
 
-            print(
-                "[GENERATION RESPONSE]",
-                json.dumps(response_data),
-                flush=True
-            )
+        print(
+            "[GENERATION RESPONSE]",
+            json.dumps(response_data),
+            flush=True
+        )
 
-            return response_data
+        return response_data
 
-
-
-
+    
     except HTTPException:
 
         db.rollback()

@@ -751,6 +751,21 @@ async function generatePDF() {
                 link.onclick = async function(event) {
                     event.preventDefault();
 
+                    // Guest downloads use a temporary signed R2 URL.
+                    // Open it directly instead of calling the protected
+                    // authenticated download endpoint.
+                    if (
+                        typeof result.download_url === "string" &&
+                        result.download_url.startsWith("https://")
+                    ) {
+                        window.open(
+                            result.download_url,
+                            "_blank",
+                            "noopener"
+                        );
+                        return;
+                    }
+
                     try {
 
                         const response =

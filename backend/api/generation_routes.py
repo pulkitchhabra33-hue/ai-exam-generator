@@ -712,24 +712,39 @@ def generate(
             file_path
         )
 
-        return {
+        # Authenticated users continue using the protected
+        # download endpoint. Guests receive a temporary,
+        # signed Cloudflare R2 download URL.
 
-            "success": True,
+        if user:
+            download_url = f"/download/{filename}"
 
-            "message":
-                "Paper generated successfully.",
+        else:
+            try:
+                download_url = generate_download_url(
+                    object_key=object_key,
+                    expires_in=3600
+                )
 
-            "download_url":
-                f"/download/{filename}",
+            except Exception as error:
+                print(
+                    "[R2 DOWNLOAD URL ERROR]",
+                    error,
+                    flush=True
+                )
 
-            "credits_used":
-                credit_cost,
+                raise HTTPException(
+                    status_code=500,
+                    detail="Unable to create PDF download link."
+                )
 
-            "credits_remaining":
-                credits_remaining
-
-        }
-
+            return {
+                "success": True,
+                "message": "Paper generated successfully.",
+                "download_url": download_url,
+                "credits_used": credit_cost,
+                "credits_remaining": credits_remaining
+            }
 
     except HTTPException:
 

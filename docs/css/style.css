@@ -610,3 +610,20 @@ input[type="file"] {
         gap: 12px;
     }
 }
+
+
+/* Keep the complete navigation header visible */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 2000;
+    background: #fff;
+}
+
+/* Prevent the page content from hiding behind the fixed header */
+body {
+    padding-top: 80px;
+}

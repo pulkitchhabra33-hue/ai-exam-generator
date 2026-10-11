@@ -738,13 +738,25 @@ def generate(
                     detail="Unable to create PDF download link."
                 )
 
-            return {
+            
+            response_data = {
                 "success": True,
                 "message": "Paper generated successfully.",
                 "download_url": download_url,
                 "credits_used": credit_cost,
                 "credits_remaining": credits_remaining
             }
+
+            print(
+                "[GENERATION RESPONSE]",
+                json.dumps(response_data),
+                flush=True
+            )
+
+            return response_data
+
+
+
 
     except HTTPException:
 

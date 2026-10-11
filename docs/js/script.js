@@ -699,8 +699,35 @@ async function generatePDF() {
 
         try {
             result = await res.json();
-        } catch {
-            result = {};
+        } catch (error) {
+            console.error(
+                "Failed to parse generation response:",
+                error
+            );
+
+            result = null;
+        }
+
+        if (
+            !result ||
+            typeof result !== "object" ||
+            Array.isArray(result)
+        ) {
+            console.error(
+                "Invalid generation response:",
+                {
+                    status: res.status,
+                    result: result
+                }
+            );
+
+            alert(
+                "The server returned an invalid response. " +
+                "Please try again. If the problem continues, " +
+                "check the browser console."
+            );
+
+            return;
         }
 
         if (

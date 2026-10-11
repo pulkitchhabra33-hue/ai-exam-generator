@@ -696,16 +696,48 @@ async function generatePDF() {
         }
 
         let result;
+        let rawResponse = "";
 
         try {
-            result = await res.json();
+            rawResponse = await res.text();
+
+            console.log(
+                "Generation HTTP status:",
+                res.status
+            );
+
+            console.log(
+                "Generation raw response:",
+                rawResponse
+            );
+
+            result = JSON.parse(rawResponse);
         } catch (error) {
             console.error(
-                "Failed to parse generation response:",
+                "Generation response parsing failed:",
                 error
             );
 
-            result = null;
+            console.error(
+                "Raw response body:",
+                rawResponse
+            );
+
+            alert(
+                "The server response could not be parsed. " +
+                "Please check the browser console."
+            );
+
+            return;
+        }
+
+        if (!result || typeof result !== "object") {
+            console.error(
+                "Unexpected generation response:",
+                result
+            );
+
+            return;
         }
 
         if (

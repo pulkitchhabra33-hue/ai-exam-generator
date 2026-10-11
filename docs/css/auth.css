@@ -61,3 +61,48 @@ body {
     align-items: center;
     gap: 12px;
 }
+
+
+/* ============================================================
+   DAY 18 — LOGIN / SIGNUP RESPONSIVENESS
+   ============================================================ */
+
+.auth-container {
+    min-height: 100vh;
+    min-height: 100svh;
+    height: auto;
+    padding: 24px 16px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 380px;
+    min-width: 0;
+    padding: clamp(20px, 5vw, 35px);
+    box-sizing: border-box;
+}
+
+.auth-card input,
+.auth-card button {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.auth-buttons {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 380px) {
+    .auth-container {
+        padding: 16px 12px;
+    }
+
+    .auth-card {
+        padding: 20px 16px;
+    }
+
+    .auth-card h1 {
+        font-size: 24px;
+        overflow-wrap: anywhere;
+    }
+}

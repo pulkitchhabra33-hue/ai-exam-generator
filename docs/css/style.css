@@ -346,3 +346,267 @@ textarea {
     transform: rotate(360deg);
   }
 }
+
+
+/* ============================================================
+   DAY 18 — MOBILE RESPONSIVENESS
+   Main exam-generation page
+   ============================================================ */
+
+/* Prevent padding and borders from causing overflow */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+body {
+    min-width: 320px;
+}
+
+/* Keep the main form within the available screen width */
+.container {
+    width: calc(100% - 32px);
+    max-width: 600px;
+    margin: 32px auto;
+}
+
+.form-card {
+    width: 100%;
+    min-width: 0;
+}
+
+/* Do not stretch checkbox controls like text inputs */
+input[type="checkbox"] {
+    width: auto;
+    max-width: 100%;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+/* Allow long labels and controls to shrink safely */
+.input-group,
+.question-group,
+.question-group-fields,
+.section {
+    min-width: 0;
+}
+
+input,
+select,
+textarea,
+button {
+    max-width: 100%;
+}
+
+input[type="file"] {
+    width: 100%;
+    min-width: 0;
+}
+
+/* Medium screens: tablets and smaller laptops */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 14px 20px;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    .logo {
+        font-size: 21px;
+    }
+
+    .nav-links {
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .auth-buttons {
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .auth-buttons button {
+        padding: 10px 14px;
+    }
+
+    .container {
+        margin-top: 24px;
+    }
+
+    .form-card {
+        padding: 20px;
+    }
+
+    .row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .question-group-fields {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Phones */
+@media (max-width: 480px) {
+    .navbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 14px 16px;
+    }
+
+    .logo {
+        text-align: center;
+        font-size: 20px;
+    }
+
+    .nav-links {
+        justify-content: center;
+        gap: 12px 18px;
+    }
+
+    .auth-buttons {
+        display: flex;
+        width: 100%;
+    }
+
+    .auth-buttons button {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 8px;
+    }
+
+    .container {
+        width: calc(100% - 24px);
+        margin: 20px auto;
+    }
+
+    .container > h1 {
+        font-size: 25px;
+        line-height: 1.25;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    .form-card {
+        padding: 14px;
+        border-radius: 10px;
+    }
+
+    .form-card h3 {
+        font-size: 18px;
+    }
+
+    .input-group label {
+        line-height: 1.45;
+    }
+
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+
+    .section {
+        padding: 10px;
+    }
+
+    .section-header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .question-group {
+        padding: 10px;
+    }
+
+    .toggle-box {
+        gap: 12px;
+        align-items: center;
+    }
+
+    .toggle-box label {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .btn {
+        font-size: 15px;
+        padding: 12px 10px;
+        overflow-wrap: anywhere;
+    }
+
+    .loading {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    #generationStatus,
+    #generationElapsed {
+        overflow-wrap: anywhere;
+    }
+
+    #downloadLink {
+        display: inline-block;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+}
+
+
+/* Mobile sizing improvement */
+@media (max-width: 600px) {
+    body {
+        font-size: 16px;
+    }
+
+    .container {
+        width: calc(100% - 20px);
+        max-width: none;
+        margin: 16px auto;
+    }
+
+    .form-card {
+        padding: 18px;
+    }
+
+    .container > h1 {
+        font-size: 28px;
+    }
+
+    /* Give the four main controls more room */
+    .row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .row .input-group {
+        min-width: 0;
+    }
+
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+        min-width: 0;
+    }
+
+    .btn,
+    button {
+        min-height: 44px;
+    }
+
+    .toggle-box {
+        justify-content: flex-start;
+        gap: 12px;
+    }
+}

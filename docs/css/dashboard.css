@@ -402,3 +402,137 @@ body {
 .back-home:hover {
     text-decoration: underline;
 }
+
+
+/* ============================================================
+   DAY 18 — DASHBOARD RESPONSIVENESS
+   ============================================================ */
+
+.dashboard-header,
+.header-left,
+.header-right,
+.dashboard-container,
+.stats-grid,
+.stat-card,
+.dashboard-actions,
+.recent-papers-section,
+.paper-card,
+.paper-info {
+    min-width: 0;
+}
+
+.dashboard-header {
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.header-right {
+    flex-wrap: wrap;
+}
+
+.paper-info {
+    overflow-wrap: anywhere;
+}
+
+.paper-card button,
+.dashboard-actions button {
+    max-width: 100%;
+}
+
+@media (max-width: 700px) {
+    .dashboard-header {
+        align-items: flex-start;
+        padding: 16px;
+    }
+
+    .header-left h2 {
+        font-size: 20px;
+        overflow-wrap: anywhere;
+    }
+
+    .header-right {
+        width: 100%;
+        gap: 10px;
+    }
+
+    .header-right button {
+        flex: 1;
+        min-width: 0;
+        padding: 10px;
+    }
+
+    .dashboard-container {
+        padding: 24px 16px;
+    }
+
+    .welcome-section h1 {
+        font-size: 26px;
+        line-height: 1.25;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .stat-card {
+        padding: 20px;
+    }
+
+    .dashboard-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .dashboard-actions button {
+        width: 100%;
+    }
+
+    .recent-papers-section {
+        padding: 16px;
+    }
+
+    .section-header {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .paper-card {
+        align-items: stretch;
+        gap: 12px;
+        padding: 16px 0;
+    }
+
+    .paper-card button {
+        width: 100%;
+        padding: 12px;
+    }
+
+    .empty-papers {
+        padding: 22px 10px;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 380px) {
+    .dashboard-container {
+        padding: 20px 12px;
+    }
+
+    .recent-papers-section {
+        padding: 12px;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .header-right {
+        flex-direction: column;
+    }
+
+    .header-right button {
+        width: 100%;
+    }
+}

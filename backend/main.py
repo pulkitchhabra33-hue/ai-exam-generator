@@ -26,7 +26,9 @@ app.include_router(auth_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://pulkitchhabra33-hue.github.io"
+    "https://pulkitchhabra33-hue.github.io",
+    "https://ai-exam-generator.in",
+    "https://www.ai-exam-generator.in",
     ],
     allow_credentials=True,
     allow_methods=[

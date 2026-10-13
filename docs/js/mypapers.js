@@ -78,10 +78,11 @@ async function loadPaperHistory() {
     papers.forEach(
       paper => {
 
-        const createdDate =
-          new Date(
-            paper.created_at
-          ).toLocaleString();
+        const createdDate = new Date(paper.created_at).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        });
 
 
         container.innerHTML += `

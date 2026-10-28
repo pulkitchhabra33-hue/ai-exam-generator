@@ -1,25 +1,19 @@
 const API_BASE_URL = "https://ai-exam-generator-backend.onrender.com";
 
-async function apiRequest(
-    endpoint,
-    options = {}
-) {
-    const response = await fetch(
-
-        API_BASE_URL + endpoint,
-
-        options
-
-    );
+async function apiRequest(endpoint, options = {}) {
+    const response = await fetch(API_BASE_URL + endpoint, options);
 
     if (!response.ok) {
+        let message = "Something went wrong. Please try again.";
 
-        throw new Error(
+        try {
+            const errorData = await response.json();
+            message = errorData.detail || message;
+        } catch {
+            // Keep the fallback message if the response isn't JSON.
+        }
 
-            await response.text()
-
-        );
-
+        throw new Error(message);
     }
 
     return response.json();

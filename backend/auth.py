@@ -177,11 +177,11 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 
 #SIGNUP
 @router.post("/signup")
-def signup(user: SignupRequest):
-    db: Session= SessionLocal()
+def signup(user: SignupRequest, request: Request):
+    db: Session = SessionLocal()
 
     try:
-        existing_user= (
+        existing_user = (
             db.query(User)
             .filter(User.email == user.email)
             .first()
@@ -189,27 +189,72 @@ def signup(user: SignupRequest):
 
         if existing_user:
             raise HTTPException(
-                status_code= 400,
+                status_code=400,
                 detail="Email already registered"
             )
 
-        hashed_password= get_password_hash(
-            user.password
+        # 1. Identify the guest session using the secure cookie first.
+        guest = None
+        identity_token = request.cookies.get("guest_identity")
+
+        if identity_token:
+            identity_token_hash = hashlib.sha256(
+                identity_token.encode()
+            ).hexdigest()
+
+            guest = (
+                db.query(GuestSession)
+                .filter(
+                    GuestSession.identity_token_hash
+                    == identity_token_hash
+                )
+                .with_for_update()
+                .first()
+            )
+
+        # 2. Fall back to the guest ID stored by the frontend.
+        if guest is None:
+            guest_id = request.headers.get("X-Guest-ID")
+
+            if guest_id:
+                guest = (
+                    db.query(GuestSession)
+                    .filter(
+                        GuestSession.guest_id == guest_id
+                    )
+                    .with_for_update()
+                    .first()
+                )
+
+        # 3. Transfer only the remaining guest credits.
+        # No valid guest session means zero free credits.
+        credits_to_transfer = (
+            max(0, guest.credits_remaining)
+            if guest is not None
+            else 0
         )
 
-        new_user= User(
-            name= user.name,
-            email= user.email,
-            password= hashed_password,
-            plan= "FREE",
-            credits_remaining= 10
+        hashed_password = get_password_hash(user.password)
+
+        new_user = User(
+            name=user.name,
+            email=user.email,
+            password=hashed_password,
+            plan="FREE",
+            credits_remaining=credits_to_transfer
         )
 
         db.add(new_user)
+
+        # Prevent the same guest balance from being transferred again.
+        if guest is not None:
+            guest.credits_remaining = 0
+
+        # Save the account and credit transfer together.
         db.commit()
         db.refresh(new_user)
 
-        access_token= create_access_token(
+        access_token = create_access_token(
             data={"sub": new_user.email}
         )
 
@@ -219,9 +264,14 @@ def signup(user: SignupRequest):
             "token_type": "bearer",
             "user": {
                 "name": new_user.name,
-                "email": new_user.email
+                "email": new_user.email,
+                "credits_remaining": new_user.credits_remaining
             }
         }
+
+    except Exception:
+        db.rollback()
+        raise
 
     finally:
         db.close()

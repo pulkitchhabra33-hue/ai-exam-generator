@@ -93,24 +93,25 @@ async function signupUser(event) {
     }
 
     try {
-        const response= 
-            await apiRequest(
-                "/signup",
-                {
-                    method: "POST",
+        const response = await apiRequest(
+            "/signup",
+            {
+                method: "POST",
 
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
+                credentials: "include",
 
-                    body: JSON.stringify({
-                        name,
-                        email,
-                        password
-                    })
-                }
-            );
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Guest-ID": localStorage.getItem("guest_id") || ""
+                },
+
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password
+                })
+            }
+        );
 
             localStorage.setItem(
                 "access_token",
@@ -138,7 +139,9 @@ async function signupUser(event) {
         );
 
         alert(
-            "Signup failed. The email may already be registered."
+            error.message?.includes("Email already registered")
+                ? "This email is already registered. Please log in instead."
+                : "Signup failed. Please check your details and try again."
         );
     }
 }

@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 test.db
 *.db
+test.db.backup
+test.db.backup2
